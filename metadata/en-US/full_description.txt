@@ -1,0 +1,36 @@
+Cowspent is a shared budget manager able to synchronize with Nextcloud Cospend. It is partially based on MoneyBuster
+
+What did we change from MoneyBuster ?
+
+We added more statistics, support for projects marked as archived (hidden by default),
+added support for custom splits to bills, added a way to add categories to bills missing them.
+Behind the scenes we migrated the UI and app into Kotlin and Jetpack Compose for a smoother and more modern experience.
+
+What's different from other shared budget managers?
+
+You can keep your project local or make it synchronize with Nextcloud Cospend projects.
+This means you can choose where your data is going and preserve your privacy.
+
+# Features
+
+* Manage projects, members and bills (add/remove/edit)
+* Search bills (by payer, name, amount, date)
+* Generate and share project statistics and settlement plan
+* Dark theme and customizable main app color
+* Share/import projects with link/QRCode
+* Connect to a Nextcloud account to automatically add projects
+* Background sync service with notifications on bills events
+* Multi-lingual user-interface (translated on Crowdin: https://crowdin.com/project/cowspent)
+
+# Requirements
+
+If you want to host a project in Nextcloud Cospend :
+
+* Nextcloud instance running with Cospend app installed
+
+If you want to be able to create remote projects from Cowspent : enable public project creation on your Nextcloud Cospend instance.
+
+# Alternatives
+
+MoneyBuster which is FOSS but has older UI and was missing some QoL features.
+Tricount, Cospender, Splitwise etc... which are not FOSS and force you to give away your private data.

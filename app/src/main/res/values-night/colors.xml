@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#72D1FF</color>
+    <color name="on_primary">#000000</color>
+    <color name="accent">#72D1FF</color>
+    <color name="surface">#121212</color>
+    <color name="on_surface">#ffffff</color>
+    <color name="bg_normal">#121212</color>
+    <color name="fg_default">#ffffff</color>
+    <color name="fg_default_low">#aaaaaa</color>
+</resources>

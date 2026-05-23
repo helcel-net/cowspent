@@ -1,0 +1,16 @@
+.gradle/
+local.properties
+.DS_Store
+build/
+captures/
+.idea/
+.kotlin/
+*.iml
+.*.swp
+projectFilesBackup/
+app/debug/
+app/lint/
+app/release/
+/gradle/verification-keyring.gpg
+/crowdin.*
+app/build

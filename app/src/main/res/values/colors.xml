@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#0082C9</color>
+    <color name="on_primary">#ffffff</color>
+    <color name="accent">#0082C9</color>
+    <color name="surface">#ffffff</color>
+    <color name="on_surface">#000000</color>
+
+    <color name="bg_normal">#ffffff</color>
+    <color name="fg_default">#000000</color>
+    <color name="fg_default_low">#666666</color>
+    <color name="green">#00CC00</color>
+    <color name="red">#CC0000</color>
+</resources>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <style name="BaseTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorPrimaryDark">@color/bg_normal</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:actionModeBackground">?attr/colorPrimary</item>
+        <item name="colorControlNormal">?attr/colorAccent</item>
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeStyle">@style/actionModeStyle</item>
+        <item name="appBarLayoutStyle">@style/appBarLayoutStyle</item>
+        <item name="toolbarStyle">@style/toolbarStyle</item>
+
+
+        <item name="colorPrimaryContainer">@color/primary</item>
+        <item name="colorOnPrimaryContainer">@android:color/white</item>
+        <item name="android:datePickerDialogTheme">@style/DialogTheme</item>
+        <item name="android:timePickerDialogTheme">@style/DialogTheme</item>
+        <item name="android:alertDialogTheme">@style/DialogTheme</item>
+    </style>
+
+    <style name="DialogTheme" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowBackground">@color/bg_normal</item>
+        <item name="android:colorBackground">@color/bg_normal</item>
+        <item name="android:textColorPrimary">@color/on_surface</item>
+        <item name="android:textColorSecondary">@color/fg_default_low</item>
+        <item name="android:colorPrimary">@color/primary</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorControlActivated">@color/accent</item>
+        <item name="android:headerBackground">@color/primary</item>
+        <item name="android:numbersBackgroundColor">@color/surface</item>
+        <item name="android:numbersSelectorColor">@color/accent</item>
+        <item name="android:numbersTextColor">@color/on_surface</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/DialogButtonStyle</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/DialogButtonStyle</item>
+
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorAccent">@color/accent</item>
+    </style>
+
+    <style name="DialogButtonStyle" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:textColor">@color/accent</item>
+    </style>
+
+    <style name="AppTheme" parent="BaseTheme" >
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">@bool/isDayMode</item>
+    </style>
+
+    <style name="appBarLayoutStyle" parent="@style/Widget.Design.AppBarLayout">
+        <item name="android:paddingStart">@dimen/spacer_activity_sides</item>
+        <item name="android:paddingEnd">@dimen/spacer_activity_sides</item>
+    </style>
+
+    <style name="toolbarStyle" parent="@style/Widget.AppCompat.Toolbar">
+        <item name="android:background">@color/bg_normal</item>
+    </style>
+
+    <style name="actionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
+        <item name="android:paddingStart">@dimen/spacer_activity_sides</item>
+        <item name="android:paddingEnd">@dimen/spacer_activity_sides</item>
+    </style>
+
+
+    <style name="AppTheme.NoActionBar" parent="AppTheme">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+</resources>
