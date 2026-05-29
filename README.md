@@ -30,9 +30,11 @@ Many thanks to their developers :heart: !
 <div align="center">
   <table>
     <tr>
-      <td style="width: 33%; height: 100px;"><img src="./metadata/en-US/images/phoneScreenshots/launcher.jpg" alt="Launcher" style="width: 100%; height: 100%;"></td>
-      <td style="width: 33%; height: 100px;"><img src="./metadata/en-US/images/phoneScreenshots/view.jpg" alt="View" style="width: 100%; height: 100%;"></td>
-      <td style="width: 33%; height: 100px;"><img src="./metadata/en-US/images/phoneScreenshots/edit.jpg" alt="Edit" style="width: 100%; height: 100%;"></td>
+      <td style="width: 20%; height: 100px;"><img src="./metadata/en-US/images/phoneScreenshots/1.png" alt="1" style="width: 100%; height: 100%;"></td>
+      <td style="width: 20%; height: 100px;"><img src="./metadata/en-US/images/phoneScreenshots/2.png" alt="2" style="width: 100%; height: 100%;"></td>
+      <td style="width: 20%; height: 100px;"><img src="./metadata/en-US/images/phoneScreenshots/3.png" alt="3" style="width: 100%; height: 100%;"></td>
+      <td style="width: 20%; height: 100px;"><img src="./metadata/en-US/images/phoneScreenshots/4.png" alt="4" style="width: 100%; height: 100%;"></td>
+      <td style="width: 20%; height: 100px;"><img src="./metadata/en-US/images/phoneScreenshots/5.png" alt="5" style="width: 100%; height: 100%;"></td>
     </tr>
   </table>
 </div>
