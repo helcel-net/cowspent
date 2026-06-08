@@ -3,6 +3,7 @@ package net.helcel.cowspent.android.settings
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
@@ -25,6 +26,7 @@ import net.helcel.cowspent.util.ColorUtils
 class PreferencesActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {

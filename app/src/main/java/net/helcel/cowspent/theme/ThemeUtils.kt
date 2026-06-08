@@ -100,14 +100,18 @@ object ThemeUtils {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colors.background
                     ) {
-                        Column {
+                        Column(modifier = Modifier.fillMaxSize()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colors.primary)
                                     .statusBarsPadding()
                             )
-                            Box(modifier = Modifier.fillMaxSize()) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .navigationBarsPadding()
+                            ) {
                                 content()
                             }
                         }

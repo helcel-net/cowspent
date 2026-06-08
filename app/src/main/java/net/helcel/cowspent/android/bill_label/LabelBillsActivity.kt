@@ -3,6 +3,7 @@ package net.helcel.cowspent.android.bill_label
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -20,6 +21,7 @@ class LabelBillsActivity : AppCompatActivity() {
     private val viewModel: LabelBillsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         val projectId = intent.getLongExtra(EXTRA_PROJECT_ID, -1L)

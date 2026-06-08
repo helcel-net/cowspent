@@ -20,11 +20,14 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name="net.helcel.cowspent.android.currencies.ManageCurrenciesActivity" />
+        <activity
+            android:name="net.helcel.cowspent.android.currencies.ManageCurrenciesActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name="net.helcel.cowspent.android.main.BillsListViewActivity"
             android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
             android:exported="true">
 
             <intent-filter>
@@ -45,7 +48,7 @@
             android:name="net.helcel.cowspent.android.account.AccountActivity"
             android:label="@string/settings_server_settings"
             android:parentActivityName="net.helcel.cowspent.android.settings.PreferencesActivity"
-            android:windowSoftInputMode="stateVisible"
+            android:windowSoftInputMode="adjustResize|stateVisible"
             android:launchMode="standard"
             />
 
@@ -66,7 +69,7 @@
             android:name="net.helcel.cowspent.android.project.create.NewProjectActivity"
             android:label="@string/simple_add_project"
             android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
-            android:windowSoftInputMode="stateHidden"
+            android:windowSoftInputMode="adjustResize"
             android:launchMode="standard"
             android:exported="true">
             <intent-filter>
@@ -93,7 +96,7 @@
             android:name="net.helcel.cowspent.android.project.edit.EditProjectActivity"
             android:label="@string/simple_edit_project"
             android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
-            android:windowSoftInputMode="stateHidden"
+            android:windowSoftInputMode="adjustResize"
             android:launchMode="standard">
         </activity>
 
@@ -101,7 +104,7 @@
             android:name="net.helcel.cowspent.android.bill_edit.EditBillActivity"
             android:label="@string/simple_edit_bill"
             android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
-            android:windowSoftInputMode="stateHidden"
+            android:windowSoftInputMode="adjustResize"
             android:launchMode="standard">
         </activity>
 

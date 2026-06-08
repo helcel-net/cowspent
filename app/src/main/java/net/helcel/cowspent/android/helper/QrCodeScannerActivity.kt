@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
@@ -42,6 +43,7 @@ class QrCodeScannerActivity : AppCompatActivity() {
     private var isScanning = true
 
     override fun onCreate(state: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(state)
         
         cameraExecutor = Executors.newSingleThreadExecutor()

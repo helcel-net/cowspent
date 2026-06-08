@@ -3,6 +3,7 @@ package net.helcel.cowspent.android.project.edit
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -27,6 +28,7 @@ class EditProjectActivity : AppCompatActivity() {
     private lateinit var project: DBProject
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         db = CowspentSQLiteOpenHelper.getInstance(this)
         

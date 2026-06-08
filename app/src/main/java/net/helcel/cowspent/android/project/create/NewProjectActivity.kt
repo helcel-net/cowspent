@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Patterns
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -33,6 +34,7 @@ class NewProjectActivity : AppCompatActivity() {
     private lateinit var db: CowspentSQLiteOpenHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         db = CowspentSQLiteOpenHelper.getInstance(this)
 
