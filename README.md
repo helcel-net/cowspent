@@ -4,6 +4,7 @@
   <img width="100px" src="./metadata/en-US/images/icon.webp" alt="Logo">
 
   <p>
+  
 Shared budget manager able to sync with [Nextcloud Cospend](https://github.com/julien-nc/cospend-nc).
 
 This work is based upon [MoneyBuster](https://gitlab.com/eneiluj/moneybuster).
