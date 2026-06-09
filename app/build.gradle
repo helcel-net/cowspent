@@ -14,7 +14,7 @@ android {
         applicationId "net.helcel.cowspent"
         minSdk = 26
         targetSdk = 37
-        versionName "1.0a"
+        versionName "1.0b"
         versionCode project.hasProperty('VERSION_CODE') ? project.property('VERSION_CODE').toInteger() : 1
     }
 
