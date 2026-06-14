@@ -45,6 +45,7 @@ fun EditBillScreen(
     onDateClick: () -> Unit,
     onTimeClick: () -> Unit,
     onScan: () -> Unit,
+    onDuplicate: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     accessLevel: Int = DBProject.ACCESS_LEVEL_ADMIN
 ) {
@@ -59,7 +60,7 @@ fun EditBillScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (viewModel.what.isEmpty()) R.string.simple_new_bill else R.string.simple_edit_bill)) },
+                title = { Text(stringResource(if (viewModel.isNewBill) R.string.simple_new_bill else R.string.simple_edit_bill)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -69,6 +70,11 @@ fun EditBillScreen(
                     if (canEdit) {
                         IconButton(onClick = onScan) {
                             Icon(Icons.Default.QrCodeScanner, contentDescription = null)
+                        }
+                        if (onDuplicate != null) {
+                            IconButton(onClick = onDuplicate) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate")
+                            }
                         }
                         if (onDelete != null) {
                             IconButton(onClick = onDelete) {
@@ -160,7 +166,6 @@ fun BillBasicInfoSection(
     val context = LocalContext.current
     val currencyDialogTitle =
         stringResource(R.string.currency_dialog_title, viewModel.mainCurrencyName)
-    val noCurrencyError = stringResource(R.string.no_currency_error)
 
     OutlinedTextField(
         value = viewModel.what,
@@ -182,25 +187,37 @@ fun BillBasicInfoSection(
         enabled = canEdit,
         placeholder = { Text("0") },
         modifier = Modifier.fillMaxWidth(),
-        leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = null) },
+        leadingIcon = {
+            val currencyToShow = viewModel.selectedCurrencyName.ifEmpty { viewModel.mainCurrencyName }
+            TextIconDisplay(
+                textIcon = TextIcon.Symbol(currencyToShow),
+                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+            )
+        },
         trailingIcon = {
             IconButton(
                 enabled = canEdit,
                 onClick = {
-                    if (viewModel.currencies.isNotEmpty()) {
-                        viewModel.showDialog(
-                            title = currencyDialogTitle,
-                            items = viewModel.currencies.map { "${it.name} (${it.exchangeRate})" },
-                            onItemSelected = { index ->
-                                viewModel.convertCurrency(viewModel.currencies[index])
-                            }
-                        )
-                    } else {
-                        showToast(context, noCurrencyError)
+                    val mainLabel = viewModel.mainCurrencyName.ifEmpty { "Main" }
+                    val options = listOf("$mainLabel | Base") + viewModel.currencies.map { 
+                        "${it.name} | 1 $mainLabel = ${it.exchangeRate} ${it.name}" 
                     }
+                    viewModel.showDialog(
+                        title = currencyDialogTitle,
+                        items = options,
+                        onItemSelected = { index ->
+                            if (index == 0) {
+                                viewModel.selectedCurrencyName = ""
+                                viewModel.selectedCurrencyRate = 1.0
+                                viewModel.updateSplits()
+                            } else {
+                                viewModel.convertCurrency(viewModel.currencies[index - 1])
+                            }
+                        }
+                    )
                 }
             ) {
-                Icon(Icons.Default.CurrencyExchange, contentDescription = null)
+                Icon(Icons.Default.SwapHoriz, contentDescription = null)
             }
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -587,6 +604,7 @@ fun EditBillScreenPreview() {
             viewModel = EditBillViewModel().apply {
                 what = "Pizza"
                 amount = "12.50"
+                mainCurrencyName = "EUR"
                 members = listOf(
                     DBMember(1, 0, 0, "Alice", true, 1.0, 0, null, null, null, null, null),
                     DBMember(2, 0, 0, "Bob", true, 1.0, 0, null, null, null, null, null)

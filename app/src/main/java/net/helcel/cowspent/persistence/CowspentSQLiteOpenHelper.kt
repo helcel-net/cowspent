@@ -553,7 +553,11 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     }
 
     fun getCurrencies(projectId: Long): List<DBCurrency> {
-        return getCurrenciesCustom("$key_projectid = ?", arrayOf(projectId.toString()), null)
+        return getCurrenciesCustom(
+            "$key_projectid = ? AND $key_state != ?",
+            arrayOf(projectId.toString(), DBBill.STATE_DELETED.toString()),
+            null
+        )
     }
 
     @WorkerThread

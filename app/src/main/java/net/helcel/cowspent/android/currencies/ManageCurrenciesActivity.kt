@@ -15,6 +15,7 @@ import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.showToast
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBCurrency
+import net.helcel.cowspent.model.ProjectType
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.ICallback
@@ -86,11 +87,17 @@ class ManageCurrenciesActivity : AppCompatActivity() {
                 val project = db!!.getProject(selectedProjectID)
                 if (project != null) {
                     db!!.syncIfRemote(project)
-                    withContext(Dispatchers.Main) {
-                        if (!db!!.cowspentServerSyncHelper
-                                .editRemoteProject(selectedProjectID, project.name, null, null, newMainCurrencyName, editMainCurrencyCallBack)
-                        ) {
-                            showToast(this@ManageCurrenciesActivity, getString(R.string.remote_project_operation_no_network), Toast.LENGTH_LONG)
+                    if (project.type == ProjectType.COSPEND) {
+                        withContext(Dispatchers.Main) {
+                            if (!db!!.cowspentServerSyncHelper
+                                    .editRemoteProject(selectedProjectID, project.name, null, null, newMainCurrencyName, editMainCurrencyCallBack)
+                            ) {
+                                showToast(this@ManageCurrenciesActivity, getString(R.string.remote_project_operation_no_network), Toast.LENGTH_LONG)
+                            }
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            showToast(this@ManageCurrenciesActivity, getString(R.string.currency_saved_success), Toast.LENGTH_LONG)
                         }
                     }
                 }

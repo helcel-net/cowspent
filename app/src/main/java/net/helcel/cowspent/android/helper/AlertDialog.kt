@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -128,10 +129,32 @@ fun AlertDialog(
                                             )
                                             Spacer(Modifier.width(16.dp))
                                         }
-                                        Text(
-                                            text = item.toString(),
-                                            style = MaterialTheme.typography.body1
-                                        )
+                                        
+                                        val text = item.toString()
+                                        if (text.contains("|")) {
+                                            val parts = text.split("|")
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = parts[0].trim(),
+                                                    style = MaterialTheme.typography.body1,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text(
+                                                    text = parts[1].trim(),
+                                                    style = MaterialTheme.typography.body2,
+                                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                                                )
+                                            }
+                                        } else {
+                                            Text(
+                                                text = text,
+                                                style = MaterialTheme.typography.body1
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -234,10 +257,32 @@ fun AlertDialogContent(
                                         )
                                         Spacer(Modifier.width(16.dp))
                                     }
-                                    Text(
-                                        text = item.toString(),
-                                        style = MaterialTheme.typography.body1
-                                    )
+                                    
+                                    val text = item.toString()
+                                    if (text.contains("|")) {
+                                        val parts = text.split("|")
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = parts[0].trim(),
+                                                style = MaterialTheme.typography.body1,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = parts[1].trim(),
+                                                style = MaterialTheme.typography.body2,
+                                                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                                            )
+                                        }
+                                    } else {
+                                        Text(
+                                            text = text,
+                                            style = MaterialTheme.typography.body1
+                                        )
+                                    }
                                 }
                             }
                         }

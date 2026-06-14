@@ -11,6 +11,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -26,6 +27,8 @@ import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.UserAvatar
 import net.helcel.cowspent.android.helper.formatBalance
 import net.helcel.cowspent.android.helper.lazyVerticalScrollbar
+import net.helcel.cowspent.android.helper.TextIcon
+import net.helcel.cowspent.android.helper.TextIconDisplay
 import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.model.DBProject
 import net.helcel.cowspent.model.ProjectType
@@ -38,6 +41,7 @@ fun Drawer(
     selectedProjectId: Long,
     selectedMemberId: Long?,
     lastSyncText: String,
+    mainCurrency: String? = null,
     showArchived: Boolean = false,
     onProjectClick: (Long) -> Unit,
     onProjectOptionsClick: (Long) -> Unit,
@@ -96,22 +100,37 @@ fun Drawer(
 
                 // Members Section
                 val membersState = rememberLazyListState()
+                val sortedMembers = remember(members, memberBalances) {
+                    members.sortedWith(compareBy<DBMember> {
+                        val balance = memberBalances[it.id] ?: 0.0
+                        when {
+                            balance > 0.01 -> 0
+                            balance < -0.01 -> 1
+                            else -> 2
+                        }
+                    }.thenBy {
+                        val balance = memberBalances[it.id] ?: 0.0
+                        if (balance > 0.01) -balance else balance
+                    }.thenBy { it.name })
+                }
+
                 LazyColumn(
                     state = membersState,
                     modifier = Modifier
                         .heightIn(max = maxBottomHeight)
                         .lazyVerticalScrollbar(membersState)
                 ) {
-                    if (members.isNotEmpty()) {
+                    if (sortedMembers.isNotEmpty()) {
                         item {
                             DrawerItem(
                                 icon = Icons.Default.Receipt,
                                 text = stringResource(R.string.label_all_bills),
+                                secondaryText = mainCurrency,
                                 selected = selectedMemberId == null,
                                 onClick = { onMemberClick(null) }
                             )
                         }
-                        items(members) { member ->
+                        items(sortedMembers) { member ->
                             val balance = memberBalances[member.id] ?: 0.0
                             MemberDrawerItem(
                                 member = member,
@@ -241,6 +260,7 @@ fun DrawerItem(
     member: DBMember? = null,
     text: String? = null,
     balanceText: String? = null,
+    secondaryText: String? = null,
     balanceColor: Color = Color.Unspecified,
     selected: Boolean = false,
     alpha: Float = 1f,
@@ -294,6 +314,17 @@ fun DrawerItem(
                 modifier = Modifier.padding(end = 8.dp)
             )
         }
+
+        if (secondaryText != null) {
+            Box(modifier = Modifier
+                .padding(end = 8.dp)
+           ) {
+                TextIconDisplay(
+                    textIcon = TextIcon.Symbol(secondaryText),
+                    tint = contentColor.copy(alpha = 0.6f)
+                )
+            }
+        }
         
         if (onSecondaryClick != null) {
             IconButton(onClick = onSecondaryClick) {
@@ -340,6 +371,7 @@ fun DrawerPreview() {
             selectedProjectId = 1,
             selectedMemberId = null,
             lastSyncText = "Last sync: 5 mins ago",
+            mainCurrency = "EUR",
             onProjectClick = {},
             onProjectOptionsClick = {},
             onMemberClick = {},

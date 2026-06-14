@@ -27,6 +27,7 @@ import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.BillParser
 import net.helcel.cowspent.util.CategoryUtils
+import net.helcel.cowspent.util.SupportUtil
 import java.text.ParseException
 import java.time.ZoneId
 import java.util.Calendar
@@ -107,7 +108,8 @@ class EditBillActivity : AppCompatActivity() {
                             val createIntent = Intent(this@EditBillActivity, QrCodeScannerActivity::class.java)
                             scanQRCodeLauncher.launch(createIntent)
                         },
-                        onDelete = if (bill.id > 0) { { deleteBillAsked() } } else null,
+                        onDuplicate = if (!viewModel.isNewBill) { { duplicateCurrentBill() } } else null,
+                        onDelete = if (!viewModel.isNewBill) { { deleteBillAsked() } } else null,
                         accessLevel = db.getProject(bill.projectId)?.myAccessLevel ?: DBProject.ACCESS_LEVEL_ADMIN
                     )
                 }
@@ -191,6 +193,7 @@ class EditBillActivity : AppCompatActivity() {
             withContext(Dispatchers.Main) {
                 viewModel.currencies = currencies
                 viewModel.mainCurrencyName = project?.currencyName ?: ""
+                viewModel.isNewBill = (bill.id == 0L)
                 viewModel.initFromBill(bill, members, customSplits)
             }
         }
@@ -224,6 +227,19 @@ class EditBillActivity : AppCompatActivity() {
                 }
             }
         }
+
+    private fun duplicateCurrentBill() {
+        bill = DBBill(
+            0, 0, bill.projectId, viewModel.payerId, viewModel.amountAsDouble,
+            System.currentTimeMillis() / 1000, viewModel.what, DBBill.STATE_ADDED,
+            viewModel.repeat, bill.paymentMode, viewModel.categoryRemoteId,
+            viewModel.getFinalComment(), viewModel.paymentModeRemoteId
+        )
+        viewModel.timestamp = bill.timestamp
+        viewModel.isNewBill = true
+        
+        showToast(this, "Duplicating bill...")
+    }
 
     private fun onBack() {
         if (!valuesHaveChanged()) {
@@ -298,9 +314,9 @@ class EditBillActivity : AppCompatActivity() {
 
         return !(bill.what == viewModel.what &&
                 bill.timestamp == viewModel.timestamp &&
-                bill.amount == viewModel.amountAsDouble &&
+                bill.amount == viewModel.getFinalAmount() &&
                 bill.payerId == viewModel.payerId &&
-                bill.comment == viewModel.comment &&
+                bill.comment == viewModel.getFinalComment() &&
                 bill.repeat == viewModel.repeat &&
                 bill.categoryRemoteId == viewModel.categoryRemoteId &&
                 bill.paymentModeRemoteId == viewModel.paymentModeRemoteId &&
@@ -312,13 +328,17 @@ class EditBillActivity : AppCompatActivity() {
         val isCustomSplit = viewModel.isCustomSplit
 
         if (isCustomSplit) {
-            val splits = viewModel.owersCustomSplit.filter { (id, amount) ->
-                viewModel.owersSelection[id] == true && (amount.replace(',', '.').toDoubleOrNull()
+            val splits: Map<Long, Double> = viewModel.owersCustomSplit.filter { (id, amountStr) ->
+                viewModel.owersSelection[id] == true && (amountStr.replace(',', '.').toDoubleOrNull()
                     ?: 0.0) > 0
-            }.mapValues { it.value.replace(',', '.').toDoubleOrNull() ?: 0.0 }
+            }.mapValues { 
+                val uiAmount = it.value.replace(',', '.').toDoubleOrNull() ?: 0.0
+                SupportUtil.round2(uiAmount / viewModel.selectedCurrencyRate)
+            }
 
             if (splits.isEmpty()) return@withContext 0L
-
+            
+            val finalComment = viewModel.getFinalComment()
             val splitEntries = splits.entries.toList()
 
             // Pool of existing bills in this group that we can potentially reuse
@@ -360,7 +380,7 @@ class EditBillActivity : AppCompatActivity() {
                         existingBill.paymentMode,
                         viewModel.paymentModeRemoteId,
                         viewModel.categoryRemoteId,
-                        viewModel.comment
+                        finalComment
                     )
                     if (firstSavedId == 0L) firstSavedId = billToUseId
                 } else {
@@ -368,7 +388,7 @@ class EditBillActivity : AppCompatActivity() {
                     val newBill = DBBill(
                         0, 0, bill.projectId, viewModel.payerId, amount,
                         viewModel.timestamp, viewModel.what, DBBill.STATE_ADDED, viewModel.repeat,
-                        bill.paymentMode, viewModel.categoryRemoteId, viewModel.comment, viewModel.paymentModeRemoteId
+                        bill.paymentMode, viewModel.categoryRemoteId, finalComment, viewModel.paymentModeRemoteId
                     )
                     newBill.billOwers = listOf(DBBillOwer(0, 0, memberId))
                     val newId = db.addBill(newBill)
@@ -398,7 +418,8 @@ class EditBillActivity : AppCompatActivity() {
 
             return@withContext firstSavedId
         } else {
-            val newAmount = viewModel.amountAsDouble
+            val newAmount = viewModel.getFinalAmount()
+            val finalComment = viewModel.getFinalComment()
             val newOwersIds = viewModel.getOwersIds()
 
             if (bill.id != 0L) {
@@ -414,7 +435,7 @@ class EditBillActivity : AppCompatActivity() {
                         bill.paymentMode,
                         viewModel.paymentModeRemoteId,
                         viewModel.categoryRemoteId,
-                        viewModel.comment
+                        finalComment
                     )
                     if (groupedBillIds != null) {
                         for (id in groupedBillIds) {
@@ -431,7 +452,7 @@ class EditBillActivity : AppCompatActivity() {
                 val newBill = DBBill(
                     0, 0, bill.projectId, viewModel.payerId, newAmount,
                     viewModel.timestamp, viewModel.what, DBBill.STATE_ADDED, viewModel.repeat,
-                    bill.paymentMode, viewModel.categoryRemoteId, viewModel.comment, viewModel.paymentModeRemoteId
+                    bill.paymentMode, viewModel.categoryRemoteId, finalComment, viewModel.paymentModeRemoteId
                 )
                 newOwersIds.forEach { newBill.billOwers += DBBillOwer(0, 0, it) }
                 val newBillId = db.addBill(newBill)

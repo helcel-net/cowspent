@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.helcel.cowspent.R
@@ -93,19 +95,42 @@ fun ManageCurrenciesScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(stringResource(R.string.add_currency_title), style = MaterialTheme.typography.h6)
+            
+            // Visual relationship indicator
+            Surface(
+                color = MaterialTheme.colors.primary.copy(alpha = 0.05f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text("1 ", style = MaterialTheme.typography.body1)
+                    Text(viewModel.mainCurrencyName.ifEmpty { "Base" }, fontWeight = FontWeight.Bold)
+                    Text(" = ", style = MaterialTheme.typography.h6)
+                    Text(viewModel.newCurrencyRate.ifEmpty { "0.0" }, fontWeight = FontWeight.Bold, color = MaterialTheme.colors.primary)
+                    Text(" ")
+                    Text(viewModel.newCurrencyName.ifEmpty { "Currency" }, fontWeight = FontWeight.Bold)
+                }
+            }
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     value = viewModel.newCurrencyName,
                     onValueChange = { viewModel.newCurrencyName = it },
                     label = { Text(stringResource(R.string.currency_edit_name)) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("e.g. USD") }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 OutlinedTextField(
                     value = viewModel.newCurrencyRate,
                     onValueChange = { viewModel.newCurrencyRate = it },
                     label = { Text(stringResource(R.string.currency_rate)) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("1.0") }
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -121,7 +146,7 @@ fun ManageCurrenciesScreen(
 
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(viewModel.currencies) { currency ->
-                    CurrencyRow(currency, onDelete = { onDelete(currency) })
+                    CurrencyRow(currency, viewModel.mainCurrencyName, onDelete = { onDelete(currency) })
                 }
             }
         }
@@ -129,15 +154,47 @@ fun ManageCurrenciesScreen(
 }
 
 @Composable
-fun CurrencyRow(currency: DBCurrency, onDelete: () -> Unit) {
+fun CurrencyRow(currency: DBCurrency, mainCurrencyName: String, onDelete: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(currency.name ?: "", style = MaterialTheme.typography.subtitle1)
-            Text("Rate: ${currency.exchangeRate}", style = MaterialTheme.typography.caption)
+        // Table-like layout
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "1 ",
+                style = MaterialTheme.typography.body1,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+            )
+            Text(
+                text = mainCurrencyName,
+                style = MaterialTheme.typography.body1,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = " = ",
+                style = MaterialTheme.typography.h6,
+                color = MaterialTheme.colors.primary,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+            Column {
+                Text(
+                    text = currency.exchangeRate.toString(),
+                    style = MaterialTheme.typography.body1,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = currency.name ?: "",
+                    style = MaterialTheme.typography.caption,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                )
+            }
         }
+        
         IconButton(onClick = onDelete) {
             Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colors.error)
         }
@@ -151,6 +208,7 @@ fun CurrencyRowPreview() {
     MaterialTheme {
         CurrencyRow(
             currency = DBCurrency(1, 0, 0, "USD", 1.0, 0),
+            mainCurrencyName = "EUR",
             onDelete = {}
         )
     }

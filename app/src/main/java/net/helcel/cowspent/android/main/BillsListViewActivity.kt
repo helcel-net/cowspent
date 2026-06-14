@@ -444,11 +444,11 @@ class BillsListViewActivity :
     fun onManageCurrenciesClick(projectId: Long) {
         lifecycleScope.launch {
             val proj = withContext(Dispatchers.IO) { db.getProject(projectId) }
-            if (proj != null && proj.type == ProjectType.COSPEND) {
+            if (proj != null) {
                 startActivity(Intent(applicationContext, ManageCurrenciesActivity::class.java).apply {
                     putExtra(ManageCurrenciesActivity.EXTRA_PROJECT_ID, projectId)
                 })
-            } else showToast(this@BillsListViewActivity, getString(R.string.currency_management_unavailable))
+            }
         }
     }
 
