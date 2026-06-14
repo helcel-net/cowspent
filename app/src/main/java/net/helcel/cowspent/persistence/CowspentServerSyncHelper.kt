@@ -320,48 +320,69 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                     }
                 }
 
-                val currenciesToDelete = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_DELETED)
-                for (cToDel in currenciesToDelete) {
-                    try {
-                        val deleteRemoteCurrencyResponse = client!!.deleteRemoteCurrency(project, cToDel.remoteId)
-                        if (deleteRemoteCurrencyResponse.stringContent == "OK") {
-                            Log.d(TAG, "successfully deleted currency on remote project : delete it locally")
-                            dbHelper.deleteCurrency(cToDel.id)
+                if (project.type == ProjectType.COSPEND) {
+                    val currenciesToDelete = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_DELETED)
+                    for (cToDel in currenciesToDelete) {
+                        try {
+                            val deleteRemoteCurrencyResponse = client!!.deleteRemoteCurrency(project, cToDel.remoteId)
+                            if (deleteRemoteCurrencyResponse.stringContent == "OK") {
+                                Log.d(TAG, "successfully deleted currency on remote project : delete it locally")
+                                dbHelper.deleteCurrency(cToDel.id)
+                            }
+                        } catch (e: IOException) {
+                            if (e.message == "\"Not Found\"") {
+                                Log.d(TAG, "failed to delete currency on remote project : delete it locally anyway")
+                                dbHelper.deleteCurrency(cToDel.id)
+                            } else {
+                                throw e
+                            }
                         }
-                    } catch (e: IOException) {
-                        if (e.message == "\"Not Found\"") {
-                            Log.d(TAG, "failed to delete currency on remote project : delete it locally anyway")
-                            dbHelper.deleteCurrency(cToDel.id)
-                        } else {
-                            throw e
-                        }
+                    }
+                } else {
+                    val currenciesToDelete = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_DELETED)
+                    for (cToDel in currenciesToDelete) {
+                        dbHelper.deleteCurrency(cToDel.id)
                     }
                 }
 
-                val currenciesToEdit = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_EDITED)
-                for (cToEdit in currenciesToEdit) {
-                    try {
-                        val editRemoteCurrencyResponse = client!!.editRemoteCurrency(project, cToEdit)
-                        if (editRemoteCurrencyResponse.stringContent == cToEdit.remoteId.toString()) {
-                            dbHelper.setCurrencyState(cToEdit.id, DBBill.STATE_OK)
-                            Log.d(TAG, "SUCCESSFUL remote currency edition (${editRemoteCurrencyResponse.stringContent})")
-                        } else {
-                            Log.d(TAG, "FAILED to edit remote currency (${editRemoteCurrencyResponse.stringContent})")
+                if (project.type == ProjectType.COSPEND) {
+                    val currenciesToEdit = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_EDITED)
+                    for (cToEdit in currenciesToEdit) {
+                        try {
+                            val editRemoteCurrencyResponse = client!!.editRemoteCurrency(project, cToEdit)
+                            if (editRemoteCurrencyResponse.stringContent == cToEdit.remoteId.toString()) {
+                                dbHelper.setCurrencyState(cToEdit.id, DBBill.STATE_OK)
+                                Log.d(TAG, "SUCCESSFUL remote currency edition (${editRemoteCurrencyResponse.stringContent})")
+                            } else {
+                                Log.d(TAG, "FAILED to edit remote currency (${editRemoteCurrencyResponse.stringContent})")
+                            }
+                        } catch (e: IOException) {
+                            if (e.message == "{\"message\": \"Internal Server Error\"}") {
+                                Log.d(TAG, "FAILED to edit remote currency : it does not exist remotely")
+                            } else {
+                                throw e
+                            }
                         }
-                    } catch (e: IOException) {
-                        if (e.message == "{\"message\": \"Internal Server Error\"}") {
-                            Log.d(TAG, "FAILED to edit remote currency : it does not exist remotely")
-                        } else {
-                            throw e
-                        }
+                    }
+                } else {
+                    val currenciesToEdit = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_EDITED)
+                    for (cToEdit in currenciesToEdit) {
+                        dbHelper.setCurrencyState(cToEdit.id, DBBill.STATE_OK)
                     }
                 }
 
-                val currencyToAdd = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_ADDED)
-                for (cToAdd in currencyToAdd) {
-                    val createRemoteCurrencyResponse = client!!.createRemoteCurrency(project, cToAdd)
-                    val newRemoteId = createRemoteCurrencyResponse.stringContent.toLong()
-                    if (newRemoteId > 0) {
+                if (project.type == ProjectType.COSPEND) {
+                    val currencyToAdd = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_ADDED)
+                    for (cToAdd in currencyToAdd) {
+                        val createRemoteCurrencyResponse = client!!.createRemoteCurrency(project, cToAdd)
+                        val newRemoteId = createRemoteCurrencyResponse.stringContent.toLong()
+                        if (newRemoteId > 0) {
+                            dbHelper.setCurrencyState(cToAdd.id, DBBill.STATE_OK)
+                        }
+                    }
+                } else {
+                    val currencyToAdd = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_ADDED)
+                    for (cToAdd in currencyToAdd) {
                         dbHelper.setCurrencyState(cToAdd.id, DBBill.STATE_OK)
                     }
                 }

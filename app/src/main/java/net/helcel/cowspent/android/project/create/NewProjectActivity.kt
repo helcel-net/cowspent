@@ -21,6 +21,7 @@ import net.helcel.cowspent.model.*
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.*
+import java.util.Locale
 import androidx.core.net.toUri
 import androidx.core.content.edit
 import net.helcel.cowspent.model.ProjectType
@@ -60,7 +61,8 @@ class NewProjectActivity : AppCompatActivity() {
                         chooseFromNextcloud()
                     },
                     onOkPressed = { onPressOk() },
-                    onBack = { finish() }
+                    onBack = { finish() },
+                    onFieldsChanged = { updateAuthStatus() }
                 )
             }
         }
@@ -85,6 +87,8 @@ class NewProjectActivity : AppCompatActivity() {
                 viewModel.projectUrl = defaultNcUrl
             }
         }
+        
+        updateAuthStatus()
 
         val defaultProjectId = intent.getStringExtra(PARAM_DEFAULT_PROJECT_ID)
         if (defaultProjectId != null) {
@@ -139,6 +143,17 @@ class NewProjectActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateAuthStatus() {
+        val url = getFormattedUrl()
+        val fakeProj = DBProject(
+            0, "", "", "", url,
+            "", 0L, viewModel.projectType, 0L,
+            null, false, DBProject.ACCESS_LEVEL_UNKNOWN,
+            ""
+        )
+        viewModel.isAuthenticatedAccount = db.cowspentServerSyncHelper.canCreateAuthenticatedProject(fakeProj)
+    }
+
     private fun onPressOk() {
         val type = viewModel.projectType
         val todoCreate = viewModel.whatTodoIsCreate
@@ -186,7 +201,16 @@ class NewProjectActivity : AppCompatActivity() {
     }
 
     private fun createProject() {
-        val isCospendScheme = isCospendSchemeLink(getFormattedUrl())
+        val url = getFormattedUrl()
+        val isCospendScheme = isCospendSchemeLink(url)
+        
+        if (viewModel.whatTodoIsCreate && viewModel.projectId.isEmpty() && viewModel.projectName.isNotEmpty()) {
+            viewModel.projectId = viewModel.projectName.lowercase(Locale.ROOT)
+                .replace("[^a-z0-9]".toRegex(), "-")
+                .replace("-+".toRegex(), "-")
+                .trim('-')
+        }
+
         val rid = viewModel.projectId
         if (!isCospendScheme && (rid == "" || rid.contains(",") || rid.contains("/"))) {
             showToast(getString(R.string.error_invalid_project_remote_id), Toast.LENGTH_LONG)
@@ -194,7 +218,7 @@ class NewProjectActivity : AppCompatActivity() {
         }
 
         if (viewModel.projectType != ProjectType.LOCAL && !isCospendScheme) {
-            if (!isValidUrl(getFormattedUrl())) {
+            if (!isValidUrl(url)) {
                 showToast("Invalid URL", Toast.LENGTH_SHORT)
                 return
             }
@@ -217,7 +241,16 @@ class NewProjectActivity : AppCompatActivity() {
                 showToast("Invalid project name", Toast.LENGTH_SHORT)
                 return
             }
-            if (!SupportUtil.isValidEmail(viewModel.projectEmail)) {
+            
+            val fakeProj = DBProject(
+                0, rid, "", viewModel.projectName, url,
+                viewModel.projectEmail, 0L, viewModel.projectType, 0L,
+                null, false, DBProject.ACCESS_LEVEL_UNKNOWN,
+                ""
+            )
+            val isAuthenticated = db.cowspentServerSyncHelper.canCreateAuthenticatedProject(fakeProj)
+
+            if (!isAuthenticated && !SupportUtil.isValidEmail(viewModel.projectEmail)) {
                 showToast("Invalid email", Toast.LENGTH_SHORT)
                 return
             }
@@ -226,7 +259,7 @@ class NewProjectActivity : AppCompatActivity() {
             
             if (!db.cowspentServerSyncHelper.createRemoteProject(
                     viewModel.projectId, viewModel.projectName,
-                    viewModel.projectEmail, viewModel.projectPassword, getFormattedUrl(), viewModel.projectType, createRemoteCallBack
+                    viewModel.projectEmail, viewModel.projectPassword, url, viewModel.projectType, createRemoteCallBack
                 )
             ) {
                 viewModel.isCreatingRemoteProject = false

@@ -32,8 +32,13 @@ fun NewProjectScreen(
     onImportFile: () -> Unit,
     onChooseFromNextcloud: () -> Unit,
     onOkPressed: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onFieldsChanged: () -> Unit
 ) {
+    LaunchedEffect(viewModel.projectUrl, viewModel.projectType) {
+        onFieldsChanged()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -162,16 +167,18 @@ fun NewProjectScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            OutlinedTextField(
-                value = viewModel.projectId,
-                onValueChange = { viewModel.projectId = it },
-                label = { Text(stringResource(R.string.setting_project_id)) },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.AutoMirrored.Filled.LibraryBooks, contentDescription = null) }
-            )
+            if (!viewModel.whatTodoIsCreate || !viewModel.isAuthenticatedAccount || viewModel.projectType != ProjectType.COSPEND) {
+                OutlinedTextField(
+                    value = viewModel.projectId,
+                    onValueChange = { viewModel.projectId = it },
+                    label = { Text(stringResource(R.string.setting_project_id)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.LibraryBooks, contentDescription = null) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             if (viewModel.projectType != ProjectType.LOCAL && (!viewModel.whatTodoIsCreate || viewModel.projectType == ProjectType.IHATEMONEY)) {
-                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = viewModel.projectPassword,
                     onValueChange = { viewModel.projectPassword = it },
@@ -179,10 +186,10 @@ fun NewProjectScreen(
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
                 )
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
             if (viewModel.whatTodoIsCreate && viewModel.projectType != ProjectType.LOCAL) {
-                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = viewModel.projectName,
                     onValueChange = { viewModel.projectName = it },
@@ -190,14 +197,17 @@ fun NewProjectScreen(
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Title, contentDescription = null) }
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = viewModel.projectEmail,
-                    onValueChange = { viewModel.projectEmail = it },
-                    label = { Text(stringResource(R.string.setting_new_project_email)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
-                )
+                
+                if (!viewModel.isAuthenticatedAccount || viewModel.projectType == ProjectType.IHATEMONEY) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = viewModel.projectEmail,
+                        onValueChange = { viewModel.projectEmail = it },
+                        label = { Text(stringResource(R.string.setting_new_project_email)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
+                    )
+                }
             }
         }
     }
@@ -334,6 +344,7 @@ fun NewProjectScreenPreview() {
         onImportFile = {},
         onChooseFromNextcloud = {},
         onOkPressed = {},
-        onBack = {}
+        onBack = {},
+        onFieldsChanged = {}
     )
 }

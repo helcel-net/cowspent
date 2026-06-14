@@ -430,6 +430,7 @@ fun BillsListScreen(
             }
         },
         drawerContent = {
+            val selectedProject = viewModel.projects.find { it.id == viewModel.selectedProjectId }
             Drawer(
                 projects = viewModel.projects,
                 members = viewModel.members,
@@ -437,6 +438,7 @@ fun BillsListScreen(
                 selectedProjectId = viewModel.selectedProjectId,
                 selectedMemberId = viewModel.selectedMemberId,
                 lastSyncText = viewModel.lastSyncText,
+                mainCurrency = selectedProject?.currencyName,
                 showArchived = showArchived,
                 onProjectClick = {
                     viewModel.selectedMemberId = null
