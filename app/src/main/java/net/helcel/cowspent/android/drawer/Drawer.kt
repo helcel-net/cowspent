@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import net.helcel.cowspent.R
-import net.helcel.cowspent.android.helper.UserAvatar
+import net.helcel.cowspent.android.helper.MemberAvatar
 import net.helcel.cowspent.android.helper.formatBalance
 import net.helcel.cowspent.android.helper.lazyVerticalScrollbar
 import net.helcel.cowspent.android.helper.TextIcon
@@ -279,13 +279,8 @@ fun DrawerItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (member != null) {
-            UserAvatar(
-                name = member.name,
-                r = member.r,
-                g = member.g,
-                b = member.b,
-                avatar = member.avatar,
-                disabled = !member.isActivated,
+            MemberAvatar(
+                member = member,
                 size = 24.dp,
                 alpha = alpha
             )

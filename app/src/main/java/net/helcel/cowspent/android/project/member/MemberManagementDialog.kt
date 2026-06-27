@@ -30,7 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.helcel.cowspent.R
-import net.helcel.cowspent.android.helper.UserAvatar
+import net.helcel.cowspent.android.helper.MemberAvatar
 import net.helcel.cowspent.android.helper.lazyVerticalScrollbar
 import net.helcel.cowspent.model.DBMember
 
@@ -84,13 +84,8 @@ fun MemberManagementDialogContent(
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        UserAvatar(
-                            name = member.name,
-                            r = member.r,
-                            g = member.g,
-                            b = member.b,
-                            avatar = member.avatar,
-                            disabled = !member.isActivated,
+                        MemberAvatar(
+                            member = member,
                             size = 40.dp
                         )
                         Spacer(modifier = Modifier.width(16.dp))

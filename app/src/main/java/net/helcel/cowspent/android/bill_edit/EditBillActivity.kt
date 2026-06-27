@@ -209,6 +209,7 @@ class EditBillActivity : AppCompatActivity() {
                         calendar.timeInMillis = austrianBill.date.time
                         viewModel.timestamp = calendar.timeInMillis / 1000
                         viewModel.amount = austrianBill.amount.toString()
+                        viewModel.updateSplits()
                         return@registerForActivityResult
                     } catch (_: ParseException) {
                     }
@@ -220,6 +221,7 @@ class EditBillActivity : AppCompatActivity() {
                             viewModel.timestamp = calendar.timeInMillis / 1000
                         }
                         viewModel.amount = croatianBill.amount.toString()
+                        viewModel.updateSplits()
                         return@registerForActivityResult
                     } catch (_: ParseException) {
                     }
@@ -235,7 +237,8 @@ class EditBillActivity : AppCompatActivity() {
             viewModel.repeat, bill.paymentMode, viewModel.categoryRemoteId,
             viewModel.getFinalComment(), viewModel.paymentModeRemoteId
         )
-        viewModel.timestamp = bill.timestamp
+        calendar.timeInMillis = System.currentTimeMillis()
+        viewModel.timestamp = calendar.timeInMillis / 1000
         viewModel.isNewBill = true
         
         showToast(this, "Duplicating bill...")

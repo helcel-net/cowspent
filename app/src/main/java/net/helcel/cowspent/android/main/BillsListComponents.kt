@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.helcel.cowspent.R
-import net.helcel.cowspent.android.helper.UserAvatar
+import net.helcel.cowspent.android.helper.MemberAvatar
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.util.SupportUtil
@@ -83,13 +83,8 @@ fun BillItemRow(bill: DBBill, payer: DBMember?, onClick: () -> Unit) {
     ) {
         if (payer != null) {
             Box {
-                UserAvatar(
-                    name = payer.name,
-                    r = payer.r,
-                    g = payer.g,
-                    b = payer.b,
-                    avatar = payer.avatar,
-                    disabled = !payer.isActivated,
+                MemberAvatar(
+                    member = payer,
                     size = 40.dp
                 )
                 if (bill.repeat != null && bill.repeat != DBBill.NON_REPEATED) {

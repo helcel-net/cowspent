@@ -66,7 +66,7 @@ import androidx.core.graphics.toColorInt
 import kotlinx.coroutines.launch
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.EditableExposedDropdownMenu
-import net.helcel.cowspent.android.helper.UserAvatar
+import net.helcel.cowspent.android.helper.MemberAvatar
 import net.helcel.cowspent.android.helper.formatShortValue
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBCategory
@@ -170,7 +170,7 @@ fun ProjectSankeyDiagram(
                     leadingIcon = {
                         Box(modifier = Modifier.padding(start = 12.dp)) {
                             if (selectedMember != null) {
-                                UserAvatar(name = selectedMember.name, r = selectedMember.r, g = selectedMember.g, b = selectedMember.b, disabled = !selectedMember.isActivated, size = 24.dp)
+                                MemberAvatar(member = selectedMember, size = 24.dp)
                             } else Icon(Icons.Default.Group, contentDescription = null)
                         }
                     },
@@ -182,7 +182,7 @@ fun ProjectSankeyDiagram(
                         }
                         allMembers.forEach { member ->
                             DropdownMenuItem(onClick = { selectedMemberId = member.id; expanded = false }) {
-                                UserAvatar(name = member.name, r = member.r, g = member.g, b = member.b, disabled = !member.isActivated, size = 24.dp)
+                                MemberAvatar(member = member, size = 24.dp)
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(member.name)
                             }

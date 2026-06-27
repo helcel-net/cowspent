@@ -131,14 +131,18 @@ class EditBillViewModel : ViewModel() {
     }
 
     fun convertCurrency(currency: DBCurrency) {
-        if (amountAsDouble == 0.0) return
-
         selectedCurrencyName = currency.name ?: ""
         selectedCurrencyRate = currency.exchangeRate
         
         // We don't change 'amount' here anymore as per request.
         // It stays as the original amount.
         
+        updateSplits()
+    }
+
+    fun resetCurrency() {
+        selectedCurrencyName = ""
+        selectedCurrencyRate = 1.0
         updateSplits()
     }
 

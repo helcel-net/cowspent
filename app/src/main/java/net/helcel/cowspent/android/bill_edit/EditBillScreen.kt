@@ -207,9 +207,7 @@ fun BillBasicInfoSection(
                         items = options,
                         onItemSelected = { index ->
                             if (index == 0) {
-                                viewModel.selectedCurrencyName = ""
-                                viewModel.selectedCurrencyRate = 1.0
-                                viewModel.updateSplits()
+                                viewModel.resetCurrency()
                             } else {
                                 viewModel.convertCurrency(viewModel.currencies[index - 1])
                             }
@@ -217,7 +215,7 @@ fun BillBasicInfoSection(
                     )
                 }
             ) {
-                Icon(Icons.Default.SwapHoriz, contentDescription = null)
+                Icon(Icons.Default.SwapHoriz, contentDescription = "Change Currency")
             }
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -238,7 +236,7 @@ fun BillBasicInfoSection(
             onClick = onDateClick,
             modifier = Modifier.weight(1f),
             enabled = canEdit,
-            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) }
+            leadingIcon = { Icon(Icons.Default.Event, contentDescription = "Select Date") }
         )
         Spacer(modifier = Modifier.width(8.dp))
         ClickableOutlinedTextField(
@@ -246,7 +244,7 @@ fun BillBasicInfoSection(
             onClick = onTimeClick,
             modifier = Modifier.weight(1f),
             enabled = canEdit,
-            leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) }
+            leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = "Select Time") }
         )
     }
 }
@@ -269,12 +267,8 @@ fun PayerSection(
         leadingIcon = {
             Box(modifier = Modifier.padding(start = 12.dp)) {
                 if (selectedPayer != null) {
-                    UserAvatar(
-                        name = selectedPayer.name,
-                        r = selectedPayer.r,
-                        g = selectedPayer.g,
-                        b = selectedPayer.b,
-                        disabled = !selectedPayer.isActivated,
+                    MemberAvatar(
+                        member = selectedPayer,
                         size = 24.dp
                     )
                 } else {
@@ -288,12 +282,8 @@ fun PayerSection(
                     viewModel.payerId = member.id
                     payerExpanded = false
                 }) {
-                    UserAvatar(
-                        name = member.name,
-                        r = member.r,
-                        g = member.g,
-                        b = member.b,
-                        disabled = !member.isActivated,
+                    MemberAvatar(
+                        member = member,
                         size = 24.dp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -398,12 +388,8 @@ fun OwerSelectionSection(
                 enabled = canEdit,
                 onCheckedChange = { viewModel.toggleMember(member.id, it) }
             )
-            UserAvatar(
-                name = member.name,
-                r = member.r,
-                g = member.g,
-                b = member.b,
-                disabled = !member.isActivated,
+            MemberAvatar(
+                member = member,
                 size = 32.dp
             )
             Spacer(modifier = Modifier.width(8.dp))

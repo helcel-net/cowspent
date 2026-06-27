@@ -111,49 +111,54 @@ fun AlertDialog(
                             if (message != null) Spacer(Modifier.height(8.dp))
                             LazyColumn {
                                 itemsIndexed(items) { index, item ->
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable { 
-                                                onItemSelected?.invoke(index)
+                                    Column {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { 
+                                                    onItemSelected?.invoke(index)
+                                                }
+                                                .padding(vertical = 16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            if (itemIcons != null && index < itemIcons.size) {
+                                                Icon(
+                                                    itemIcons[index], 
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(24.dp),
+                                                    tint = MaterialTheme.colors.primary.copy(alpha = 0.7f)
+                                                )
+                                                Spacer(Modifier.width(16.dp))
                                             }
-                                            .padding(vertical = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        if (itemIcons != null && index < itemIcons.size) {
-                                            Icon(
-                                                itemIcons[index], 
-                                                contentDescription = null,
-                                                modifier = Modifier.size(24.dp),
-                                                tint = MaterialTheme.colors.primary.copy(alpha = 0.7f)
-                                            )
-                                            Spacer(Modifier.width(16.dp))
+                                            
+                                            val text = item.toString()
+                                            if (text.contains("|")) {
+                                                val parts = text.split("|")
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = parts[0].trim(),
+                                                        style = MaterialTheme.typography.body1,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                    Text(
+                                                        text = parts[1].trim(),
+                                                        style = MaterialTheme.typography.body2,
+                                                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                                                    )
+                                                }
+                                            } else {
+                                                Text(
+                                                    text = text,
+                                                    style = MaterialTheme.typography.body1
+                                                )
+                                            }
                                         }
-                                        
-                                        val text = item.toString()
-                                        if (text.contains("|")) {
-                                            val parts = text.split("|")
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = parts[0].trim(),
-                                                    style = MaterialTheme.typography.body1,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                                Text(
-                                                    text = parts[1].trim(),
-                                                    style = MaterialTheme.typography.body2,
-                                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
-                                                )
-                                            }
-                                        } else {
-                                            Text(
-                                                text = text,
-                                                style = MaterialTheme.typography.body1
-                                            )
+                                        if (index < items.size - 1) {
+                                            Divider(color = MaterialTheme.colors.onSurface.copy(alpha = 0.08f))
                                         }
                                     }
                                 }
@@ -239,49 +244,54 @@ fun AlertDialogContent(
                         if (message != null) Spacer(Modifier.height(8.dp))
                         LazyColumn {
                             itemsIndexed(items) { index, item ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            onItemSelected?.invoke(index)
+                                Column {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                onItemSelected?.invoke(index)
+                                            }
+                                            .padding(vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (itemIcons != null && index < itemIcons.size) {
+                                            Icon(
+                                                itemIcons[index],
+                                                contentDescription = null,
+                                                modifier = Modifier.size(24.dp),
+                                                tint = MaterialTheme.colors.primary.copy(alpha = 0.7f)
+                                            )
+                                            Spacer(Modifier.width(16.dp))
                                         }
-                                        .padding(vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (itemIcons != null && index < itemIcons.size) {
-                                        Icon(
-                                            itemIcons[index],
-                                            contentDescription = null,
-                                            modifier = Modifier.size(24.dp),
-                                            tint = MaterialTheme.colors.primary.copy(alpha = 0.7f)
-                                        )
-                                        Spacer(Modifier.width(16.dp))
+                                        
+                                        val text = item.toString()
+                                        if (text.contains("|")) {
+                                            val parts = text.split("|")
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = parts[0].trim(),
+                                                    style = MaterialTheme.typography.body1,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text(
+                                                    text = parts[1].trim(),
+                                                    style = MaterialTheme.typography.body2,
+                                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                                                )
+                                            }
+                                        } else {
+                                            Text(
+                                                text = text,
+                                                style = MaterialTheme.typography.body1
+                                            )
+                                        }
                                     }
-                                    
-                                    val text = item.toString()
-                                    if (text.contains("|")) {
-                                        val parts = text.split("|")
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = parts[0].trim(),
-                                                style = MaterialTheme.typography.body1,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                text = parts[1].trim(),
-                                                style = MaterialTheme.typography.body2,
-                                                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
-                                            )
-                                        }
-                                    } else {
-                                        Text(
-                                            text = text,
-                                            style = MaterialTheme.typography.body1
-                                        )
+                                    if (index < items.size - 1) {
+                                        Divider(color = MaterialTheme.colors.onSurface.copy(alpha = 0.08f))
                                     }
                                 }
                             }
