@@ -141,11 +141,10 @@ fun ManageCurrenciesScreen(
 
                 // Integrated Add/Edit Ribbon
                 Surface(
-                    color = if (isEditing) MaterialTheme.colors.secondary.copy(alpha = 0.08f) else MaterialTheme.colors.surface,
+                    color = MaterialTheme.colors.surface,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = if (isEditing) 4.dp else 2.dp,
-                    border = if (isEditing) BorderStroke(2.dp, MaterialTheme.colors.secondary) else null
+                    elevation = 2.dp
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -164,7 +163,7 @@ fun ManageCurrenciesScreen(
                             value = viewModel.newCurrencyRate,
                             onValueChange = { viewModel.newCurrencyRate = it },
                             modifier = Modifier.weight(1.2f).height(52.dp),
-                            placeholder = { Text("Rate", fontSize = 12.sp) },
+                            placeholder = { Text("1", fontSize = 12.sp) },
                             singleLine = true,
                             textStyle = LocalTextStyle.current.copy(fontWeight = FontWeight.ExtraBold, fontSize = 14.sp),
                             shape = RoundedCornerShape(8.dp),
@@ -179,7 +178,7 @@ fun ManageCurrenciesScreen(
                             value = viewModel.newCurrencyName,
                             onValueChange = { viewModel.newCurrencyName = it },
                             modifier = Modifier.weight(1f).height(52.dp),
-                            placeholder = { Text("Code", fontSize = 12.sp) },
+                            placeholder = { Text(viewModel.mainCurrencyName.ifEmpty { "$" }, fontSize = 12.sp) },
                             singleLine = true,
                             textStyle = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
                             shape = RoundedCornerShape(8.dp),
