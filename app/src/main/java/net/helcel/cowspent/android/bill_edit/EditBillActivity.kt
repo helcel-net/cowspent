@@ -187,7 +187,12 @@ class EditBillActivity : AppCompatActivity() {
                 }
             }
             calendar.timeInMillis = bill.timestamp * 1000
-            val members = db.getMembersOfProject(bill.projectId, null)
+            val allMembers = db.getMembersOfProject(bill.projectId, null)
+            val billOwerIds = bill.billOwersIds
+            val members = allMembers.filter { m ->
+                m.isActivated || m.id == bill.payerId || billOwerIds.contains(m.id)
+            }
+            
             val project = db.getProject(bill.projectId)
             val currencies = db.getCurrencies(bill.projectId)
             withContext(Dispatchers.Main) {

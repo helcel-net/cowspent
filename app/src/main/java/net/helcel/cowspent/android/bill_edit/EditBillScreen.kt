@@ -188,7 +188,9 @@ fun BillBasicInfoSection(
         placeholder = { Text("0") },
         modifier = Modifier.fillMaxWidth(),
         leadingIcon = {
-            val currencyToShow = viewModel.selectedCurrencyName.ifEmpty { viewModel.mainCurrencyName }
+            val currencyToShow = viewModel.selectedCurrencyName.ifEmpty { 
+                viewModel.mainCurrencyName.ifEmpty { "$" } 
+            }
             TextIconDisplay(
                 textIcon = TextIcon.Symbol(currencyToShow),
                 tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
@@ -198,7 +200,7 @@ fun BillBasicInfoSection(
             IconButton(
                 enabled = canEdit,
                 onClick = {
-                    val mainLabel = viewModel.mainCurrencyName.ifEmpty { "Main" }
+                    val mainLabel = viewModel.mainCurrencyName.ifEmpty { "$" }
                     val options = listOf("$mainLabel | Base") + viewModel.currencies.map { 
                         "${it.name} | 1 $mainLabel = ${it.exchangeRate} ${it.name}" 
                     }

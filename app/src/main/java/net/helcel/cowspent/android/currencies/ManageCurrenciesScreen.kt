@@ -18,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.AlertDialog
+import net.helcel.cowspent.android.helper.formatAmount
 import net.helcel.cowspent.model.DBCurrency
 
 @Composable
@@ -108,7 +109,7 @@ fun ManageCurrenciesScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text("1 ", style = MaterialTheme.typography.body1)
-                    Text(viewModel.mainCurrencyName.ifEmpty { "Base" }, fontWeight = FontWeight.Bold)
+                    Text(viewModel.mainCurrencyName.ifEmpty { "$" }, fontWeight = FontWeight.Bold)
                     Text(" = ", style = MaterialTheme.typography.h6)
                     Text(viewModel.newCurrencyRate.ifEmpty { "0.0" }, fontWeight = FontWeight.Bold, color = MaterialTheme.colors.primary)
                     Text(" ")
@@ -170,7 +171,7 @@ fun CurrencyRow(currency: DBCurrency, mainCurrencyName: String, onDelete: () -> 
                 color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
             )
             Text(
-                text = mainCurrencyName,
+                text = mainCurrencyName.ifEmpty { "$" },
                 style = MaterialTheme.typography.body1,
                 fontWeight = FontWeight.Bold
             )
@@ -182,7 +183,7 @@ fun CurrencyRow(currency: DBCurrency, mainCurrencyName: String, onDelete: () -> 
             )
             Column {
                 Text(
-                    text = currency.exchangeRate.toString(),
+                    text = formatAmount(currency.exchangeRate),
                     style = MaterialTheme.typography.body1,
                     fontWeight = FontWeight.ExtraBold
                 )

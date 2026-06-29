@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.helcel.cowspent.R
+import net.helcel.cowspent.android.helper.formatAmount
 import net.helcel.cowspent.android.helper.MemberAvatar
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBMember

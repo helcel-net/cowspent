@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.android.helper.DialogState
+import net.helcel.cowspent.android.helper.parseAmount
 import net.helcel.cowspent.util.SupportUtil
 import net.helcel.cowspent.util.evalMath
 
@@ -41,13 +42,8 @@ class EditBillViewModel : ViewModel() {
 
     val amountAsDouble: Double
         get() {
-            val amountStr = amount.replace(',', '.')
-            return try {
-                if (amountStr.matches("[0-9.]+".toRegex())) {
-                    amountStr.toDouble()
-                } else {
-                    evalMath(amountStr)
-                }
+            return parseAmount(amount) ?: try {
+                evalMath(amount.replace(',', '.'))
             } catch (_: Exception) {
                 0.0
             }
