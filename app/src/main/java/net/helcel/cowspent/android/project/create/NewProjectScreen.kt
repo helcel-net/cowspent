@@ -63,6 +63,7 @@ fun NewProjectScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
+                .imePadding()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
                 .fillMaxSize()

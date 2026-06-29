@@ -67,8 +67,10 @@ class ManageCurrenciesActivity : AppCompatActivity() {
                         viewModel = viewModel,
                         onBack = { finish() },
                         onSaveMain = { saveMainCurrency() },
-                        onAdd = { addCurrency() },
-                        onDelete = { deleteCurrency(it) }
+                        onAdd = { addOrUpdateCurrency() },
+                        onDelete = { deleteCurrency(it) },
+                        onEdit = { startEditing(it) },
+                        onCancelEdit = { cancelEditing() }
                     )
                 }
             }
@@ -105,20 +107,42 @@ class ManageCurrenciesActivity : AppCompatActivity() {
         }
     }
 
-    private fun addCurrency() {
+    private fun addOrUpdateCurrency() {
         val exchangeRate = try { viewModel.newCurrencyRate.toDouble() } catch (_: Exception) { 0.0 }
-        val newCurrency = DBCurrency(
-            0, 0, selectedProjectID,
-            viewModel.newCurrencyName, exchangeRate, DBBill.STATE_ADDED
-        )
+        val currencyName = viewModel.newCurrencyName
+        val editingId = viewModel.editingCurrencyId
+
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
-                db!!.addCurrencyAndSync(newCurrency)
+                if (editingId != null) {
+                    db!!.updateCurrency(editingId, currencyName, exchangeRate)
+                    val currency = db!!.getCurrency(editingId)
+                    if (currency != null) {
+                        db!!.setCurrencyStateSync(editingId, DBBill.STATE_EDITED)
+                    }
+                } else {
+                    val newCurrency = DBCurrency(
+                        0, 0, selectedProjectID,
+                        currencyName, exchangeRate, DBBill.STATE_ADDED
+                    )
+                    db!!.addCurrencyAndSync(newCurrency)
+                }
             }
-            viewModel.newCurrencyName = ""
-            viewModel.newCurrencyRate = ""
+            cancelEditing()
             updateCurrenciesList()
         }
+    }
+
+    private fun startEditing(currency: DBCurrency) {
+        viewModel.editingCurrencyId = currency.id
+        viewModel.newCurrencyName = currency.name ?: ""
+        viewModel.newCurrencyRate = currency.exchangeRate.toString()
+    }
+
+    private fun cancelEditing() {
+        viewModel.editingCurrencyId = null
+        viewModel.newCurrencyName = ""
+        viewModel.newCurrencyRate = ""
     }
 
     private fun deleteCurrency(currency: DBCurrency) {

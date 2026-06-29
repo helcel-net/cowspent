@@ -111,6 +111,7 @@ object ThemeUtils {
                                 modifier = Modifier
                                     .weight(1f)
                                     .navigationBarsPadding()
+                                    .imePadding()
                             ) {
                                 content()
                             }

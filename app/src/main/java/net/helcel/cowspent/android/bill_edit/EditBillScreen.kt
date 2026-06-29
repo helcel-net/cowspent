@@ -117,6 +117,7 @@ fun EditBillScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
+                .imePadding()
                 .padding(16.dp)
                 .fillMaxSize()
                 .verticalScroll(scrollState)

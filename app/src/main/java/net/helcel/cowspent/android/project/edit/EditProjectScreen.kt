@@ -2,6 +2,8 @@ package net.helcel.cowspent.android.project.edit
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -80,11 +82,14 @@ fun EditProjectScreen(
             }
         }
     ) { padding ->
+        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
                 .padding(padding)
+                .imePadding()
                 .padding(16.dp)
                 .fillMaxSize()
+                .verticalScroll(scrollState)
         ) {
             OutlinedTextField(
                 value = viewModel.name,
