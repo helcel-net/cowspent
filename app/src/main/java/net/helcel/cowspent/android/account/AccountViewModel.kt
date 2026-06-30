@@ -61,14 +61,15 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
         } else {
             preferences.getString(AccountActivity.SETTINGS_USERNAME, "")
         }
-        val password = if (useSso) {
-            ""
-        } else {
-            SecureStorage.getPassword(getApplication(), AccountActivity.SETTINGS_PASSWORD)
-        }
 
         if (!url.isNullOrEmpty() && !username.isNullOrEmpty()) {
             viewModelScope.launch {
+                val password = if (useSso) {
+                    ""
+                } else {
+                    SecureStorage.getPassword(getApplication(), AccountActivity.SETTINGS_PASSWORD)
+                }
+
                 isValidatingLogin = true
                 isLoggedIn = withContext(Dispatchers.IO) {
                     if (useSso) {
@@ -88,7 +89,9 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun logout() {
-        SecureStorage.removePassword(getApplication(), AccountActivity.SETTINGS_PASSWORD)
+        viewModelScope.launch {
+            SecureStorage.removePassword(getApplication(), AccountActivity.SETTINGS_PASSWORD)
+        }
         preferences.edit {
             remove(AccountActivity.SETTINGS_USE_SSO)
             remove(AccountActivity.SETTINGS_SSO_URL)

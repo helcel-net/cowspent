@@ -321,7 +321,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         values.put(key_name, accountProject.name)
         values.put(key_archived, accountProject.archivedTs ?: 0L)
         val id = db.insert(table_account_projects, null, values)
-        SecureStorage.savePassword(context, "AccountProjectPassword_$id", accountProject.password)
+        SecureStorage.savePasswordSync(context, "AccountProjectPassword_$id", accountProject.password)
         return id
     }
 
@@ -348,7 +348,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     private fun getAccountProjectFromCursor(cursor: Cursor): DBAccountProject {
         val id = cursor.getLong(cursor.getColumnIndex(key_id))
         val archivedTs = cursor.getLong(cursor.getColumnIndex(key_archived))
-        val password = SecureStorage.getPassword(context, "AccountProjectPassword_$id")
+        val password = SecureStorage.getPasswordSync(context, "AccountProjectPassword_$id")
         return DBAccountProject(
             id,
             cursor.getString(cursor.getColumnIndex(key_remoteId)),
@@ -619,7 +619,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         values.put(key_type, project.type.id)
         values.put(key_archived, project.archivedTs ?: 0L)
         val id = db.insert(table_projects, null, values)
-        SecureStorage.savePassword(context, "ProjectPassword_$id", project.password)
+        SecureStorage.savePasswordSync(context, "ProjectPassword_$id", project.password)
         return id
     }
 
@@ -651,7 +651,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     private fun getProjectFromCursor(cursor: Cursor): DBProject {
         val id = cursor.getLong(cursor.getColumnIndex(key_id))
         val archivedTs = cursor.getLong(cursor.getColumnIndex(key_archived))
-        val password = SecureStorage.getPassword(context, "ProjectPassword_$id")
+        val password = SecureStorage.getPasswordSync(context, "ProjectPassword_$id") ?: ""
         return DBProject(
             id,
             cursor.getString(cursor.getColumnIndex(key_remoteId)),
@@ -678,7 +678,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         }
         db.delete(table_members, "$key_projectid = ?", arrayOf(id.toString()))
         db.delete(table_projects, "$key_id = ?", arrayOf(id.toString()))
-        SecureStorage.removePassword(context, "ProjectPassword_$id")
+        SecureStorage.removePasswordSync(context, "ProjectPassword_$id")
     }
 
     fun updateProject(
@@ -693,7 +693,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         val values = ContentValues()
         if (newName != null) values.put(key_name, newName)
         if (newEmail != null) values.put(key_email, newEmail)
-        if (newPassword != null) SecureStorage.savePassword(context, "ProjectPassword_$projId", newPassword)
+        if (newPassword != null) SecureStorage.savePasswordSync(context, "ProjectPassword_$projId", newPassword)
         if (newBearerToken != null) values.put(key_bearer_token, newBearerToken)
         if (newLastPayerId != null) values.put(key_lastPayerId, newLastPayerId)
         if (newLastSyncedTimestamp != null) values.put(key_lastSyncTimestamp, newLastSyncedTimestamp)
@@ -733,7 +733,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         val values = ContentValues()
         if (newName != null) values.put(key_name, newName)
         if (newEmail != null) values.put(key_email, newEmail)
-        if (newPassword != null) SecureStorage.savePassword(context, "ProjectPassword_$projId", newPassword)
+        if (newPassword != null) SecureStorage.savePasswordSync(context, "ProjectPassword_$projId", newPassword)
         if (newBearerToken != null) values.put(key_bearer_token, newBearerToken)
         if (newLastPayerId != null) values.put(key_lastPayerId, newLastPayerId)
         if (newLastSyncedTimestamp != null) values.put(key_lastSyncTimestamp, newLastSyncedTimestamp)

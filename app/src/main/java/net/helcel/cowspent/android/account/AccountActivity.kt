@@ -69,7 +69,6 @@ class AccountActivity : AppCompatActivity() {
     }
 
     private lateinit var preferences: SharedPreferences
-    private var oldPassword = ""
     private var useWebLogin = true
     private var showLoginDialog by mutableStateOf(false)
 
@@ -222,11 +221,7 @@ class AccountActivity : AppCompatActivity() {
     private fun legacyLogin() {
         val url = CospendClientUtil.formatURL(viewModel.serverUrl.trim())
         val username = viewModel.username
-        var password = viewModel.password
-
-        if (password.isEmpty()) {
-            password = oldPassword
-        }
+        val password = viewModel.password
 
         performLogin(url, username, password)
     }

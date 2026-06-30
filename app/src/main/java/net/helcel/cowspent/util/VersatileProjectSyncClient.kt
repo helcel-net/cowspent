@@ -333,7 +333,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + bill.remoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + bill.remoteId
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for editRemoteBill")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/bills/" + bill.remoteId
@@ -386,7 +385,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for deleteRemoteProject")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId
@@ -433,7 +431,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + billRemoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + billRemoteId
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for deleteRemoteProject")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/bills/" + billRemoteId
@@ -504,8 +501,7 @@ class VersatileProjectSyncClient(
             else
                 project.getRequestBaseUrl(false) + "/api-priv/projects"
             useOcsApiRequest = cospendVersionGT161
-            if (cospendVersionGT161) {
-                    }
+
             return ServerResponse.CreateRemoteProjectResponse(
                 requestServer(
                     target, METHOD_POST, paramKeys, paramValues,
@@ -584,7 +580,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills"
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for createRemoteBill")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/bills"
@@ -651,7 +646,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for createRemoteBill")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/members"
@@ -686,8 +680,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills?lastchanged=" + tsLastSync
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                            }
                 return ServerResponse.BillsResponse(
                     requestServer(
                         target, METHOD_GET, null, null,
@@ -718,7 +710,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills?lastChanged=" + tsLastSync
                 else
                     project.getRequestBaseUrl(false) + "/apiv2/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills?lastchanged=" + tsLastSync
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for getBills")
                 return ServerResponse.BillsResponse(
                     requestServer(
                          target, METHOD_GET, null, null,
@@ -773,7 +764,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for getMembers")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/members"
@@ -827,7 +817,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency"
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for createRemoteCurrency")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/currency"
@@ -881,7 +870,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currency.remoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currency.remoteId
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for createRemoteCurrency")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/currency/" + currency.remoteId
@@ -928,7 +916,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currencyRemoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currencyRemoteId
-                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for deleteRemoteCurrency")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/currency/" + currencyRemoteId
@@ -1027,7 +1014,6 @@ class VersatileProjectSyncClient(
             httpCon.setRequestProperty("Accept", "application/json")
         }
         httpCon.connectTimeout = 10 * 1000 // 10 seconds
-        Log.d(javaClass.simpleName, "$method ${SupportUtil.maskUrl(target)}")
         if (paramKeys != null && paramValues != null) {
             var dataString = ""
             for (i in paramKeys.indices) {
@@ -1040,7 +1026,6 @@ class VersatileProjectSyncClient(
                 dataString += URLEncoder.encode(value, "UTF-8")
             }
             val data = dataString.toByteArray()
-            Log.d(javaClass.simpleName, "Params: ${SupportUtil.maskParams(dataString)}")
             httpCon.setFixedLengthStreamingMode(data.size)
             httpCon.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
             httpCon.setRequestProperty("Content-Length", data.size.toString())

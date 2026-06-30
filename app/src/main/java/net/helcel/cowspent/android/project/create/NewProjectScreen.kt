@@ -121,13 +121,7 @@ fun NewProjectScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (viewModel.whatTodoIsCreate) {
-                if (viewModel.projectType == ProjectType.COSPEND) {
-                    Button(
-                        onClick = onChooseFromNextcloud
-                    ) {
-                        Text(stringResource(R.string.new_project_from_nextcloud_tooltip))
-                    }
-                } else if (viewModel.projectType == ProjectType.LOCAL) {
+                if (viewModel.projectType == ProjectType.LOCAL) {
                     Button(
                         onClick = onImportFile
                     ) {
