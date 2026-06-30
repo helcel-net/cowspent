@@ -4,11 +4,32 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.Card
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -28,10 +49,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.AlertDialog
-import net.helcel.cowspent.android.helper.TextIcon
-import net.helcel.cowspent.android.helper.TextIconDisplay
 import net.helcel.cowspent.android.helper.formatAmount
 import net.helcel.cowspent.model.DBCurrency
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ManageCurrenciesScreen(
@@ -96,7 +116,7 @@ fun ManageCurrenciesScreen(
         ) {
             LaunchedEffect(viewModel.mainCurrencyName) {
                 if (viewModel.mainCurrencyName.isNotEmpty()) {
-                    delay(500)
+                    delay(500.milliseconds)
                     onSaveMain()
                 }
             }

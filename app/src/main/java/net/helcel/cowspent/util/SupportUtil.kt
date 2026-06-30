@@ -1,11 +1,12 @@
 package net.helcel.cowspent.util
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
-import net.helcel.cowspent.model.*
+import net.helcel.cowspent.model.CreditDebt
+import net.helcel.cowspent.model.DBBill
+import net.helcel.cowspent.model.DBMember
+import net.helcel.cowspent.model.Transaction
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import org.json.JSONException
 import org.json.JSONObject
