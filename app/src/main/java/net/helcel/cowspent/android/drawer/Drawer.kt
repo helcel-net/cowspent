@@ -100,8 +100,11 @@ fun Drawer(
 
                 // Members Section
                 val membersState = rememberLazyListState()
-                val sortedMembers = remember(members, memberBalances) {
-                    members.sortedWith(compareBy<DBMember> {
+                val sortedMembers = remember(members, memberBalances, selectedMemberId) {
+                    members.filter {
+                        val balance = memberBalances[it.id] ?: 0.0
+                        it.isActivated || balance > 0.01 || balance < -0.01 || it.id == selectedMemberId
+                    }.sortedWith(compareBy<DBMember> {
                         val balance = memberBalances[it.id] ?: 0.0
                         when {
                             balance > 0.01 -> 0
