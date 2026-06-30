@@ -81,13 +81,9 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for getProjectInfo")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
-                    Log.i(TAG, "using new API for getProjectInfo")
                     ServerResponse.ProjectResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, null, null, true), true)
                 } else {
                     target = "/index.php/apps/cospend/api-priv/projects/" + project.remoteId
@@ -99,7 +95,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
-                Log.i(TAG, "using public API, target is: ${target}for getProjectInfo")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId
@@ -172,13 +167,9 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for editRemoteProject")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
-                    Log.i(TAG, "using new API for editRemoteProject")
                     ServerResponse.EditRemoteProjectResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_PUT, paramKeys, paramValues, true), true)
                 } else {
                     target = "/index.php/apps/cospend/api-priv/projects/" + project.remoteId
@@ -190,7 +181,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
-                Log.i(TAG, "using public API, target is: ${target}for editRemoteProject")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId
@@ -239,13 +229,9 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/members/" + member.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for editRemoteMember")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/members/" + member.remoteId
-                    Log.i(TAG, "using new API for editRemoteMember")
                     ServerResponse.EditRemoteMemberResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_PUT, paramKeys, paramValues, true), true)
                 } else {
                     target = "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/members/" + member.remoteId
@@ -257,7 +243,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members/" + member.remoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members/" + member.remoteId
-                Log.i(TAG, "using public API, target is: ${target}for editRemoteMember")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/members/" + member.remoteId
@@ -333,9 +318,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills/" + bill.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for editRemoteBill")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/bills/" + bill.remoteId
@@ -351,7 +333,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + bill.remoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + bill.remoteId
-                Log.i(TAG, "using public API, target is: ${target}for editRemoteBill")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for editRemoteBill")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/bills/" + bill.remoteId
@@ -389,9 +371,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for deleteRemoteProject")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
@@ -407,7 +386,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
-                Log.i(TAG, "using public API, target is: ${target}for deleteRemoteProject")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for deleteRemoteProject")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId
@@ -439,9 +418,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills/" + billRemoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for deleteRemoteBill")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/bills/" + billRemoteId
@@ -457,7 +433,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + billRemoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + billRemoteId
-                Log.i(TAG, "using public API, target is: ${target}for deleteRemoteProject")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for deleteRemoteProject")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/bills/" + billRemoteId
@@ -529,8 +505,7 @@ class VersatileProjectSyncClient(
                 project.getRequestBaseUrl(false) + "/api-priv/projects"
             useOcsApiRequest = cospendVersionGT161
             if (cospendVersionGT161) {
-                Log.i(TAG, "using new API (weblogin, $username:$password) for createAuthenticatedRemoteProject")
-            }
+                    }
             return ServerResponse.CreateRemoteProjectResponse(
                 requestServer(
                     target, METHOD_POST, paramKeys, paramValues,
@@ -594,9 +569,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills"
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for createRemoteBill")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/bills"
@@ -612,7 +584,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills"
-                Log.i(TAG, "using public API, target is: ${target}for createRemoteBill")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for createRemoteBill")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/bills"
@@ -664,9 +636,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/members"
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for createRemoteMember")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/members"
@@ -682,7 +651,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
-                Log.i(TAG, "using public API, target is: ${target}for createRemoteBill")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for createRemoteBill")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/members"
@@ -718,8 +687,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills?lastchanged=" + tsLastSync
                 useOcsApiRequest = cospendVersionGT161
                 if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for getBills")
-                }
+                            }
                 return ServerResponse.BillsResponse(
                     requestServer(
                         target, METHOD_GET, null, null,
@@ -750,7 +718,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills?lastChanged=" + tsLastSync
                 else
                     project.getRequestBaseUrl(false) + "/apiv2/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills?lastchanged=" + tsLastSync
-                Log.i(TAG, "using public API, target is: ${target}for getBills")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for getBills")
                 return ServerResponse.BillsResponse(
                     requestServer(
                          target, METHOD_GET, null, null,
@@ -790,9 +758,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/members"
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for getMembers, projectId: " + project.remoteId)
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/members"
@@ -808,7 +773,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
-                Log.i(TAG, "using public API, target is: ${target}for getMembers")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for getMembers")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/members"
@@ -847,9 +812,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/currency"
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for createRemoteCurrency")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/currency"
@@ -865,7 +827,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency"
-                Log.i(TAG, "using public API, target is: ${target}for createRemoteCurrency")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for createRemoteCurrency")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/currency"
@@ -904,9 +866,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/currency/" + currency.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for editRemoteCurrency")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/currency/" + currency.remoteId
@@ -922,7 +881,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currency.remoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currency.remoteId
-                Log.i(TAG, "using public API, target is: ${target}for createRemoteCurrency")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for createRemoteCurrency")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/currency/" + currency.remoteId
@@ -954,9 +913,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/currency/" + currencyRemoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for deleteRemoteCurrency")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/currency/" + currencyRemoteId
@@ -972,7 +928,7 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currencyRemoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currencyRemoteId
-                Log.i(TAG, "using public API, target is: ${target}for deleteRemoteCurrency")
+                Log.i(TAG, "using public API, target is: ${SupportUtil.maskUrl(target)} for deleteRemoteCurrency")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/currency/" + currencyRemoteId
@@ -1071,7 +1027,7 @@ class VersatileProjectSyncClient(
             httpCon.setRequestProperty("Accept", "application/json")
         }
         httpCon.connectTimeout = 10 * 1000 // 10 seconds
-        Log.d(javaClass.simpleName, "$method $target")
+        Log.d(javaClass.simpleName, "$method ${SupportUtil.maskUrl(target)}")
         if (paramKeys != null && paramValues != null) {
             var dataString = ""
             for (i in paramKeys.indices) {
@@ -1084,7 +1040,7 @@ class VersatileProjectSyncClient(
                 dataString += URLEncoder.encode(value, "UTF-8")
             }
             val data = dataString.toByteArray()
-            Log.d(javaClass.simpleName, "Params: $dataString")
+            Log.d(javaClass.simpleName, "Params: ${SupportUtil.maskParams(dataString)}")
             httpCon.setFixedLengthStreamingMode(data.size)
             httpCon.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
             httpCon.setRequestProperty("Content-Length", data.size.toString())

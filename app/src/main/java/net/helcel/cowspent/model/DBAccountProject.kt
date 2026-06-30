@@ -12,6 +12,6 @@ class DBAccountProject(
 ) : Serializable {
 
     override fun toString(): String {
-        return "#DBAccountProject$id/$remoteId,$name, $ncUrl, $password, archivedTs=$archivedTs"
+        return "#DBAccountProject$id/$remoteId,$name, $ncUrl, [SECURE], archivedTs=$archivedTs"
     }
 }

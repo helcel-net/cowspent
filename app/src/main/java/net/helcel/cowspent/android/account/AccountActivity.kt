@@ -41,6 +41,7 @@ import net.helcel.cowspent.android.main.MainConstants
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.CospendClientUtil
 import net.helcel.cowspent.util.CospendClientUtil.LoginStatus
+import net.helcel.cowspent.util.SecureStorage
 import java.net.URLDecoder
 import java.util.Locale
 
@@ -128,8 +129,6 @@ class AccountActivity : AppCompatActivity() {
                 )
             }
         }
-        
-        oldPassword = preferences.getString(SETTINGS_PASSWORD, DEFAULT_SETTINGS) ?: ""
         viewModel.validateUrl()
     }
 
@@ -310,10 +309,10 @@ class AccountActivity : AppCompatActivity() {
             }
 
             if (status == LoginStatus.OK) {
+                SecureStorage.savePassword(applicationContext, SETTINGS_PASSWORD, password)
                 preferences.edit {
                     putString(SETTINGS_URL, url)
                     putString(SETTINGS_USERNAME, username)
-                    putString(SETTINGS_PASSWORD, password)
                     remove(SETTINGS_KEY_ETAG)
                     remove(SETTINGS_KEY_LAST_MODIFIED)
                 }

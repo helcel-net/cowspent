@@ -13,6 +13,7 @@ import androidx.preference.PreferenceManager
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.main.BillsListViewActivity
 import net.helcel.cowspent.model.*
+import net.helcel.cowspent.util.SecureStorage
 import net.helcel.cowspent.util.SupportUtil
 import java.text.SimpleDateFormat
 import java.util.*
@@ -316,11 +317,12 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         val db = writableDatabase
         val values = ContentValues()
         values.put(key_remoteId, accountProject.remoteId)
-        values.put(key_password, accountProject.password)
         values.put(key_ncUrl, accountProject.ncUrl)
         values.put(key_name, accountProject.name)
         values.put(key_archived, accountProject.archivedTs ?: 0L)
-        return db.insert(table_account_projects, null, values)
+        val id = db.insert(table_account_projects, null, values)
+        SecureStorage.savePassword(context, "AccountProjectPassword_$id", accountProject.password)
+        return id
     }
 
     val accountProjects: List<DBAccountProject>
@@ -344,11 +346,13 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @SuppressLint("Range")
     private fun getAccountProjectFromCursor(cursor: Cursor): DBAccountProject {
+        val id = cursor.getLong(cursor.getColumnIndex(key_id))
         val archivedTs = cursor.getLong(cursor.getColumnIndex(key_archived))
+        val password = SecureStorage.getPassword(context, "AccountProjectPassword_$id")
         return DBAccountProject(
-            cursor.getLong(cursor.getColumnIndex(key_id)),
+            id,
             cursor.getString(cursor.getColumnIndex(key_remoteId)),
-            cursor.getString(cursor.getColumnIndex(key_password)),
+            password,
             cursor.getString(cursor.getColumnIndex(key_name)),
             cursor.getString(cursor.getColumnIndex(key_ncUrl)),
             if (archivedTs > 0) archivedTs else null
@@ -608,14 +612,15 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         val db = writableDatabase
         val values = ContentValues()
         values.put(key_remoteId, project.remoteId)
-        values.put(key_password, project.password)
         values.put(key_bearer_token, project.bearerToken)
         values.put(key_email, project.email)
         values.put(key_name, project.name)
         values.put(key_ihmUrl, project.serverUrl)
         values.put(key_type, project.type.id)
         values.put(key_archived, project.archivedTs ?: 0L)
-        return db.insert(table_projects, null, values)
+        val id = db.insert(table_projects, null, values)
+        SecureStorage.savePassword(context, "ProjectPassword_$id", project.password)
+        return id
     }
 
     fun getProject(id: Long): DBProject? {
@@ -644,11 +649,13 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @SuppressLint("Range")
     private fun getProjectFromCursor(cursor: Cursor): DBProject {
+        val id = cursor.getLong(cursor.getColumnIndex(key_id))
         val archivedTs = cursor.getLong(cursor.getColumnIndex(key_archived))
+        val password = SecureStorage.getPassword(context, "ProjectPassword_$id")
         return DBProject(
-            cursor.getLong(cursor.getColumnIndex(key_id)),
+            id,
             cursor.getString(cursor.getColumnIndex(key_remoteId)),
-            cursor.getString(cursor.getColumnIndex(key_password)),
+            password,
             cursor.getString(cursor.getColumnIndex(key_name)),
             cursor.getString(cursor.getColumnIndex(key_ihmUrl)),
             cursor.getString(cursor.getColumnIndex(key_email)),
@@ -671,6 +678,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         }
         db.delete(table_members, "$key_projectid = ?", arrayOf(id.toString()))
         db.delete(table_projects, "$key_id = ?", arrayOf(id.toString()))
+        SecureStorage.removePassword(context, "ProjectPassword_$id")
     }
 
     fun updateProject(
@@ -685,7 +693,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         val values = ContentValues()
         if (newName != null) values.put(key_name, newName)
         if (newEmail != null) values.put(key_email, newEmail)
-        if (newPassword != null) values.put(key_password, newPassword)
+        if (newPassword != null) SecureStorage.savePassword(context, "ProjectPassword_$projId", newPassword)
         if (newBearerToken != null) values.put(key_bearer_token, newBearerToken)
         if (newLastPayerId != null) values.put(key_lastPayerId, newLastPayerId)
         if (newLastSyncedTimestamp != null) values.put(key_lastSyncTimestamp, newLastSyncedTimestamp)
@@ -725,7 +733,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         val values = ContentValues()
         if (newName != null) values.put(key_name, newName)
         if (newEmail != null) values.put(key_email, newEmail)
-        if (newPassword != null) values.put(key_password, newPassword)
+        if (newPassword != null) SecureStorage.savePassword(context, "ProjectPassword_$projId", newPassword)
         if (newBearerToken != null) values.put(key_bearer_token, newBearerToken)
         if (newLastPayerId != null) values.put(key_lastPayerId, newLastPayerId)
         if (newLastSyncedTimestamp != null) values.put(key_lastSyncTimestamp, newLastSyncedTimestamp)

@@ -5,7 +5,7 @@ import java.io.Serializable
 class DBProject(
     var id: Long,
     var remoteId: String,
-    var password: String,
+    var password: String?,
     var name: String,
     var serverUrl: String?,
     var email: String?,
