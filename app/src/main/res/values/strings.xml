@@ -8,8 +8,8 @@
     <string name="action_scan_qrcode">Scan QRCode from Cospend/Cowspent</string>
     <string name="action_add_project">Add project</string>
     <string name="action_save_bill">Save bill</string>
-    <string name="action_edit_project">Edit project</string>
-    <string name="action_share_project">Share project</string>
+    <string name="action_edit_project">Edit</string>
+    <string name="action_share_project">Share</string>
     <string name="setting_what">What?</string>
     <string name="setting_payer">Who paid?</string>
     <string name="setting_all">All</string>
@@ -82,12 +82,15 @@
     <string name="simple_share_share">Share Cowspent link</string>
     <string name="menu_delete_project_remote">Delete project on server</string>
     <string name="menu_save_project">Save project</string>
-    <string name="fab_add_member">Add a member</string>
-    <string name="fab_rm_project">Remove Project</string>
+    <string name="fab_add_member">Add member</string>
+    <string name="fab_rm_project">Remove</string>
     <string name="remove_project_confirmation">Project %1$s has been removed</string>
-    <string name="choose_project_management_action">Manage project</string>
-    <string name="fab_manage_members">Manage members</string>
-    <string name="fab_export_project">Export project</string>
+    <string name="choose_project_management_action">Project</string>
+    <string name="fab_manage_members">Members</string>
+    <string name="fab_manage_labels">Labels</string>
+    <string name="action_archive">Archive</string>
+    <string name="action_unarchive">Unarchive</string>
+    <string name="fab_export_project">Export</string>
     <string name="drawer_last_sync_text">Last sync: %1$02d:%2$02d</string>
     <string name="scan_qrcode">Scan QR code</string>
     <string name="new_project_from_nextcloud_tooltip">Choose from Nextcloud account</string>
@@ -147,7 +150,7 @@
     <string name="stats_paid">Paid</string>
     <string name="stats_spent">Spent</string>
     <string name="stats_balance">Balance</string>
-    <string name="fab_statistics">Statistics</string>
+    <string name="fab_statistics">Stats</string>
     <string name="fab_settle">Settle</string>
     <string name="project_add_success_message">Project %1$s was successfully added</string>
     <string name="project_create_success_message">Project %1$s was successfully created</string>
@@ -240,7 +243,7 @@
 
     <!-- QR Code Scanner -->
     <string name="error_scanning_bill_qr_code">QR code could not be scanned.</string>
-    <string name="fab_manage_currencies">Manage currencies</string>
+    <string name="fab_manage_currencies">Currencies</string>
     <string name="setting_show_archived">Show archived projects</string>
 
 

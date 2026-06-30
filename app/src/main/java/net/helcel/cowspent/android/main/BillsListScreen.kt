@@ -65,6 +65,7 @@ import net.helcel.cowspent.android.statistics.ProjectStatisticsActivity
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.model.DBProject
+import net.helcel.cowspent.model.ProjectType
 import net.helcel.cowspent.model.SectionItem
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.util.IRefreshBillsListCallback
@@ -137,6 +138,10 @@ fun BillsListScreen(
                     onProjectAction(projectOptionsProjectId, 3)
                     viewModel.showProjectOptionsDialogByProjectId = null
                 },
+                onManageLabels = {
+                    onProjectAction(projectOptionsProjectId, 8)
+                    viewModel.showProjectOptionsDialogByProjectId = null
+                },
                 onStatistics = {
                     onProjectAction(projectOptionsProjectId, 4)
                     viewModel.showProjectOptionsDialogByProjectId = null
@@ -155,6 +160,7 @@ fun BillsListScreen(
                 },
                 onDismiss = { viewModel.showProjectOptionsDialogByProjectId = null },
                 isArchived = proj?.isArchived == true,
+                projectType = proj?.type ?: ProjectType.LOCAL,
                 accessLevel = proj?.myAccessLevel ?: DBProject.ACCESS_LEVEL_ADMIN,
                 isShareable = proj?.isShareable() ?: true
             )

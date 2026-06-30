@@ -45,6 +45,7 @@ import net.helcel.cowspent.model.Category
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBProject
 import net.helcel.cowspent.model.GroupedBill
+import net.helcel.cowspent.model.ProjectType
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.persistence.CowspentServerSyncHelper
 import net.helcel.cowspent.theme.ThemeUtils
@@ -254,13 +255,21 @@ class BillsListViewActivity :
                     onProjectAction = { pid, actionIndex ->
                         when (actionIndex) {
                             0 -> onEditProjectClick(pid)
-                            1 -> onRemoveProjectClick(pid)
+                            1 -> {
+                                val proj = db.getProject(pid)
+                                if (proj?.type == ProjectType.COSPEND) {
+                                    onArchiveProjectClick(pid)
+                                } else {
+                                    onRemoveProjectClick(pid)
+                                }
+                            }
                             2 -> onManageMembersClick(pid)
                             3 -> onManageCurrenciesClick(pid)
                             4 -> onProjectStatisticsClick(pid)
                             5 -> onSettleProjectClick(pid)
                             6 -> onShareProjectClick(pid)
                             7 -> onExportProjectClick(pid)
+                            8 -> { /* Manage Labels - Placeholder for now */ }
                         }
                     },
                     onAccountSwitcherClick = {
@@ -420,6 +429,38 @@ class BillsListViewActivity :
                 },
                 negativeText = getString(R.string.simple_no)
             )
+        }
+    }
+
+    private fun onArchiveProjectClick(projectId: Long) {
+        if (projectId == 0L) return
+        lifecycleScope.launch {
+            val proj = withContext(Dispatchers.IO) { db.getProject(projectId) } ?: return@launch
+            val isArchiving = !proj.isArchived
+            
+            val newArchivedTs = if (isArchiving) System.currentTimeMillis() / 1000 else 0L
+            
+            withContext(Dispatchers.IO) {
+                db.updateProject(
+                    projId = projectId,
+                    newName = null,
+                    newEmail = null,
+                    newPassword = null,
+                    newLastPayerId = null,
+                    newLastSyncedTimestamp = null,
+                    newCurrencyName = null,
+                    newDeletionDisabled = null,
+                    newMyAccessLevel = null,
+                    newBearerToken = null,
+                    newArchivedTs = newArchivedTs
+                )
+            }
+            
+            setupDrawerProjects()
+            refreshLists()
+            
+            val msgRes = if (isArchiving) R.string.action_archive else R.string.action_unarchive
+            showToast(this@BillsListViewActivity, getString(msgRes))
         }
     }
 
