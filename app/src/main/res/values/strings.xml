@@ -20,14 +20,9 @@
     <string name="save_or_discard_bill_dialog_save">Save</string>
     <string name="save_or_discard_bill_dialog_discard">Discard</string>
     <string name="currency_manager">Currency manager</string>
-    <string name="add_currency_title">Add currency</string>
-    <string name="currency_management_unavailable">Currency management is only available for Cospend projects</string>
     <string name="setting_comment">Comment</string>
     <string name="currency_dialog_title">Convert current amount from another currency into %s</string>
-    <string name="no_currency_error">There is no additional currency</string>
     <string name="main_currency">Main currency</string>
-    <string name="currency_edit_name">Name</string>
-    <string name="currency_rate">Exchange rate</string>
     <string name="setting_owers">For whom?</string>
     <string name="setting_project_id">Project ID/name</string>
 
@@ -75,7 +70,6 @@
     <string name="simple_ok" tools:ignore="ButtonCase,Typos">Ok</string>
     <string name="simple_yes">Yes</string>
     <string name="simple_no">No</string>
-    <string name="simple_add">Add</string>
     <string name="simple_edit_bill">Edit bill</string>
     <string name="simple_new_bill">New bill</string>
     <string name="simple_add_project">Add project in Cowspent</string>
