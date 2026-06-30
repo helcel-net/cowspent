@@ -1,6 +1,7 @@
 package net.helcel.cowspent.android.bill_edit
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -31,7 +32,7 @@ class EditBillViewModel : ViewModel() {
     var currencies by mutableStateOf<List<DBCurrency>>(emptyList())
     var mainCurrencyName by mutableStateOf("")
     var selectedCurrencyName by mutableStateOf("")
-    var selectedCurrencyRate by mutableStateOf(1.0)
+    var selectedCurrencyRate by mutableDoubleStateOf(1.0)
     var members by mutableStateOf<List<DBMember>>(emptyList())
 
     var owersSelection = mutableStateMapOf<Long, Boolean>()
