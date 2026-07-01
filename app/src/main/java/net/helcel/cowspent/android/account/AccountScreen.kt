@@ -4,39 +4,18 @@
 
 package net.helcel.cowspent.android.account
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Switch
-import androidx.compose.material.SwitchDefaults
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -99,7 +78,7 @@ fun AccountScreenContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings_server_settings)) },
+                title = { Text(stringResource(R.string.title_account)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -123,30 +102,70 @@ fun AccountScreenContent(
                 }
             } else if (isLoggedIn) {
                 Text(
-                    text = stringResource(R.string.account_logged_in_as, username),
-                    style = MaterialTheme.typography.h6
+                    text = "CURRENT ACCOUNT",
+                    style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                Text(
-                    text = serverUrl,
-                    style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
-                )
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Person, 
+                        contentDescription = null, 
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.width(32.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.msg_logged_in_as, username),
+                            style = MaterialTheme.typography.subtitle1
+                        )
+                        Text(
+                            text = serverUrl,
+                            style = MaterialTheme.typography.caption,
+                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = onLogout,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.account_logout))
+                    Text(stringResource(R.string.action_logout))
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
             if (!isValidatingLogin) {
+                Text(
+                    text = "CONNECTION SETTINGS",
+                    style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp, top = if (isLoggedIn) 16.dp else 0.dp)
+                )
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(vertical = 8.dp)
                 ) {
-                    Text(stringResource(R.string.use_sso_toggle), modifier = Modifier.weight(1f))
+                    Icon(
+                        Icons.Default.Sync, 
+                        contentDescription = null, 
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.width(32.dp))
+                    Text(stringResource(R.string.label_use_sso), modifier = Modifier.weight(1f), style = MaterialTheme.typography.subtitle1)
                     Switch(
                         checked = useSso,
                         onCheckedChange = { onSsoClick(it) },
@@ -163,7 +182,7 @@ fun AccountScreenContent(
                     OutlinedTextField(
                         value = serverUrl,
                         onValueChange = onServerUrlChange,
-                        label = { Text(stringResource(R.string.settings_url)) },
+                        placeholder = { Text(stringResource(R.string.label_url)) },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) },
                         trailingIcon = {
@@ -192,7 +211,7 @@ fun AccountScreenContent(
                     OutlinedTextField(
                         value = username,
                         onValueChange = onUsernameChange,
-                        label = { Text(stringResource(R.string.settings_username)) },
+                        placeholder = { Text(stringResource(R.string.label_username)) },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                         singleLine = true
@@ -204,7 +223,7 @@ fun AccountScreenContent(
                     OutlinedTextField(
                         value = password,
                         onValueChange = onPasswordChange,
-                        label = { Text(stringResource(R.string.settings_password)) },
+                        placeholder = { Text(stringResource(R.string.label_password)) },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         visualTransformation = PasswordVisualTransformation(),
@@ -221,7 +240,7 @@ fun AccountScreenContent(
                         if (isSubmitting) {
                             CustomCircularProgressIndicator(size = 24.dp, color = Color.White)
                         } else {
-                            Text(stringResource(R.string.settings_submit))
+                            Text(stringResource(R.string.action_connect))
                         }
                     }
                 }

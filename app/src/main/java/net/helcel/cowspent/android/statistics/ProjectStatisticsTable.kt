@@ -57,8 +57,8 @@ fun ProjectStatisticsTable(
     val paymentModeAll = stringResource(R.string.payment_mode_all)
     val paymentModeNone = stringResource(R.string.payment_mode_none)
 
-    val shareStatsHeader = stringResource(R.string.share_stats_header)
-    val shareStatsIntro = stringResource(R.string.share_stats_intro, proj.name.ifEmpty { proj.remoteId })
+    val shareStatsHeader = stringResource(R.string.msg_stats_header)
+    val shareStatsIntro = stringResource(R.string.msg_stats_intro, proj.name.ifEmpty { proj.remoteId })
 
     val categories = remember(proj.id, customCategories, categoryAll, categoryNone, categoryReimbursement, categoryAllExceptReimbursement) {
         val list = mutableListOf<Triple<Int, String, String>>()
@@ -164,12 +164,12 @@ fun ProjectStatisticsTable(
 
                 EditableExposedDropdownMenu(
                     value = selectedCategory?.third ?: "",
-                    placeholder = stringResource(R.string.setting_category),
+                    placeholder = stringResource(R.string.label_category),
                     expanded = categoryExpanded,
                     onExpandedChange = { categoryExpanded = it },
                     onDismissRequest = { categoryExpanded = false },
                     leadingIcon = {
-                        Box(modifier = Modifier.padding(start = 12.dp)) {
+                        Box(modifier = Modifier) {
                             if (selectedCategory != null) {
                                 Text(text = selectedCategory.second, fontSize = 20.sp)
                             } else {
@@ -198,12 +198,12 @@ fun ProjectStatisticsTable(
 
                 EditableExposedDropdownMenu(
                     value = selectedPm?.third ?: "",
-                    placeholder = stringResource(R.string.setting_payment_mode),
+                    placeholder = stringResource(R.string.label_mode),
                     expanded = pmExpanded,
                     onExpandedChange = { pmExpanded = it },
                     onDismissRequest = { pmExpanded = false },
                     leadingIcon = {
-                        Box(modifier = Modifier.padding(start = 12.dp)) {
+                        Box(modifier = Modifier) {
                             if (selectedPm != null) {
                                 Text(text = selectedPm.second, fontSize = 20.sp)
                             } else {
@@ -269,17 +269,15 @@ fun ProjectStatisticsTable(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Table Header
         Surface(
-            color = MaterialTheme.colors.onSurface.copy(alpha = 0.05f),
-            shape = MaterialTheme.shapes.small,
+            color = MaterialTheme.colors.background,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)) {
-                Text(stringResource(R.string.stats_who), modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
-                Text(stringResource(R.string.stats_paid), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
-                Text(stringResource(R.string.stats_spent), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
-                Text(stringResource(R.string.stats_balance), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp)) {
+                Text(stringResource(R.string.stats_who).uppercase(), modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold, color = MaterialTheme.colors.onSurface, style = MaterialTheme.typography.overline)
+                Text(stringResource(R.string.stats_paid).uppercase(), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface, style = MaterialTheme.typography.overline)
+                Text(stringResource(R.string.stats_spent).uppercase(), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface, style = MaterialTheme.typography.overline)
+                Text(stringResource(R.string.stats_balance).uppercase(), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface, style = MaterialTheme.typography.overline)
             }
         }
 

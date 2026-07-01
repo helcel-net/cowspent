@@ -230,7 +230,12 @@ fun AlertDialogContent(
                         Spacer(Modifier.width(8.dp))
                     }
                     if (title != null) {
-                        Text(text = title, style = MaterialTheme.typography.h6)
+                        Text(
+                            text = title.uppercase(),
+                            style = MaterialTheme.typography.subtitle1,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colors.onSurface
+                        )
                     }
                 }
             }

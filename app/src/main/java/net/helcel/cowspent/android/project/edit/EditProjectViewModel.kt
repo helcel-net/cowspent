@@ -13,6 +13,7 @@ class EditProjectViewModel : ViewModel() {
     var password by mutableStateOf("")
     var newPassword by mutableStateOf("")
     var email by mutableStateOf("")
+    var isLocal by mutableStateOf(false)
 
     var dialogState by mutableStateOf<DialogState?>(null)
 
@@ -53,5 +54,6 @@ class EditProjectViewModel : ViewModel() {
         password = project.password
         newPassword = project.password
         email = project.email?.let { if (it == "null") "" else it } ?: ""
+        isLocal = project.isLocal
     }
 }

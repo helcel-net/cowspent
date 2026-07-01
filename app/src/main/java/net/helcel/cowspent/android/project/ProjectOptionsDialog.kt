@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,8 +48,10 @@ fun ProjectOptionsDialogContent(
                 .fillMaxWidth()
         ) {
             Text(
-                text = stringResource(R.string.choose_project_management_action),
-                style = MaterialTheme.typography.h6,
+                text = stringResource(R.string.choose_project_management_action).uppercase(),
+                style = MaterialTheme.typography.subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
@@ -59,34 +62,35 @@ fun ProjectOptionsDialogContent(
             val row2 = mutableListOf<ProjectOption>()
             val row3 = mutableListOf<ProjectOption>()
 
-            // Row 1: Edit, Share, Remove/Archive
             if (!isArchived && isMaintainer) {
-                row1.add(ProjectOption(stringResource(R.string.action_edit_project), Icons.Default.Edit, onEditProject))
+                row1.add(ProjectOption(stringResource(R.string.action_edit), Icons.Default.Edit, onEditProject))
             }
             if (isShareable && isParticipant) {
-                row1.add(ProjectOption(stringResource(R.string.action_share_project), Icons.Default.Share, onShareProject))
+                row1.add(ProjectOption(stringResource(R.string.action_share), Icons.Default.Share, onShareProject))
             }
             if (projectType == ProjectType.COSPEND) {
                 val archiveLabel = if (isArchived) stringResource(R.string.action_unarchive) else stringResource(R.string.action_archive)
                 val archiveIcon = if (isArchived) Icons.Default.Unarchive else Icons.Default.Archive
                 row1.add(ProjectOption(archiveLabel, archiveIcon, onRemoveProject))
             } else {
-                row1.add(ProjectOption(stringResource(R.string.fab_rm_project), Icons.Default.Delete, onRemoveProject))
+                row1.add(ProjectOption(stringResource(R.string.action_delete), Icons.Default.Delete, onRemoveProject))
             }
 
             // Row 2: Manage Member, Manage Labels, Manage Currencies
             if (!isArchived && isMaintainer) {
-                row2.add(ProjectOption(stringResource(R.string.fab_manage_members), Icons.Default.Group, onManageMembers))
-                row2.add(ProjectOption(stringResource(R.string.fab_manage_labels), Icons.AutoMirrored.Filled.Label, onManageLabels))
-                row2.add(ProjectOption(stringResource(R.string.fab_manage_currencies), Icons.Default.MonetizationOn, onManageCurrencies))
+                row2.add(ProjectOption(stringResource(R.string.action_members), Icons.Default.Group, onManageMembers))
+                if (projectType == ProjectType.LOCAL || projectType == ProjectType.COSPEND) {
+                    row2.add(ProjectOption(stringResource(R.string.action_labels), Icons.AutoMirrored.Filled.Label, onManageLabels))
+                }
+                row2.add(ProjectOption(stringResource(R.string.action_currencies), Icons.Default.MonetizationOn, onManageCurrencies))
             }
 
             // Row 3: Statistics, Settle, Export
-            row3.add(ProjectOption(stringResource(R.string.fab_statistics), Icons.Default.BarChart, onStatistics))
+            row3.add(ProjectOption(stringResource(R.string.action_stats), Icons.Default.BarChart, onStatistics))
             if (!isArchived && isParticipant) {
-                row3.add(ProjectOption(stringResource(R.string.fab_settle), Icons.Default.Handshake, onSettle))
+                row3.add(ProjectOption(stringResource(R.string.action_settle), Icons.Default.Handshake, onSettle))
             }
-            row3.add(ProjectOption(stringResource(R.string.fab_export_project), Icons.Default.Download, onExportProject))
+            row3.add(ProjectOption(stringResource(R.string.action_export), Icons.Default.Download, onExportProject))
 
             val allRows = listOf(row1, row2, row3).filter { it.isNotEmpty() }
 

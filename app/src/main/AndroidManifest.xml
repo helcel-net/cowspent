@@ -46,7 +46,7 @@
 
         <activity
             android:name="net.helcel.cowspent.android.account.AccountActivity"
-            android:label="@string/settings_server_settings"
+            android:label="@string/title_account"
             android:parentActivityName="net.helcel.cowspent.android.settings.PreferencesActivity"
             android:windowSoftInputMode="adjustResize|stateVisible"
             android:launchMode="standard"
@@ -67,7 +67,7 @@
 
         <activity
             android:name="net.helcel.cowspent.android.project.create.NewProjectActivity"
-            android:label="@string/simple_add_project"
+            android:label="@string/title_add_project"
             android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
             android:windowSoftInputMode="adjustResize"
             android:launchMode="standard"
@@ -94,7 +94,7 @@
 
         <activity
             android:name="net.helcel.cowspent.android.project.edit.EditProjectActivity"
-            android:label="@string/simple_edit_project"
+            android:label="@string/title_edit_project"
             android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
             android:windowSoftInputMode="adjustResize"
             android:launchMode="standard">
@@ -102,7 +102,7 @@
 
         <activity
             android:name="net.helcel.cowspent.android.bill_edit.EditBillActivity"
-            android:label="@string/simple_edit_bill"
+            android:label="@string/action_edit"
             android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
             android:windowSoftInputMode="adjustResize"
             android:launchMode="standard">
@@ -110,20 +110,32 @@
 
         <activity
             android:name="net.helcel.cowspent.android.about.AboutActivity"
-            android:label="@string/simple_about"
+            android:label="@string/title_about"
             android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity" />
 
         <activity
             android:name="net.helcel.cowspent.android.statistics.ProjectStatisticsActivity"
-            android:label="@string/statistic_title"
+            android:label="@string/title_stats"
             android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
             android:name="net.helcel.cowspent.android.bill_label.LabelBillsActivity"
-            android:label="@string/label_bills_title"
+            android:label="@string/title_label_bills"
             android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
             android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
+            android:name="net.helcel.cowspent.android.label.LabelManagementActivity"
+            android:label="@string/title_labels"
+            android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name="net.helcel.cowspent.android.project.member.MemberManagementActivity"
+            android:label="@string/action_members"
+            android:parentActivityName="net.helcel.cowspent.android.main.BillsListViewActivity"
+            android:windowSoftInputMode="adjustResize" />
 
     </application>
 </manifest>

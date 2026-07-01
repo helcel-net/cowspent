@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Title
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.helcel.cowspent.R
@@ -61,24 +62,26 @@ fun EditProjectScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.simple_edit_project)) },
+                title = { Text(stringResource(R.string.title_edit_project)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
                 actions = {
-                    IconButton(onClick = onDeleteRemote) {
-                        Icon(Icons.Default.DeleteForever, contentDescription = stringResource(R.string.menu_delete_project_remote))
+                    if (!viewModel.isLocal) {
+                        IconButton(onClick = onDeleteRemote) {
+                            Icon(Icons.Default.DeleteForever, contentDescription = stringResource(R.string.action_delete))
+                        }
                     }
                 },
-                backgroundColor = MaterialTheme.colors.surface,
+                backgroundColor = MaterialTheme.colors.primary,
                 elevation = 0.dp
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onSave) {
-                Icon(Icons.Default.Done, contentDescription = stringResource(R.string.menu_save_project))
+                Icon(Icons.Default.Done, contentDescription = stringResource(R.string.action_save))
             }
         }
     ) { padding ->
@@ -91,43 +94,59 @@ fun EditProjectScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
+            Text(
+                text = "GENERAL",
+                style = MaterialTheme.typography.subtitle1,
+                color = MaterialTheme.colors.onSurface,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
             OutlinedTextField(
                 value = viewModel.name,
                 onValueChange = { viewModel.name = it },
-                label = { Text(stringResource(R.string.setting_new_project_name)) },
+                placeholder = { Text(stringResource(R.string.label_project_title)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Title, contentDescription = null) }
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            if (!viewModel.isLocal) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = viewModel.password,
-                onValueChange = { viewModel.password = it },
-                label = { Text(stringResource(R.string.setting_password)) },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
-            )
+                OutlinedTextField(
+                    value = viewModel.email,
+                    onValueChange = { viewModel.email = it },
+                    placeholder = { Text(stringResource(R.string.label_email)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "SECURITY",
+                    style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp, top = 24.dp)
+                )
 
-            OutlinedTextField(
-                value = viewModel.newPassword,
-                onValueChange = { viewModel.newPassword = it },
-                label = { Text(stringResource(R.string.setting_new_project_password)) },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.LockOpen, contentDescription = null) }
-            )
+                OutlinedTextField(
+                    value = viewModel.password,
+                    onValueChange = { viewModel.password = it },
+                    placeholder = { Text("Old " + stringResource(R.string.label_password)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = viewModel.email,
-                onValueChange = { viewModel.email = it },
-                label = { Text(stringResource(R.string.setting_new_project_email)) },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
-            )
+                OutlinedTextField(
+                    value = viewModel.newPassword,
+                    onValueChange = { viewModel.newPassword = it },
+                    placeholder = { Text("New " + stringResource(R.string.label_password)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.LockOpen, contentDescription = null) }
+                )
+            }
         }
     }
 }

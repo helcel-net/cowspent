@@ -2,228 +2,148 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <string name="app_name">Cowspent</string>
-    <string name="label_all_bills">All bills</string>
-    <string name="action_create_bill">New bill</string>
-    <string name="action_settings">App settings</string>
-    <string name="action_scan_qrcode">Scan QRCode from Cospend/Cowspent</string>
+
+    <!-- Actions -->
+    <string name="action_new_bill">New bill</string>
     <string name="action_add_project">Add project</string>
-    <string name="action_save_bill">Save bill</string>
-    <string name="action_edit_project">Edit</string>
-    <string name="action_share_project">Share</string>
-    <string name="setting_what">What?</string>
-    <string name="setting_payer">Who paid?</string>
-    <string name="setting_all">All</string>
-    <string name="setting_none">None</string>
-
-    <string name="save_or_discard_bill_dialog_title">Bill edition</string>
-    <string name="save_or_discard_bill_dialog_message">Bill values have been changed. What do you want to do?</string>
-    <string name="save_or_discard_bill_dialog_save">Save</string>
-    <string name="save_or_discard_bill_dialog_discard">Discard</string>
-    <string name="currency_manager">Currency manager</string>
-    <string name="setting_comment">Comment</string>
-    <string name="currency_dialog_title">Convert current amount from another currency into %s</string>
-    <string name="main_currency">Main currency</string>
-    <string name="setting_owers">For whom?</string>
-    <string name="setting_project_id">Project ID/name</string>
-
-    <string name="setting_project_repetition">Repeat this bill every</string>
-    <string name="setting_payment_mode">Mode</string>
-    <string name="setting_category">Category</string>
-
-    <string name="action_label_bills">Label missing categories</string>
-    <string name="label_bills_title">Label Bills</string>
-    <string name="label_bills_no_more">No more bills to label</string>
-    <string name="label_bills_skip">Skip</string>
-    <string name="label_bills_suggested">Suggested</string>
-    <string name="label_bills_no_suggestions">No suggestions for this bill</string>
-    <string name="new_project_what_todo">What do you want to do?</string>
-    <string name="new_project_where">Where?</string>
-    <string name="where_local_short">Local</string>
-    <string name="where_cospend_short">Cospend</string>
-    <string name="where_ihatemoney_short">ihatemoney</string>
-    <string name="setting_ihatemoney_project_url">ihatemoney address</string>
-    <string name="todo_join_label">Join</string>
-    <string name="todo_create_label">Create</string>
-    <string name="setting_cospend_project_url">Nextcloud address</string>
-    <string name="setting_password">Password (local)</string>
-    <string name="setting_new_project_password">Password</string>
-    <string name="setting_new_project_name">Project title</string>
-    <string name="setting_new_project_email">E-mail</string>
-    <string name="warning_auth_project_creation">Warning: creating a Cospend project using Nextcloud account works with Cospend v0.3.4 and higher.</string>
-    <string name="auth_project_creation_title">Authenticated project creation</string>
-    <string name="project_edition_no_change">Nothing was changed</string>
-    <string name="project_added_success">Project successfully added to Cowspent</string>
+    <string name="action_save">Save</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_share">Share</string>
     <string name="action_search">Search</string>
     <string name="action_delete">Delete</string>
-    <string name="simple_error">Error</string>
-    <string name="simple_close">Close</string>
-    <string name="simple_loading">Loading</string>
-    <string name="sync_error_dialog_title">Project sync failed</string>
-    <string name="sync_error_dialog_full_content">Synchronization with project %1$s failed. Error message:\n\n%2$s\n\nThe associated remote project might not exist anymore. If so, you could remove this project from Cowspent.</string>
-    <string name="error_maintenance_mode">The Nextcloud instance is probably in maintenance mode</string>
+    <string name="action_archive">Archive</string>
+    <string name="action_unarchive">Unarchive</string>
+    <string name="action_export">Export</string>
+    <string name="action_stats">Stats</string>
+    <string name="action_settle">Settle</string>
+    <string name="action_scan_qrcode">Scan QR Code</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_label_bills">Label missing categories</string>
+    <string name="action_logout">Logout</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_discard">Discard</string>
+    <string name="action_members">Members</string>
+    <string name="action_labels">Labels</string>
+    <string name="action_currencies">Currencies</string>
+
+    <!-- Titles -->
+    <string name="title_stats">Statistics</string>
+    <string name="title_edit_project">Edit project</string>
+    <string name="title_label_bills">Label Bills</string>
+    <string name="title_labels">Manage Labels</string>
+    <string name="title_about">About</string>
+    <string name="title_settle">Settle Project</string>
+    <string name="title_share">Share Project</string>
+    <string name="title_add_project">Add Project</string>
+    <string name="title_account">Nextcloud Account</string>
+    <string name="title_share_web">Web link</string>
+    <string name="title_share_qr">Cowspent link</string>
+    <string name="title_confirm">Are you sure?</string>
+
+    <!-- Labels and Fields -->
+    <string name="label_all_bills">All bills</string>
+    <string name="label_categories">Categories</string>
+    <string name="label_payment_modes">Payment Modes</string>
+    <string name="label_name">Name</string>
+    <string name="label_icon">Icon / Emoji</string>
+    <string name="label_color">Color</string>
+    <string name="label_weight">Weight</string>
+    <string name="label_activated">Activated</string>
+    <string name="label_password">Password</string>
+    <string name="label_email">E-mail</string>
+    <string name="label_url">Server address</string>
+    <string name="label_username">Username</string>
+    <string name="label_comment">Comment</string>
+    <string name="label_what">What?</string>
+    <string name="label_payer">Who paid?</string>
+    <string name="label_owers">For whom?</string>
+    <string name="label_repeat">Repeat every</string>
+    <string name="label_mode">Mode</string>
+    <string name="label_category">Category</string>
+    <string name="label_project_id">Project ID/name</string>
+    <string name="label_project_title">Project title</string>
+    <string name="label_use_sso">Use Nextcloud App Account</string>
+
+    <!-- Dialogs and Messages -->
+    <string name="dialog_unsaved_changes_title">Unsaved changes</string>
+    <string name="dialog_unsaved_changes_msg">Save changes before leaving?</string>
+    <string name="dialog_confirm_remove_project_msg">The remote project will not be deleted.</string>
+    <string name="dialog_sync_error_title">Sync error</string>
+    <string name="dialog_sync_error_msg">Sync failed for %1$s.\n\n%2$s</string>
+    <string name="dialog_balanced_msg">Expenses are already balanced.</string>
+    <string name="msg_project_added">Project %1$s added</string>
+    <string name="msg_bill_labeled_done">All bills labeled</string>
+    <string name="msg_no_suggestions">No suggestions</string>
+    <string name="msg_auth_warning">Requires Cospend v0.3.4+.</string>
+    <string name="msg_link_copied">Link copied to clipboard</string>
+    <string name="msg_share_qr">Scan QR code or share the link to join.</string>
+    <string name="msg_share_web">Link for web browser access.</string>
+    <string name="msg_share_qr_warn">Share this link with a Cowspent user.</string>
+    <string name="msg_settle_intro">Settlement for %1$s:</string>
+    <string name="msg_settle_sentence">%1$s owes %3$.2f to %2$s</string>
+    <string name="msg_stats_intro">Stats for %1$s:</string>
+    <string name="msg_stats_header">Member (Paid | Spent | Balance)</string>
+    <string name="msg_logged_in_as">Logged in as %1$s</string>
+
+    <!-- Errors -->
+    <string name="error_generic">Error</string>
+    <string name="error_loading">Loading</string>
+    <string name="error_no_projects">No projects found</string>
+    <string name="error_no_members">No members found</string>
+    <string name="error_no_bills">No bills found</string>
+    <string name="error_no_member">At least one member required</string>
+    <string name="error_maintenance_mode">Server is in maintenance mode</string>
     <string name="error_400">400 Bad request</string>
     <string name="error_401">401 Unauthorized</string>
     <string name="error_403">403 Forbidden</string>
     <string name="error_404">404 Not Found</string>
-    <string name="creating_remote_project">Creating remote project</string>
+    <string name="error_sync">Sync failed: %1$s</string>
+    <string name="error_invalid_login">Invalid login: %1$s</string>
+    <string name="error_auth">Wrong username or password</string>
+    <string name="error_json">Invalid server response</string>
+    <string name="error_req_failed">Request failed</string>
+    <string name="error_invalid_email">Invalid e-mail</string>
+    <string name="error_invalid_project_id">Invalid project ID</string>
+    <string name="error_invalid_project_name">Invalid project title</string>
+    <string name="error_invalid_bill_name">Invalid bill name</string>
+    <string name="error_invalid_bill_date">Invalid bill date</string>
+    <string name="error_invalid_bill_payer">Payer required</string>
+    <string name="error_invalid_bill_owers">Owers required</string>
+    <string name="error_no_network">No network connection</string>
+    <string name="error_server">Server error</string>
+    <string name="error_io">Server connection broken</string>
+    <string name="error_share_impossible">Cannot share this project</string>
+
+    <!-- Drawer / Common UI -->
+    <string name="drawer_no_account">Connect to Nextcloud account</string>
+    <string name="drawer_last_sync">Last sync: %1$02d:%2$02d</string>
     <string name="simple_cancel">Cancel</string>
     <string name="simple_ok" tools:ignore="ButtonCase,Typos">Ok</string>
     <string name="simple_yes">Yes</string>
     <string name="simple_no">No</string>
-    <string name="simple_edit_bill">Edit bill</string>
-    <string name="simple_new_bill">New bill</string>
-    <string name="simple_add_project">Add project in Cowspent</string>
-    <string name="simple_edit_project">Edit project</string>
-    <string name="simple_about">About</string>
-    <string name="share_impossible">Impossible to share this project</string>
-    <string name="simple_settle_share">Share</string>
-    <string name="simple_create_bills">Create bills</string>
-    <string name="settle_bill_what">Settlement bill</string>
-    <string name="simple_share_share">Share Cowspent link</string>
-    <string name="menu_delete_project_remote">Delete project on server</string>
-    <string name="menu_save_project">Save project</string>
-    <string name="fab_add_member">Add member</string>
-    <string name="fab_rm_project">Remove</string>
-    <string name="remove_project_confirmation">Project %1$s has been removed</string>
-    <string name="choose_project_management_action">Project</string>
-    <string name="fab_manage_members">Members</string>
-    <string name="fab_manage_labels">Labels</string>
-    <string name="action_archive">Archive</string>
-    <string name="action_unarchive">Unarchive</string>
-    <string name="fab_export_project">Export</string>
-    <string name="drawer_last_sync_text">Last sync: %1$02d:%2$02d</string>
-    <string name="scan_qrcode">Scan QR code</string>
-    <string name="new_project_from_nextcloud_tooltip">Choose from Nextcloud account</string>
-    <string name="import_tooltip">Import from CSV file</string>
-    <string name="import_error_owers">Malformed CSV, bad owers on line %1$d</string>
-    <string name="import_error_date">Malformed CSV, bad date on line %1$d</string>
-    <string name="import_error_header">Malformed CSV, bad column names on line %1$d</string>
-    <string name="member_already_exists">This member already exists in this project</string>
-    <string name="confirm_remove_project_dialog_title">Are you sure?</string>
-    <string name="confirm_delete_project_dialog_title">Are you sure you want to delete remote project?</string>
-    <string name="confirm_remove_project_dialog_message">The remote project will NOT be deleted</string>
-    <string name="member_edit_toggle">Activated</string>
-    <string name="member_edit_name">Name</string>
-    <string name="member_edit_color">Color</string>
-    <string name="member_edit_weight">Weight</string>
-    <string name="member_edit_delete">Delete member</string>
-    <string name="remote_project_operation_no_network">Remote project operations require network connectivity</string>
-    <string name="insufficient_access_level">You are not allowed to perform this action</string>
+    <string name="simple_close">Close</string>
 
     <!-- Settings -->
-    <string name="settings_appearance_category">Appearance</string>
-    <string name="settings_network_category">Network</string>
-    <string name="settings_other_category">Other</string>
-    <string name="settings_about">About Cowspent</string>
-    <string name="settings_server_settings">Nextcloud account</string>
-    <string name="account_logged_in_as">Logged in as %1$s</string>
-    <string name="account_logout">Logout</string>
-    <string name="settings_url">Server address</string>
-    <string name="settings_url_warn_http">WARNING: "http" is unsafe. Please use "https".</string>
-    <string name="settings_username">Username</string>
-    <string name="settings_password">Password</string>
-    <string name="settings_submit">Connect</string>
-    <string name="settings_night_mode_title">Theme</string>
-    <string name="settings_offline_mode_title">Offline mode</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_network">Network</string>
+    <string name="settings_other">Other</string>
+    <string name="settings_night_mode">Theme</string>
+    <string name="settings_offline_mode">Offline mode</string>
     <string name="settings_offline_mode_summary">Only sync manually.</string>
-    <string name="settings_color_title">Custom color</string>
-    <string name="settings_color_summary">UI Accent color</string>
-    <string name="settings_colorpicker_title">Choose color</string>
-    <string name="settings_color_mode_title">Color Selection</string>
+    <string name="settings_color_custom">Custom color</string>
+    <string name="settings_color_mode">Color Selection</string>
+    <string name="settings_show_archived">Show archived projects</string>
+    <string name="settings_url_warn_http">WARNING: "http" is unsafe. Use "https".</string>
+    <string name="settings_colorpicker_title">Choose Color</string>
+
     <string name="pref_value_color_system">System</string>
     <string name="pref_value_color_server">Nextcloud</string>
     <string name="pref_value_color_manual">Manual</string>
+    <string name="pref_value_theme_light">Light</string>
+    <string name="pref_value_theme_dark">Dark</string>
+    <string name="pref_value_theme_system">Follow system</string>
 
-
-    <string name="currency_saved_success">Main currency saved</string>
-    <string name="file_saved_success">Project saved in %s</string>
-    <string name="add_member_dialog_title">New member name</string>
-    <string name="edit_member_dialog_title">Edit member</string>
-    <string name="center_none">Optimal</string>
-    <string name="settle_who">Who pays?</string>
-    <string name="settle_to_whom">To whom?</string>
-    <string name="settle_how_much">How much?</string>
-    <string name="total">Total Spent: %s</string>
-    <string name="stats_date_min">From</string>
-    <string name="stats_date_max">To</string>
-    <string name="stats_who">Who</string>
-    <string name="stats_paid">Paid</string>
-    <string name="stats_spent">Spent</string>
-    <string name="stats_balance">Balance</string>
-    <string name="fab_statistics">Stats</string>
-    <string name="fab_settle">Settle</string>
-    <string name="project_add_success_message">Project %1$s was successfully added</string>
-    <string name="project_create_success_message">Project %1$s was successfully created</string>
-    <string name="project_add_success_title">Project added</string>
-    <string name="project_create_success_title">Project created</string>
-    <string name="statistic_title">Statistics</string>
-    <string name="settle_dialog_title">Settle the project</string>
-    <string name="settle_dialog_balanced">The expenses in this project are already balanced. There is nothing to settle!</string>
-    <string name="share_dialog_title">Share the project</string>
-    <string name="share_project_dialog_message">Scan this QRCode with Cowspent or a scanner app on an Android device where Cowspent is installed. You can also simply send/share the Cowspent link above.</string>
-    <string name="share_project_public_url_dialog_message">Share this web link to let others access the project with a web browser.</string>
-    <string name="share_project_public_url_title">Web link</string>
-    <string name="share_project_public_qrcode_title">Cowspent link</string>
-    <string name="qrcode_link_open_attempt_warning">Share this link to a Cowspent user.</string>
-    <string name="share_share_intent_title">Cowspent link of %1$s</string>
-    <string name="share_share_chooser_title">Share Cowspent link of %1$s</string>
-    <string name="share_settle_intro">Here is how to settle project %1$s :</string>
-    <string name="share_settle_sentence">%1$s owes %3$.2f to %2$s</string>
-    <string name="share_settle_title">Settle the project %1$s</string>
-    <string name="share_stats_intro">Statistics of project %1$s :</string>
-    <string name="share_stats_header">MEMBER_NAME (PAID | SPENT | BALANCE)</string>
-    <string name="drawer_no_account">Click here to connect to a Nextcloud account</string>
-    <string name="add_bill_impossible_no_member">At least one activated member is required to add a bill</string>
-    <string name="edit_project_local_impossible">Impossible for local projects</string>
-    <string name="choose_account_project_dialog_title">Choose a project from your Nextcloud account</string>
-    <string name="choose_account_project_dialog_impossible">There is no Cospend project in your Nextcloud account</string>
-    <string name="activity_dialog_title">Activity in project %1$s</string>
-
-    <!-- Bills list corner cases -->
-    <string name="no_projects_title">No Projects</string>
-    <string name="no_projects_text">You don\'t have any projects yet. If you have Cospend installed on a Nextcloud server, you can configure your Nextcloud account. Alternatively, you can manually add projects.</string>
-    <string name="configure_account_choice">Configure Nextcloud account</string>
-    <string name="add_project_choice">Manually add a project (Cospend or local)</string>
-    <string name="no_members_title">No Members</string>
-    <string name="no_members_text">This project doesn\'t have any members. In order to create bills, you need to add at least one member (better two or more).</string>
-    <string name="no_bills_title">No Bills</string>
-    <string name="no_bills_text">This project doesn\'t have any bills. Click the button below to add your first bill.</string>
-
-    <!-- Certificates -->
-
-    <!-- Network -->
-
-    <!-- Error -->
-    <string name="error_project_connect_check">Impossible to reach the remote project:\n\n%1$s</string>
-    <string name="error_sync">Project sync failed: %1$s</string>
-    <string name="error_invalid_login">Invalid login: %1$s</string>
-    <string name="error_json">is the Cospend app activated on the server?</string>
-    <string name="error_io">server connection is broken</string>
-    <string name="error_no_network">no network connection</string>
-    <string name="error_server">server error</string>
-    <string name="error_username_password_invalid">wrong username or password</string>
-    <string name="error_invalid_email">Invalid e-mail address</string>
-    <string name="error_invalid_project_remote_id">Invalid project ID/name</string>
-    <string name="error_invalid_project_name">Invalid project title</string>
-    <string name="error_invalid_bill_what">Invalid bill name</string>
-    <string name="error_invalid_bill_date">Invalid bill date</string>
-    <string name="error_invalid_bill_payerid">Bill should have a payer</string>
-    <string name="error_invalid_bill_owers">Bill should have at least one ower</string>
-    <string name="error_create_remote_project_helper">Error at remote project creation : %s</string>
-    <string name="error_edit_remote_project_helper">Error at remote project edition : %s</string>
-    <string name="error_token_mismatch">Please reauthenticate your SSO account in settings</string>
-    <string name="error_req_failed">Request failed</string>
-
-    <!-- About -->
-    <string name="about_version">Version %1$s</string>
-    <string name="about_maintainer_title">Maintainer</string>
-    <string name="about_maintainer" translatable="false">Helcel.net</string>
-    <string name="about_license_title">License</string>
-    <string name="about_license" translatable="false">GNU GPL3x / CC BY-SA 4.0</string>
-    <string name="about_source_title">Source code</string>
-    <string name="about_source" translatable="false">https://github.com/helcel-net/cowspent</string>
-
-    <!-- Key / Values for preferences -->
+    <!-- Constants (Do not translate) -->
     <string name="pref_key_night_mode" translatable="false">nightMode</string>
     <string name="pref_key_color" translatable="false">appColor</string>
     <string name="pref_key_server_color" translatable="false">serverColor</string>
@@ -233,36 +153,28 @@
     <string name="pref_key_color_mode" translatable="false">colorMode</string>
     <string name="pref_key_offline_mode" translatable="false">offlineMode</string>
     <string name="pref_key_show_archived" translatable="false">showArchived</string>
-    <string name="pref_value_theme_light">Light</string>
-    <string name="pref_value_theme_dark">Dark</string>
-    <string name="pref_value_theme_system">Follow system</string>
     <string name="pref_value_night_mode_no" translatable="false">1</string>
     <string name="pref_value_night_mode_yes" translatable="false">2</string>
     <string name="pref_value_night_mode_system" translatable="false">-1</string>
-    <string name="use_sso_toggle">Use Nextcloud app account</string>
 
-    <!-- QR Code Scanner -->
-    <string name="error_scanning_bill_qr_code">QR code could not be scanned.</string>
-    <string name="fab_manage_currencies">Currencies</string>
-    <string name="setting_show_archived">Show archived projects</string>
-
-
-
+    <!-- Enums and Lists -->
     <string name="repeat_no">No repeat</string>
     <string name="repeat_day">Daily</string>
     <string name="repeat_week">Weekly</string>
     <string name="repeat_fortnight">Fortnightly</string>
     <string name="repeat_month">Monthly</string>
     <string name="repeat_year">Yearly</string>
-    <string name="payment_mode_none">No payment mode</string>
-    <string name="payment_mode_all">All payment modes</string>
+
+    <string name="payment_mode_none">None</string>
+    <string name="payment_mode_all">All</string>
     <string name="payment_mode_credit_card">Credit card</string>
     <string name="payment_mode_cash">Cash</string>
     <string name="payment_mode_check">Check</string>
-    <string name="payment_mode_online">Online service</string>
+    <string name="payment_mode_online">Online</string>
     <string name="payment_mode_transfer">Transfer</string>
-    <string name="category_none">No category</string>
-    <string name="category_all">All categories</string>
+
+    <string name="category_none">None</string>
+    <string name="category_all">All</string>
     <string name="category_all_except_reimbursement">All except reimbursement</string>
     <string name="category_groceries">Grocery</string>
     <string name="category_leisure">Bar/Party</string>
@@ -276,4 +188,86 @@
     <string name="category_accomodation">Accommodation</string>
     <string name="category_transport">Transport</string>
     <string name="category_sport">Sport</string>
+
+    <!-- Project specific -->
+    <string name="new_project_action">What</string>
+    <string name="new_project_where">Where</string>
+    <string name="where_local">Local only</string>
+    <string name="where_cospend">Cospend</string>
+    <string name="where_ihatemoney">IHateMoney</string>
+    <string name="todo_join">Join existing project</string>
+    <string name="todo_create">Create new project</string>
+    <string name="import_tooltip">Import from file</string>
+    <string name="choose_account_project_dialog_title">Choose project</string>
+    <string name="choose_account_project_dialog_impossible">No projects found on this account.</string>
+    <string name="choose_project_management_action">Project</string>
+    <string name="project_added_success">Project added successfully.</string>
+    <string name="no_projects_text">You have no projects yet.</string>
+    <string name="configure_account_choice">Configure Nextcloud account</string>
+    <string name="add_project_choice">Add project manually</string>
+    <string name="no_members_text">No members in this project.</string>
+    <string name="no_bills_text">No bills found.</string>
+    <string name="member_already_exists">Member already exists.</string>
+    <string name="activity_dialog_title">Project: %1$s</string>
+    <string name="remove_project_confirmation">Project %1$s removed.</string>
+    <string name="file_saved_success">File saved: %1$s</string>
+    <string name="import_error_header">Import failed at row %d</string>
+    <string name="import_error_date">Invalid date format at row %d</string>
+    <string name="import_error_owers">Invalid owers at row %d</string>
+    <string name="add_member_dialog_title">Add Member</string>
+    <string name="edit_member_dialog_title">Edit Member</string>
+    <string name="member_edit_delete">Delete</string>
+    <string name="project_edition_no_change">No changes to save.</string>
+
+    <!-- Settlement -->
+    <string name="center_none">None (Optimal)</string>
+    <string name="settle_who">Who pays</string>
+    <string name="settle_to_whom">To whom</string>
+    <string name="settle_how_much">Amount</string>
+    <string name="simple_settle_share">Share</string>
+    <string name="simple_create_bills">Create bills</string>
+    <string name="settle_bill_what">Settlement</string>
+
+    <!-- Currencies -->
+    <string name="currency_dialog_title">Choose Currency</string>
+    <string name="setting_none">None</string>
+    <string name="setting_all">All</string>
+    <string name="currency_saved_success">Currency settings saved.</string>
+    <string name="main_currency">Main Currency</string>
+
+    <!-- Statistics -->
+    <string name="label_bills_suggested">Suggested Categories</string>
+    <string name="label_bills_skip">Skip</string>
+    <string name="stats_date_min">From</string>
+    <string name="stats_date_max">To</string>
+    <string name="stats_who">Member</string>
+    <string name="stats_paid">Paid</string>
+    <string name="stats_spent">Spent</string>
+    <string name="stats_balance">Balance</string>
+    <string name="total">Total: %1$s</string>
+
+    <!-- Errors Extra -->
+    <string name="error_project_connect_check">Connection failed: %1$s</string>
+    <string name="error_create_remote_project_helper">Creation failed: %1$s</string>
+    <string name="error_edit_remote_project_helper">Error updating remote project: %1$s</string>
+    <string name="remote_project_operation_no_network">Network unavailable for remote operation.</string>
+    <string name="error_scanning_bill_qr_code">Failed to parse QR code.</string>
+    <string name="error_token_mismatch">Authentication token mismatch. Please log in again.</string>
+    <string name="insufficient_access_level">You don\'t have permission to perform this action.</string>
+    <string name="delete_label_confirmation_title">Delete Label</string>
+    <string name="delete_label_confirmation_message">Are you sure you want to delete this label?</string>
+
+    <!-- About -->
+    <string name="about_version">Version %1$s</string>
+    <string name="about_maintainer_title">Maintainer</string>
+    <string name="about_maintainer" translatable="false">Helcel.net</string>
+    <string name="about_license_title">License</string>
+    <string name="about_license" translatable="false">GNU GPL3x / CC BY-SA 4.0</string>
+    <string name="about_source_title">Source code</string>
+    <string name="about_source" translatable="false">https://github.com/helcel-net/cowspent</string>
+
+    <!-- New constants for backward compatibility or shared use -->
+    <string name="share_intent_title">Project %1$s</string>
+    <string name="share_chooser_title">Share %1$s</string>
+
 </resources>

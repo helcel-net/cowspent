@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.helcel.cowspent.R
@@ -44,15 +45,25 @@ fun EmptyProjectsState(onConfigureNextcloud: () -> Unit, onAddManually: () -> Un
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(stringResource(R.string.no_projects_title), style = MaterialTheme.typography.h6)
+        Text(
+            text = stringResource(R.string.error_no_projects).uppercase(), 
+            style = MaterialTheme.typography.subtitle1, 
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colors.onSurface
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(stringResource(R.string.no_projects_text))
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onConfigureNextcloud) {
+        Text(
+            text = stringResource(R.string.no_projects_text),
+            style = MaterialTheme.typography.body2,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onConfigureNextcloud, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.configure_account_choice))
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onAddManually) {
+        Button(onClick = onAddManually, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.add_project_choice))
         }
     }
@@ -65,9 +76,19 @@ fun EmptyMembersState() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(stringResource(R.string.no_members_title), style = MaterialTheme.typography.h6)
+        Text(
+            text = stringResource(R.string.error_no_members).uppercase(), 
+            style = MaterialTheme.typography.subtitle1, 
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colors.onSurface
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(stringResource(R.string.no_members_text))
+        Text(
+            text = stringResource(R.string.no_members_text),
+            style = MaterialTheme.typography.body2,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+        )
     }
 }
 
@@ -78,9 +99,19 @@ fun EmptyBillsState() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(stringResource(R.string.no_bills_title), style = MaterialTheme.typography.h6)
+        Text(
+            text = stringResource(R.string.error_no_bills).uppercase(), 
+            style = MaterialTheme.typography.subtitle1, 
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colors.onSurface
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(stringResource(R.string.no_bills_text))
+        Text(
+            text = stringResource(R.string.no_bills_text),
+            style = MaterialTheme.typography.body2,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+        )
     }
 }
 
@@ -122,15 +153,21 @@ fun BillItemRow(bill: DBBill, payer: DBMember?, onClick: () -> Unit) {
                 Icons.Default.Receipt,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colors.primary
+                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
             )
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(bill.formattedWhat.ifEmpty { bill.what }, fontWeight = FontWeight.Bold)
+            Text(
+                text = bill.formattedWhat.ifEmpty { bill.what }, 
+                style = MaterialTheme.typography.subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colors.onSurface
+            )
             Text(
                 text = bill.formattedSubtitle.ifEmpty { bill.comment ?: "" },
                 style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -151,13 +188,16 @@ fun SectionHeader(title: String) {
         color = MaterialTheme.colors.background,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Divider(thickness = 2.dp)
-        Text(
-            text = title,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.caption.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colors.primary
-        )
+        Column {
+            Divider(thickness = 1.dp, color = MaterialTheme.colors.onSurface.copy(alpha = 0.08f))
+            Text(
+                text = title.uppercase(),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                style = MaterialTheme.typography.subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colors.onSurface
+            )
+        }
     }
 }
 
@@ -168,7 +208,18 @@ fun EmptyState() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(stringResource(R.string.no_bills_title), style = MaterialTheme.typography.h6)
-        Text(stringResource(R.string.no_bills_text), modifier = Modifier.padding(16.dp))
+        Text(
+            text = stringResource(R.string.error_no_bills).uppercase(), 
+            style = MaterialTheme.typography.subtitle1, 
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colors.onSurface
+        )
+        Text(
+            text = stringResource(R.string.no_bills_text), 
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.body2,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+        )
     }
 }

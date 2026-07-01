@@ -96,7 +96,7 @@ fun ManageCurrenciesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.currency_manager)) },
+                title = { Text(stringResource(R.string.action_currencies)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -125,11 +125,11 @@ fun ManageCurrenciesScreen(
                 // Section 1: Main Currency
                 Text(
                     text = stringResource(R.string.main_currency).uppercase(),
-                    style = MaterialTheme.typography.overline,
-                    color = MaterialTheme.colors.primary,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
                 Card(
                     shape = RoundedCornerShape(12.dp),
                     elevation = 2.dp,
@@ -153,11 +153,11 @@ fun ManageCurrenciesScreen(
                 val isEditing = viewModel.editingCurrencyId != null
                 Text(
                     text = (if (isEditing) "Edit exchange rate" else "Add exchange rate").uppercase(),
-                    style = MaterialTheme.typography.overline,
-                    color = if (isEditing) MaterialTheme.colors.secondary else MaterialTheme.colors.primary,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
 
                 // Integrated Add/Edit Ribbon
                 Surface(
@@ -236,9 +236,10 @@ fun ManageCurrenciesScreen(
                 
                 Text(
                     text = "SAVED RATES",
-                    style = MaterialTheme.typography.overline,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.4f),
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
 

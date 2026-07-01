@@ -134,7 +134,7 @@ fun QrCodeScannerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.scan_qrcode)) },
+                title = { Text(stringResource(R.string.action_scan_qrcode)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)

@@ -42,7 +42,7 @@ fun LabelBillsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.label_bills_title)) },
+                title = { Text(stringResource(R.string.title_label_bills)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -64,10 +64,11 @@ fun LabelBillsScreen(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = stringResource(R.string.label_bills_suggested),
+                    text = stringResource(R.string.label_bills_suggested).uppercase(),
                     style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 
@@ -93,7 +94,7 @@ fun LabelBillsScreen(
                         }
                     } else {
                         Text(
-                            text = stringResource(R.string.label_bills_no_suggestions),
+                            text = stringResource(R.string.msg_no_suggestions),
                             style = MaterialTheme.typography.caption,
                             color = MaterialTheme.colors.onSurface.copy(alpha = 0.4f),
                             modifier = Modifier.fillMaxWidth(),
@@ -105,10 +106,11 @@ fun LabelBillsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = stringResource(R.string.setting_category),
+                    text = stringResource(R.string.label_category).uppercase(),
                     style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -141,7 +143,7 @@ fun LabelBillsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.label_bills_no_more))
+                    Text(stringResource(R.string.msg_bill_labeled_done))
                 }
             }
         }

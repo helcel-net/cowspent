@@ -255,22 +255,22 @@ class EditBillActivity : AppCompatActivity() {
             return
         }
         viewModel.showDialog(
-            title = getString(R.string.save_or_discard_bill_dialog_title),
-            message = getString(R.string.save_or_discard_bill_dialog_message),
-            positiveText = getString(R.string.save_or_discard_bill_dialog_save),
+            title = getString(R.string.dialog_unsaved_changes_title),
+            message = getString(R.string.dialog_unsaved_changes_msg),
+            positiveText = getString(R.string.action_save),
             onConfirm = { saveBillAsked() },
-            negativeText = getString(R.string.save_or_discard_bill_dialog_discard),
+            negativeText = getString(R.string.action_discard),
             onCancel = { finish() }
         )
     }
 
     private fun saveBillAsked() {
         val validationError = viewModel.getValidationError(
-            getString(R.string.error_invalid_bill_what),
+            getString(R.string.error_invalid_bill_name),
             getString(R.string.error_invalid_bill_date),
-            getString(R.string.error_invalid_bill_payerid),
+            getString(R.string.error_invalid_bill_payer),
             getString(R.string.error_invalid_bill_owers),
-            getString(R.string.simple_error)
+            getString(R.string.error_generic)
         )
 
         if (validationError != null) {
@@ -288,7 +288,7 @@ class EditBillActivity : AppCompatActivity() {
 
     private fun deleteBillAsked() {
         viewModel.showDialog(
-            title = getString(R.string.confirm_remove_project_dialog_title),
+            title = getString(R.string.title_confirm),
             message = bill.what,
             positiveText = getString(R.string.action_delete),
             onConfirm = {

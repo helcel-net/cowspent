@@ -2,7 +2,6 @@ package net.helcel.cowspent.android.main
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -57,9 +57,6 @@ import net.helcel.cowspent.android.drawer.Drawer
 import net.helcel.cowspent.android.helper.StatefulAlertDialog
 import net.helcel.cowspent.android.project.ProjectOptionsDialogContent
 import net.helcel.cowspent.android.project.ProjectShareDialogContent
-import net.helcel.cowspent.android.project.member.MemberAddDialogContent
-import net.helcel.cowspent.android.project.member.MemberEditDialogContent
-import net.helcel.cowspent.android.project.member.MemberManagementDialogContent
 import net.helcel.cowspent.android.project.settle.ProjectSettlementDialogContent
 import net.helcel.cowspent.android.statistics.ProjectStatisticsActivity
 import net.helcel.cowspent.model.DBBill
@@ -104,7 +101,6 @@ fun BillsListScreen(
 
     val pullRefreshState = rememberPullRefreshState(viewModel.isRefreshing, onRefresh)
     val context = LocalContext.current
-    val memberAlreadyExistsError = stringResource(R.string.member_already_exists)
     val sharedPreferences = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     val showArchived = sharedPreferences.getBoolean(stringResource(R.string.pref_key_show_archived), false)
 
@@ -214,114 +210,17 @@ fun BillsListScreen(
 
     val manageMembersProjectId = viewModel.showMemberManagementDialogByProjectId
     if (manageMembersProjectId != null) {
-        val members = viewModel.members // Use members from ViewModel as they are already loaded
-        Dialog(
-            onDismissRequest = { viewModel.showMemberManagementDialogByProjectId = null },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            MemberManagementDialogContent(
-                members = members,
-                onAddMember = {
-                    viewModel.showAddMemberDialogByProjectId = manageMembersProjectId
-                    viewModel.showMemberManagementDialogByProjectId = null
-                },
-                onEditMember = { member ->
-                    viewModel.showEditMemberDialogByProjectId = member.id
-                    viewModel.showMemberManagementDialogByProjectId = null
-                },
-                onDismiss = { viewModel.showMemberManagementDialogByProjectId = null }
-            )
-        }
+        viewModel.showMemberManagementDialogByProjectId = null
     }
 
     val addMemberProjectId = viewModel.showAddMemberDialogByProjectId
     if (addMemberProjectId != null) {
-        Dialog(
-            onDismissRequest = { viewModel.showAddMemberDialogByProjectId = null },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            MemberAddDialogContent(
-                onAdd = { memberName ->
-                    val memberNames =
-                        db.getMembersOfProject(addMemberProjectId, null).map { it.name }
-                    if (memberNames.contains(memberName)) {
-                        Toast.makeText(
-                            context,
-                            memberAlreadyExistsError,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        val color = net.helcel.cowspent.android.helper.TextDrawable.getColorFromName(memberName)
-                        db.addMemberAndSync(
-                            DBMember(
-                                0,
-                                0,
-                                addMemberProjectId,
-                                memberName,
-                                true,
-                                1.0,
-                                DBBill.STATE_ADDED,
-                                android.graphics.Color.red(color),
-                                android.graphics.Color.green(color),
-                                android.graphics.Color.blue(color),
-                                null,
-                                null
-                            )
-                        )
-                        refreshCallback.refreshLists(false)
-                        viewModel.showAddMemberDialogByProjectId = null
-                        viewModel.showMemberManagementDialogByProjectId = addMemberProjectId
-                    }
-                },
-                onDismiss = { 
-                    viewModel.showAddMemberDialogByProjectId = null
-                    viewModel.showMemberManagementDialogByProjectId = addMemberProjectId
-                }
-            )
-        }
+        viewModel.showAddMemberDialogByProjectId = null
     }
 
     val editMemberId = viewModel.showEditMemberDialogByProjectId
     if (editMemberId != null) {
-        val memberToEdit = remember(editMemberId, viewModel.members) {
-            viewModel.members.find { it.id == editMemberId }
-        }
-        if (memberToEdit != null) {
-            Dialog(
-                onDismissRequest = { viewModel.showEditMemberDialogByProjectId = null },
-                properties = DialogProperties(usePlatformDefaultWidth = false)
-            ) {
-                MemberEditDialogContent(
-                    member = memberToEdit,
-                    onSave = { name, weight, isActivated, r, g, b ->
-                        db.updateMemberAndSync(
-                            memberToEdit,
-                            name,
-                            weight,
-                            isActivated,
-                            r,
-                            g,
-                            b,
-                            "",
-                            ""
-                        )
-                        refreshCallback.refreshLists(false)
-                        viewModel.showEditMemberDialogByProjectId = null
-                        viewModel.showMemberManagementDialogByProjectId = memberToEdit.projectId
-                    },
-                    onDelete = {
-                        db.deleteMember(editMemberId)
-                        refreshCallback.refreshLists(false)
-                        viewModel.showEditMemberDialogByProjectId = null
-                        viewModel.showMemberManagementDialogByProjectId = memberToEdit.projectId
-                    },
-                    onDismiss = { 
-                        viewModel.showEditMemberDialogByProjectId = null
-                        viewModel.showMemberManagementDialogByProjectId = memberToEdit.projectId
-                    }
-                )
-            }
-        }
+        viewModel.showEditMemberDialogByProjectId = null
     }
 
     val shareProjectId = viewModel.showShareDialogByProjectId
@@ -330,8 +229,8 @@ fun BillsListScreen(
             viewModel.projects.find { it.id == shareProjectId }
         }
         if (proj != null) {
-            val shareIntentTitle = stringResource(R.string.share_share_intent_title, proj.name)
-            val shareChooserTitle = stringResource(R.string.share_share_chooser_title, proj.name)
+            val shareIntentTitle = stringResource(R.string.share_intent_title, proj.name)
+            val shareChooserTitle = stringResource(R.string.share_chooser_title, proj.name)
             Dialog(
                 onDismissRequest = { viewModel.showShareDialogByProjectId = null },
                 properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -364,7 +263,13 @@ fun BillsListScreen(
                         TextField(
                             value = viewModel.searchQuery,
                             onValueChange = { viewModel.searchQuery = it },
-                            placeholder = { Text(stringResource(R.string.action_search), color = MaterialTheme.colors.onPrimary.copy(alpha = 0.7f)) },
+                            placeholder = { 
+                                Text(
+                                    text = stringResource(R.string.action_search), 
+                                    color = MaterialTheme.colors.onPrimary.copy(alpha = 0.7f),
+                                    style = MaterialTheme.typography.subtitle1
+                                ) 
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .focusRequester(focusRequester),
@@ -387,8 +292,20 @@ fun BillsListScreen(
                         )
                     } else {
                         Column {
-                            if (viewModel.title.isNotEmpty()) Text(viewModel.title)
-                            else Text(stringResource(R.string.app_name))
+                            if (viewModel.title.isNotEmpty()) {
+                                Text(
+                                    text = viewModel.title,
+                                    style = MaterialTheme.typography.subtitle1,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            else {
+                                Text(
+                                    text = stringResource(R.string.app_name),
+                                    style = MaterialTheme.typography.subtitle1,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 },
@@ -431,7 +348,7 @@ fun BillsListScreen(
             val selectedProject = viewModel.projects.find { it.id == viewModel.selectedProjectId }
             if (selectedProject != null && !selectedProject.isArchived) {
                 FloatingActionButton(onClick = onAddBillClick) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_create_bill))
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_new_bill))
                 }
             }
         },

@@ -52,7 +52,8 @@ jobs:
       - name: Build APK
         run: |
           VERSION_CODE=$(git rev-list --count HEAD)
-          ./gradlew assembleSignedRelease -PVERSION_CODE=$VERSION_CODE
+          VERSION_NAME=$(git describe --tags --always)
+          ./gradlew assembleSignedRelease -PVERSION_CODE=$VERSION_CODE -PVERSION_NAME=$VERSION_NAME
 
       - name: Release
         uses: softprops/action-gh-release@v3

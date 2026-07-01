@@ -92,7 +92,7 @@ fun ProjectSankeyDiagram(
     customCategories: List<DBCategory>,
     onShareReady: (String) -> Unit
 ) {
-    val shareStatsIntro = stringResource(R.string.share_stats_intro, projectName)
+    val shareStatsIntro = stringResource(R.string.msg_stats_intro, projectName)
     var selectedMemberId by remember { mutableLongStateOf(-1L) }
     var expanded by remember { mutableStateOf(false) }
 
@@ -105,7 +105,7 @@ fun ProjectSankeyDiagram(
 
     if (activeBills.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No data to display", style = MaterialTheme.typography.h6)
+            Text("No data to display", style = MaterialTheme.typography.subtitle1, fontWeight = FontWeight.Bold, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f))
         }
         return
     }

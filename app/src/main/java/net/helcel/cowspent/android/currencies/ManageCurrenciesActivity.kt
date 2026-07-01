@@ -34,7 +34,7 @@ class ManageCurrenciesActivity : AppCompatActivity() {
                 showToast(this@ManageCurrenciesActivity,getString(R.string.currency_saved_success), Toast.LENGTH_LONG)
             } else {
                 viewModel.showDialog(title=getString(R.string.error_edit_remote_project_helper, message),
-                    message=getString(R.string.currency_manager),
+                    message=getString(R.string.action_currencies),
                     positiveText = getString(android.R.string.ok))
             }
         }

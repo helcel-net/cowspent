@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,7 +43,7 @@ fun NewProjectScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.action_add_project)) },
+                title = { Text(stringResource(R.string.title_add_project)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -55,7 +56,7 @@ fun NewProjectScreen(
         floatingActionButton = {
             if (viewModel.isFormValid()) {
                 FloatingActionButton(onClick = onOkPressed) {
-                    Icon(Icons.Default.Done, contentDescription = stringResource(R.string.action_save_bill))
+                    Icon(Icons.Default.Done, contentDescription = stringResource(R.string.action_save))
                 }
             }
         }
@@ -70,11 +71,11 @@ fun NewProjectScreen(
         ) {
             // What to do
             SectionRow(
-                label = stringResource(R.string.new_project_what_todo)
+                label = stringResource(R.string.new_project_action)
             ) {
                 Row {
                     ToggleButton(
-                        text = stringResource(R.string.todo_join_label),
+                        text = stringResource(R.string.todo_join),
                         selected = !viewModel.whatTodoIsCreate,
                         onClick = {
                             viewModel.whatTodoIsCreate = false
@@ -84,7 +85,7 @@ fun NewProjectScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     ToggleButton(
-                        text = stringResource(R.string.todo_create_label),
+                        text = stringResource(R.string.todo_create),
                         selected = viewModel.whatTodoIsCreate,
                         onClick = { viewModel.whatTodoIsCreate = true }
                     )
@@ -99,20 +100,20 @@ fun NewProjectScreen(
                 Row {
                     if (viewModel.whatTodoIsCreate) {
                         ToggleButton(
-                            text = stringResource(R.string.where_local_short),
+                            text = stringResource(R.string.where_local),
                             selected = viewModel.projectType == ProjectType.LOCAL,
                             onClick = { viewModel.projectType = ProjectType.LOCAL }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
                     ToggleButton(
-                        text = stringResource(R.string.where_cospend_short),
+                        text = stringResource(R.string.where_cospend),
                         selected = viewModel.projectType == ProjectType.COSPEND,
                         onClick = { viewModel.projectType = ProjectType.COSPEND }
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     ToggleButton(
-                        text = stringResource(R.string.where_ihatemoney_short),
+                        text = stringResource(R.string.where_ihatemoney),
                         selected = viewModel.projectType == ProjectType.IHATEMONEY,
                         onClick = { viewModel.projectType = ProjectType.IHATEMONEY }
                     )
@@ -131,7 +132,7 @@ fun NewProjectScreen(
             } else {
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(onClick = onScanQrCode) {
-                    Text(text = stringResource(R.string.scan_qrcode))
+                    Text(text = stringResource(R.string.action_scan_qrcode))
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(
                         Icons.Default.QrCode2,
@@ -148,13 +149,8 @@ fun NewProjectScreen(
                 OutlinedTextField(
                     value = viewModel.projectUrl,
                     onValueChange = { viewModel.projectUrl = it },
-                    label = {
-                        Text(
-                            stringResource(
-                                if (viewModel.projectType == ProjectType.COSPEND) R.string.setting_cospend_project_url
-                                else R.string.setting_ihatemoney_project_url
-                            )
-                        )
+                    placeholder = {
+                        Text(stringResource(R.string.label_url))
                     },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) }
@@ -166,7 +162,7 @@ fun NewProjectScreen(
                 OutlinedTextField(
                     value = viewModel.projectId,
                     onValueChange = { viewModel.projectId = it },
-                    label = { Text(stringResource(R.string.setting_project_id)) },
+                    placeholder = { Text(stringResource(R.string.label_project_id)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.LibraryBooks, contentDescription = null) }
                 )
@@ -177,7 +173,7 @@ fun NewProjectScreen(
                 OutlinedTextField(
                     value = viewModel.projectPassword,
                     onValueChange = { viewModel.projectPassword = it },
-                    label = { Text(stringResource(R.string.setting_new_project_password)) },
+                    placeholder = { Text(stringResource(R.string.label_password)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
                 )
@@ -188,7 +184,7 @@ fun NewProjectScreen(
                 OutlinedTextField(
                     value = viewModel.projectName,
                     onValueChange = { viewModel.projectName = it },
-                    label = { Text(stringResource(R.string.setting_new_project_name)) },
+                    placeholder = { Text(stringResource(R.string.label_project_title)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = { Icon(Icons.Default.Title, contentDescription = null) }
                 )
@@ -198,7 +194,7 @@ fun NewProjectScreen(
                     OutlinedTextField(
                         value = viewModel.projectEmail,
                         onValueChange = { viewModel.projectEmail = it },
-                        label = { Text(stringResource(R.string.setting_new_project_email)) },
+                        placeholder = { Text(stringResource(R.string.label_email)) },
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
                     )
@@ -210,8 +206,8 @@ fun NewProjectScreen(
     if (viewModel.showAuthWarningDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.showAuthWarningDialog = false },
-            title = { Text(stringResource(R.string.auth_project_creation_title)) },
-            text = { Text(stringResource(R.string.warning_auth_project_creation)) },
+            title = { Text(stringResource(R.string.app_name)) },
+            text = { Text(stringResource(R.string.msg_auth_warning)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.showAuthWarningDialog = false
@@ -265,12 +261,12 @@ fun NewProjectScreen(
     if (viewModel.isCreatingRemoteProject) {
         AlertDialog(
             onDismissRequest = { },
-            title = { Text(stringResource(R.string.simple_loading)) },
+            title = { Text(stringResource(R.string.error_loading)) },
             text = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator()
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text(stringResource(R.string.creating_remote_project))
+                    Text(stringResource(R.string.action_add_project))
                 }
             },
             confirmButton = {}
@@ -280,7 +276,7 @@ fun NewProjectScreen(
     if (viewModel.errorDialogMessage != null) {
         AlertDialog(
             onDismissRequest = { viewModel.errorDialogMessage = null },
-            title = { Text(stringResource(R.string.simple_error)) },
+            title = { Text(stringResource(R.string.error_generic)) },
             text = { Text(viewModel.errorDialogMessage!!) },
             confirmButton = {
                 TextButton(onClick = { viewModel.errorDialogMessage = null }) {
@@ -296,11 +292,15 @@ fun SectionRow(
     label: String,
     content: @Composable () -> Unit
 ) {
-    Row(verticalAlignment = Alignment.Top) {
-        Column {
-            Text(label, fontSize = 12.sp, color = MaterialTheme.colors.onSurface)
-            content()
-        }
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.subtitle1,
+            color = MaterialTheme.colors.onSurface,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        content()
     }
 }
 

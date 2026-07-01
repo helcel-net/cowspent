@@ -137,7 +137,7 @@ class EditProjectActivity : AppCompatActivity() {
 
     private fun onDeleteRemote() {
         viewModel.showDialog(
-            message = getString(R.string.confirm_delete_project_dialog_title),
+            message = getString(R.string.title_confirm),
             positiveText = getString(R.string.simple_yes),
             onConfirm = {
                 if (!db.cowspentServerSyncHelper.deleteRemoteProject(project.id, deleteCallBack)) {

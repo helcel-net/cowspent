@@ -35,7 +35,7 @@ fun ProjectStatisticsScreen(
     }
     var currentShareText by remember { mutableStateOf("") }
     val tabs = listOf(
-        stringResource(R.string.statistic_title),
+        stringResource(R.string.title_stats),
         "Trend",
         "Sankey"
     )
@@ -43,7 +43,7 @@ fun ProjectStatisticsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.statistic_title)) },
+                title = { Text(stringResource(R.string.title_stats)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)

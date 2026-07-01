@@ -213,7 +213,7 @@ class NewProjectActivity : AppCompatActivity() {
 
         val rid = viewModel.projectId
         if (!isCospendScheme && (rid == "" || rid.contains(",") || rid.contains("/"))) {
-            showToast(getString(R.string.error_invalid_project_remote_id), Toast.LENGTH_LONG)
+            showToast(getString(R.string.error_invalid_project_id), Toast.LENGTH_LONG)
             return
         }
 

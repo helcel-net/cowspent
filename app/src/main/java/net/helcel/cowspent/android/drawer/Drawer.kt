@@ -160,20 +160,27 @@ private fun DrawerHeader(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colors.primary)
-            .padding(16.dp, 4.dp)
+            .padding(4.dp, 4.dp)
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp)
-                )
+                Box(modifier = Modifier.size(48.dp)) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_background),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    stringResource(id = R.string.app_name),
+                    text = stringResource(id = R.string.app_name),
                     color = MaterialTheme.colors.onPrimary,
-                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.subtitle1,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.weight(1f))
@@ -200,6 +207,7 @@ private fun DrawerHeader(
             }
             if (lastSyncText.isNotEmpty()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.width(16.dp))
                     Icon(
                         Icons.Default.Sync,
                         contentDescription = null,
@@ -291,7 +299,7 @@ fun DrawerItem(
             Icon(icon, contentDescription = null, tint = contentColor.copy(alpha = 0.6f * alpha))
         }
         
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(32.dp))
         
         val itemText = text ?: member?.name ?: ""
         Text(

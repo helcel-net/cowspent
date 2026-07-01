@@ -119,12 +119,12 @@ class BillsListViewActivity :
                     val title: String
                     if (created) {
                         Log.e(TAG, "CREATED !!!")
-                        title = getString(R.string.project_create_success_title)
-                        message = getString(R.string.project_create_success_message, addedProj?.remoteId)
+                        title = getString(R.string.msg_project_added)
+                        message = getString(R.string.msg_project_added, addedProj?.remoteId)
                     } else {
                         Log.e(TAG, "ADDED !!!")
-                        title = getString(R.string.project_add_success_title)
-                        message = getString(R.string.project_add_success_message, addedProj?.remoteId)
+                        title = getString(R.string.msg_project_added)
+                        message = getString(R.string.msg_project_added, addedProj?.remoteId)
                     }
                     showDialog(message, title, Icons.Default.AddCircleOutline)
                 }
@@ -221,7 +221,7 @@ class BillsListViewActivity :
                             lifecycleScope.launch {
                                 val members = withContext(Dispatchers.IO) { db.getActivatedMembersOfProject(selectedProjectId) }
                                 if (members.isEmpty()) {
-                                    showToast(this@BillsListViewActivity, getString(R.string.add_bill_impossible_no_member))
+                                    showToast(this@BillsListViewActivity, getString(R.string.error_no_members))
                                 } else {
                                     val proj = withContext(Dispatchers.IO) { db.getProject(selectedProjectId) }
                                     val createIntent = Intent(applicationContext, EditBillActivity::class.java).apply {
@@ -269,7 +269,9 @@ class BillsListViewActivity :
                             5 -> onSettleProjectClick(pid)
                             6 -> onShareProjectClick(pid)
                             7 -> onExportProjectClick(pid)
-                            8 -> { /* Manage Labels - Placeholder for now */ }
+                            8 -> {
+                                startActivity(net.helcel.cowspent.android.label.LabelManagementActivity.createIntent(this@BillsListViewActivity, pid))
+                            }
                         }
                     },
                     onAccountSwitcherClick = {
@@ -391,17 +393,10 @@ class BillsListViewActivity :
 
     private fun onEditProjectClick(projectId: Long) {
         if (projectId == 0L) return
-        lifecycleScope.launch {
-            val proj = withContext(Dispatchers.IO) { db.getProject(projectId) }
-            if (proj?.isLocal == false) {
-                val intent = Intent(applicationContext, EditProjectActivity::class.java).apply {
-                    putExtra(EditProjectActivity.PARAM_PROJECT_ID, projectId)
-                }
-                editProjectLauncher.launch(intent)
-            } else {
-                showToast(this@BillsListViewActivity, getString(R.string.edit_project_local_impossible))
-            }
+        val intent = Intent(applicationContext, EditProjectActivity::class.java).apply {
+            putExtra(EditProjectActivity.PARAM_PROJECT_ID, projectId)
         }
+        editProjectLauncher.launch(intent)
     }
 
     private fun onRemoveProjectClick(projectId: Long) {
@@ -410,8 +405,8 @@ class BillsListViewActivity :
             val proj = withContext(Dispatchers.IO) { db.getProject(projectId) } ?: return@launch
             
             viewModel.showDialog(
-                title = getString(R.string.confirm_remove_project_dialog_title),
-                message = if (!proj.isLocal) getString(R.string.confirm_remove_project_dialog_message) else null,
+                title = getString(R.string.title_confirm),
+                message = if (!proj.isLocal) getString(R.string.dialog_confirm_remove_project_msg) else null,
                 positiveText = getString(R.string.simple_yes),
                 onConfirm = {
                     lifecycleScope.launch {
@@ -473,7 +468,7 @@ class BillsListViewActivity :
                 return@launch
             }
 
-            viewModel.showMemberManagementDialogByProjectId = projectId
+            startActivity(net.helcel.cowspent.android.project.member.MemberManagementActivity.createIntent(this@BillsListViewActivity, projectId))
         }
     }
 
@@ -500,7 +495,7 @@ class BillsListViewActivity :
         lifecycleScope.launch {
             val proj = withContext(Dispatchers.IO) { db.getProject(projectId) }
             if (projectId != 0L && proj?.isShareable() == true) viewModel.showShareDialogByProjectId = projectId
-            else showToast(this@BillsListViewActivity, getString(R.string.share_impossible), Toast.LENGTH_LONG)
+            else showToast(this@BillsListViewActivity, getString(R.string.error_share_impossible), Toast.LENGTH_LONG)
         }
     }
 
@@ -601,7 +596,7 @@ class BillsListViewActivity :
         } else {
             val lastSyncTimestamp = proj.lastSyncedTimestamp ?: 0
             val cal = Calendar.getInstance().apply { timeInMillis = lastSyncTimestamp * 1000 }
-            val text = getString(R.string.drawer_last_sync_text, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+            val text = getString(R.string.drawer_last_sync, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
             viewModel.lastSyncText = text
         }
     }
@@ -699,7 +694,7 @@ class BillsListViewActivity :
             lifecycleScope.launch {
                 val members = withContext(Dispatchers.IO) { db.getActivatedMembersOfProject(selectedProjectId) }
                 if (members.isEmpty()) {
-                    showToast(this@BillsListViewActivity, getString(R.string.add_bill_impossible_no_member))
+                    showToast(this@BillsListViewActivity, getString(R.string.error_no_member))
                 } else {
                     val projType = withContext(Dispatchers.IO) { db.getProject(selectedProjectId)?.type?.id }
                     val intent = Intent(applicationContext, EditBillActivity::class.java).apply {
@@ -813,8 +808,8 @@ class BillsListViewActivity :
                         lifecycleScope.launch {
                             val project = withContext(Dispatchers.IO) { db.getProject(projectId) } ?: return@launch
                             viewModel.showDialog(
-                                title = getString(R.string.sync_error_dialog_title),
-                                message = getString(R.string.sync_error_dialog_full_content, project.name, errorMessage),
+                                title = getString(R.string.dialog_sync_error_title),
+                                message = getString(R.string.dialog_sync_error_msg, project.name, errorMessage),
                                 positiveText = getString(R.string.simple_close),
                                 icon = Icons.Default.Sync
                             )
@@ -834,7 +829,7 @@ class BillsListViewActivity :
                 }
                 MainConstants.BROADCAST_SSO_TOKEN_MISMATCH -> {
                     viewModel.showDialog(
-                        title = getString(R.string.sync_error_dialog_title),
+                        title = getString(R.string.dialog_sync_error_title),
                         message = getString(R.string.error_token_mismatch),
                         positiveText = getString(R.string.simple_close),
                         icon = Icons.Default.Sync

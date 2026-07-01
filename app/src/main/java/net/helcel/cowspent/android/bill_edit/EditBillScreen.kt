@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -60,7 +61,7 @@ fun EditBillScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (viewModel.isNewBill) R.string.simple_new_bill else R.string.simple_edit_bill)) },
+                title = { Text(stringResource(if (viewModel.isNewBill) R.string.action_new_bill else R.string.action_edit)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -89,11 +90,11 @@ fun EditBillScreen(
         },
         floatingActionButton = {
             if (canEdit) {
-                val errorWhat = stringResource(R.string.error_invalid_bill_what)
+                val errorWhat = stringResource(R.string.error_invalid_bill_name)
                 val errorDate = stringResource(R.string.error_invalid_bill_date)
-                val errorPayer = stringResource(R.string.error_invalid_bill_payerid)
+                val errorPayer = stringResource(R.string.error_invalid_bill_payer)
                 val errorOwers = stringResource(R.string.error_invalid_bill_owers)
-                val errorInvalidForm = stringResource(R.string.simple_error)
+                val errorInvalidForm = stringResource(R.string.error_generic)
 
                 FloatingActionButton(onClick = {
                     val validationError = viewModel.getValidationError(
@@ -107,7 +108,7 @@ fun EditBillScreen(
                 }) {
                     Icon(
                         Icons.Default.Done,
-                        contentDescription = stringResource(R.string.action_save_bill)
+                        contentDescription = stringResource(R.string.action_save)
                     )
                 }
             }
@@ -164,6 +165,14 @@ fun BillBasicInfoSection(
     onDateClick: () -> Unit,
     onTimeClick: () -> Unit
 ) {
+    Text(
+        text = "GENERAL",
+        style = MaterialTheme.typography.subtitle1,
+        color = MaterialTheme.colors.onSurface,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
+
     val context = LocalContext.current
     val currencyDialogTitle =
         stringResource(R.string.currency_dialog_title, viewModel.mainCurrencyName)
@@ -172,7 +181,7 @@ fun BillBasicInfoSection(
         value = viewModel.what,
         onValueChange = { viewModel.what = it },
         enabled = canEdit,
-        placeholder = { Text(stringResource(R.string.setting_what)) },
+        placeholder = { Text(stringResource(R.string.label_what)) },
         modifier = Modifier.fillMaxWidth(),
         leadingIcon = { Icon(Icons.Default.Title, contentDescription = null) }
     )
@@ -262,13 +271,13 @@ fun PayerSection(
 
     EditableExposedDropdownMenu(
         value = selectedPayer?.name ?: "",
-        placeholder = stringResource(R.string.setting_payer),
+        placeholder = stringResource(R.string.label_payer),
         expanded = payerExpanded,
         onExpandedChange = { payerExpanded = it },
         onDismissRequest = { payerExpanded = false },
         enabled = canEdit,
         leadingIcon = {
-            Box(modifier = Modifier.padding(start = 12.dp)) {
+            Box(modifier = Modifier) {
                 if (selectedPayer != null) {
                     MemberAvatar(
                         member = selectedPayer,
@@ -340,8 +349,10 @@ fun OwerSelectionSection(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            stringResource(R.string.setting_owers), fontSize = 12.sp,
-            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+            text = stringResource(R.string.label_owers).uppercase(),
+            style = MaterialTheme.typography.subtitle1,
+            color = MaterialTheme.colors.onSurface,
+            fontWeight = FontWeight.Bold
         )
         Spacer(Modifier.weight(1f))
 
@@ -447,19 +458,27 @@ fun BillAdditionalDetailsSection(
     paymentModes: List<DBPaymentMode>,
     canEdit: Boolean
 ) {
+    Text(
+        text = "DETAILS",
+        style = MaterialTheme.typography.subtitle1,
+        color = MaterialTheme.colors.onSurface,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
+    )
+
     var categoryExpanded by remember { mutableStateOf(false) }
     val selectedCategory =
         categories.find { it.remoteId.toInt() == viewModel.categoryRemoteId }
 
     EditableExposedDropdownMenu(
         value = selectedCategory?.name ?: "",
-        placeholder = stringResource(R.string.setting_category),
+        placeholder = stringResource(R.string.label_category),
         expanded = categoryExpanded,
         onExpandedChange = { categoryExpanded = it },
         onDismissRequest = { categoryExpanded = false },
         enabled = canEdit,
         leadingIcon = {
-            Box(modifier = Modifier.padding(start = 12.dp)) {
+            Box(modifier = Modifier) {
                 if (selectedCategory != null) {
                     Text(text = selectedCategory.icon, fontSize = 20.sp)
                 } else {
@@ -497,13 +516,13 @@ fun BillAdditionalDetailsSection(
 
     EditableExposedDropdownMenu(
         value = selectedPm?.name ?: "",
-        placeholder = stringResource(R.string.setting_payment_mode),
+        placeholder = stringResource(R.string.label_mode),
         expanded = pmExpanded,
         onExpandedChange = { pmExpanded = it },
         onDismissRequest = { pmExpanded = false },
         enabled = canEdit,
         leadingIcon = {
-            Box(modifier = Modifier.padding(start = 12.dp)) {
+            Box(modifier = Modifier) {
                 if (selectedPm != null) {
                     Text(text = selectedPm.icon, fontSize = 20.sp)
                 } else {
@@ -548,7 +567,7 @@ fun BillAdditionalDetailsSection(
 
     EditableExposedDropdownMenu(
         value = selectedRepeat?.second ?: "",
-        placeholder = stringResource(R.string.setting_project_repetition),
+        placeholder = stringResource(R.string.label_repeat),
         expanded = repeatExpanded,
         onExpandedChange = { repeatExpanded = it },
         onDismissRequest = { repeatExpanded = false },
@@ -572,7 +591,7 @@ fun BillAdditionalDetailsSection(
         value = viewModel.comment,
         onValueChange = { viewModel.comment = it },
         enabled = canEdit,
-        placeholder = { Text(stringResource(R.string.setting_comment)) },
+        placeholder = { Text(stringResource(R.string.label_comment)) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = false,
         leadingIcon = {

@@ -188,12 +188,13 @@ fun ColorPicker(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val hueBrush = remember {
-            Brush.horizontalGradient(
-                listOf(
-                    Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red
-                )
-            )
+        val hueBrush = remember(lightness, chroma) {
+            val hueSteps = 36 // More steps for smoother gradient
+            val colors = (0..hueSteps).map { step ->
+                val h = (step.toFloat() / hueSteps) * 360f
+                Color(mLCHtoRBG(lightness, chroma, h))
+            }
+            Brush.horizontalGradient(colors)
         }
         LchSlider(
             label = "H",
