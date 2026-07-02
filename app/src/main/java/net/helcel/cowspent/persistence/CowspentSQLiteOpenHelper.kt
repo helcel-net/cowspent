@@ -125,7 +125,8 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
                     "$key_projectid INTEGER, " +
                     "$key_name TEXT, " +
                     "$key_icon TEXT, " +
-                    "$key_color TEXT)"
+                    "$key_color TEXT, " +
+                    "$key_state INTEGER DEFAULT 0)"
         )
     }
 
@@ -137,7 +138,8 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
                     "$key_projectid INTEGER, " +
                     "$key_name TEXT, " +
                     "$key_icon TEXT, " +
-                    "$key_color TEXT)"
+                    "$key_color TEXT, " +
+                    "$key_state INTEGER DEFAULT 0)"
         )
     }
 
@@ -155,120 +157,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @SuppressLint("Range")
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        if (oldVersion < 2) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_lastPayerId INTEGER DEFAULT 0")
-        }
-        if (oldVersion < 3) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_repeat TEXT")
-        }
-        if (oldVersion < 4) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_type TEXT")
-            val projects = getProjectsCustom("", arrayOf(), default_order, db)
-            for (project in projects) {
-                val url = project.serverUrl
-                project.type = if (url == null) ProjectType.LOCAL else ProjectType.COSPEND
-                updateProject(
-                    project.id, project.name, project.email,
-                    project.password, project.lastPayerId, project.type,
-                    project.lastSyncedTimestamp, project.currencyName,
-                    project.isDeletionDisabled, project.myAccessLevel, project.bearerToken,
-                    project.archivedTs, db
-                )
-            }
-        }
-        if (oldVersion < 5) {
-            createTableAccountProjects(db)
-            createIndex(db, table_account_projects)
-        }
-        if (oldVersion < 6) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_payment_mode TEXT DEFAULT \"n\"")
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_category_id INTEGER DEFAULT 0")
-        }
-        if (oldVersion < 7) {
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_r INTEGER DEFAULT NULL")
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_g INTEGER DEFAULT NULL")
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_b INTEGER DEFAULT NULL")
-        }
-        if (oldVersion < 8) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_lastSyncTimestamp INTEGER DEFAULT 0")
-        }
-        if (oldVersion < 9) {
-            createTableCategories(db)
-            createIndex(db, table_categories)
-        }
-        if (oldVersion < 10) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_currencyName TEXT")
-            createTableCurrencies(db)
-            createIndex(db, table_currencies)
-        }
-        if (oldVersion < 11) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_timestamp INTEGER")
-            val idToTs: MutableMap<Long, Long> = HashMap()
-            val sdfDate = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
-            val cursor = db.query(table_bills, arrayOf(key_id, "DATE"), "", arrayOf(), null, null, null)
-            val dateNow = Date()
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(cursor.getColumnIndex(key_id))
-                val dateStr = cursor.getString(cursor.getColumnIndex("DATE"))
-                val date = try {
-                    sdfDate.parse(dateStr)
-                } catch (_: Exception) {
-                    dateNow
-                }
-                val timestamp = (date?.time ?: System.currentTimeMillis()) / 1000
-                idToTs[id] = timestamp
-            }
-            cursor.close()
-            for (billId in idToTs.keys) {
-                val timestamp = idToTs[billId]!!
-                val values = ContentValues()
-                values.put(key_timestamp, timestamp)
-                db.update(table_bills, values, "$key_id = ?", arrayOf(billId.toString()))
-            }
-        }
-        if (oldVersion < 12) {
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_nc_userid TEXT DEFAULT NULL")
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_avatar TEXT DEFAULT NULL")
-        }
-        if (oldVersion < 13) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_comment TEXT DEFAULT \"\"")
-        }
-        if (oldVersion < 14) {
-            val projects = getProjectsCustom("", arrayOf(), default_order, db)
-            for (project in projects) {
-                updateProject(
-                    project.id, project.name, project.email,
-                    project.password, project.lastPayerId, project.type,
-                    0L, project.currencyName, project.isDeletionDisabled, project.myAccessLevel, project.bearerToken,
-                    project.archivedTs, db
-                )
-            }
-        }
-        if (oldVersion < 15) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_payment_mode_id INTEGER DEFAULT 0")
-            for (key in DBBill.oldPmIdToNew.keys) {
-                val values = ContentValues()
-                values.put(key_payment_mode_id, DBBill.oldPmIdToNew[key])
-                db.update(table_bills, values, "$key_payment_mode = ?", arrayOf(key))
-            }
-            createTablePaymentModes(db)
-            createIndex(db, table_payment_modes)
-        }
-        if (oldVersion < 16) {
-            db.execSQL("ALTER TABLE $table_currencies ADD COLUMN $key_state INTEGER DEFAULT ${DBBill.STATE_OK}")
-        }
-        if (oldVersion < 17) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_deletionDisabled INTEGER")
-        }
-        if (oldVersion < 18) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_myAccessLevel INTEGER DEFAULT ${DBProject.ACCESS_LEVEL_UNKNOWN}")
-        }
-        if (oldVersion < 19) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_bearer_token TEXT")
-        }
-        if (oldVersion < 20) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_archived INTEGER DEFAULT 0")
-            db.execSQL("ALTER TABLE $table_account_projects ADD COLUMN $key_archived INTEGER DEFAULT 0")
+        if (oldVersion < 1) {
         }
     }
 
@@ -372,6 +261,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         values.put(key_name, paymentMode.name)
         values.put(key_icon, paymentMode.icon)
         values.put(key_color, paymentMode.color)
+        values.put(key_state, paymentMode.state)
         return db.insert(table_payment_modes, null, values)
     }
 
@@ -412,16 +302,18 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             cursor.getLong(cursor.getColumnIndex(key_projectid)),
             cursor.getString(cursor.getColumnIndex(key_name)),
             cursor.getString(cursor.getColumnIndex(key_icon)),
-            cursor.getString(cursor.getColumnIndex(key_color))
+            cursor.getString(cursor.getColumnIndex(key_color)),
+            cursor.getInt(cursor.getColumnIndex(key_state))
         )
     }
 
-    fun updatePaymentMode(id: Long, name: String?, icon: String?, color: String?) {
+    fun updatePaymentMode(id: Long, name: String?, icon: String?, color: String?, state: Int? = null) {
         val db = writableDatabase
         val values = ContentValues()
         if (name != null) values.put(key_name, name)
         if (icon != null) values.put(key_icon, icon)
         if (color != null) values.put(key_color, color)
+        if (state != null) values.put(key_state, state)
         if (values.size() > 0) {
             db.update(table_payment_modes, values, "$key_id = ?", arrayOf(id.toString()))
         }
@@ -440,6 +332,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         values.put(key_name, category.name)
         values.put(key_icon, category.icon)
         values.put(key_color, category.color)
+        values.put(key_state, category.state)
         return db.insert(table_categories, null, values)
     }
 
@@ -449,6 +342,11 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             arrayOf(remoteId.toString(), projectId.toString()),
             null
         )
+        return if (categories.isEmpty()) null else categories[0]
+    }
+
+    fun getCategory(id: Long): DBCategory? {
+        val categories = getCategoriesCustom("$key_id = ?", arrayOf(id.toString()), null)
         return if (categories.isEmpty()) null else categories[0]
     }
 
@@ -480,16 +378,18 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             cursor.getLong(cursor.getColumnIndex(key_projectid)),
             cursor.getString(cursor.getColumnIndex(key_name)),
             cursor.getString(cursor.getColumnIndex(key_icon)),
-            cursor.getString(cursor.getColumnIndex(key_color))
+            cursor.getString(cursor.getColumnIndex(key_color)),
+            cursor.getInt(cursor.getColumnIndex(key_state))
         )
     }
 
-    fun updateCategory(id: Long, name: String?, icon: String?, color: String?) {
+    fun updateCategory(id: Long, name: String?, icon: String?, color: String?, state: Int? = null) {
         val db = writableDatabase
         val values = ContentValues()
         if (name != null) values.put(key_name, name)
         if (icon != null) values.put(key_icon, icon)
         if (color != null) values.put(key_color, color)
+        if (state != null) values.put(key_state, state)
         if (values.size() > 0) {
             db.update(table_categories, values, "$key_id = ?", arrayOf(id.toString()))
         }
@@ -893,8 +793,8 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         values.put(key_state, b.state)
         values.put(key_repeat, b.repeat)
         values.put(key_payment_mode, b.paymentMode)
-        values.put(key_payment_mode_id, b.paymentModeRemoteId)
-        values.put(key_category_id, b.categoryRemoteId)
+        values.put(key_payment_mode_id, b.paymentModeId)
+        values.put(key_category_id, b.categoryId)
         values.put(key_comment, b.comment)
         val billId = db.insert(table_bills, null, values)
         for (bo in b.billOwers) {
@@ -915,8 +815,8 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         newAmount: Double?, newTimestamp: Long?,
         newWhat: String?, newState: Int?,
         newRepeat: String?,
-        newPaymentMode: String?, newPaymentModeRemoteId: Int?,
-        newCategoryId: Int?, newComment: String?
+        newPaymentMode: String?, newPaymentModeId: Long?,
+        newCategoryId: Long?, newComment: String?
     ) {
         val db = writableDatabase
         val values = ContentValues()
@@ -928,7 +828,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         if (newState != null) values.put(key_state, newState)
         if (newRepeat != null) values.put(key_repeat, newRepeat)
         if (newPaymentMode != null) values.put(key_payment_mode, newPaymentMode)
-        if (newPaymentModeRemoteId != null) values.put(key_payment_mode_id, newPaymentModeRemoteId)
+        if (newPaymentModeId != null) values.put(key_payment_mode_id, newPaymentModeId)
         if (newCategoryId != null) values.put(key_category_id, newCategoryId)
         if (newComment != null) values.put(key_comment, newComment)
         if (values.size() > 0) {
@@ -940,14 +840,14 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         bill: DBBill, newPayerId: Long, newAmount: Double,
         newTimestamp: Long?, newWhat: String?,
         newOwersIds: List<Long>?, newRepeat: String?,
-        newPaymentMode: String?, newPaymentModeRemoteId: Int?,
-        newCategoryId: Int?,
+        newPaymentMode: String?, newPaymentModeId: Long?,
+        newCategoryId: Long?,
         newComment: String?
     ) {
         val newState = if (bill.state == DBBill.STATE_ADDED) DBBill.STATE_ADDED else DBBill.STATE_EDITED
         updateBill(
             bill.id, null, newPayerId, newAmount, newTimestamp, newWhat, newState,
-            newRepeat, newPaymentMode, newPaymentModeRemoteId, newCategoryId, newComment
+            newRepeat, newPaymentMode, newPaymentModeId, newCategoryId, newComment
         )
         val dbBillOwers = getBillowersOfBill(bill.id)
         val dbBillOwersByMemberId: MutableMap<Long, DBBillOwer> = HashMap()
@@ -1107,9 +1007,9 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             cursor.getInt(cursor.getColumnIndex(key_state)),
             cursor.getString(cursor.getColumnIndex(key_repeat)),
             cursor.getString(cursor.getColumnIndex(key_payment_mode)),
-            cursor.getInt(cursor.getColumnIndex(key_category_id)),
+            cursor.getLong(cursor.getColumnIndex(key_category_id)),
             cursor.getString(cursor.getColumnIndex(key_comment)),
-            cursor.getInt(cursor.getColumnIndex(key_payment_mode_id))
+            cursor.getLong(cursor.getColumnIndex(key_payment_mode_id))
         )
     }
 
@@ -1165,7 +1065,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     @Suppress("ConstPropertyName")
     companion object {
         private val TAG = CowspentSQLiteOpenHelper::class.java.simpleName
-        private const val database_version = 20
+        private const val database_version = 1
         private const val database_name = "COWSPENT"
         private const val table_members = "MEMBERS"
         const val key_id = "ID"
@@ -1237,10 +1137,10 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             key_id, key_remoteId, key_password, key_name, key_ncUrl, key_archived
         )
         private val columnsCategories = arrayOf(
-            key_id, key_remoteId, key_projectid, key_name, key_icon, key_color
+            key_id, key_remoteId, key_projectid, key_name, key_icon, key_color, key_state
         )
         private val columnsPaymentModes = arrayOf(
-            key_id, key_remoteId, key_projectid, key_name, key_icon, key_color
+            key_id, key_remoteId, key_projectid, key_name, key_icon, key_color, key_state
         )
         private val columnsCurrencies = arrayOf(
             key_id, key_remoteId, key_projectid, key_name, key_exchangeRate, key_state
