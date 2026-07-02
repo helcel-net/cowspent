@@ -79,7 +79,7 @@ fun ProjectOptionsDialogContent(
             // Row 2: Manage Member, Manage Labels, Manage Currencies
             if (!isArchived && isMaintainer) {
                 row2.add(ProjectOption(stringResource(R.string.action_members), Icons.Default.Group, onManageMembers))
-                if (projectType == ProjectType.LOCAL || projectType == ProjectType.COSPEND) {
+                if (false && (projectType == ProjectType.LOCAL || projectType == ProjectType.COSPEND)) {
                     row2.add(ProjectOption(stringResource(R.string.action_labels), Icons.AutoMirrored.Filled.Label, onManageLabels))
                 }
                 row2.add(ProjectOption(stringResource(R.string.action_currencies), Icons.Default.MonetizationOn, onManageCurrencies))
