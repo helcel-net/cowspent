@@ -124,9 +124,9 @@ object SupportUtil {
         for (b in dbBills) {
             // don't take deleted bills and respect category filter
             if (b.state != DBBill.STATE_DELETED &&
-                ((catId == -1000 || catId == -100 || b.categoryRemoteId == catId) &&
-                        (catId != -100 || b.categoryRemoteId != DBBill.CATEGORY_REIMBURSEMENT) &&
-                        (paymentModeId == -1000 || b.paymentModeRemoteId == paymentModeId)) &&
+                ((catId == -1000 || catId == -100 || b.categoryId == catId.toLong()) &&
+                        (catId != -100 || b.categoryId != DBBill.CATEGORY_REIMBURSEMENT.toLong()) &&
+                        (paymentModeId == -1000 || b.paymentModeId == paymentModeId.toLong())) &&
                 (dateMin == null || b.date >= dateMin) &&
                 (dateMax == null || b.date <= dateMax)
             ) {

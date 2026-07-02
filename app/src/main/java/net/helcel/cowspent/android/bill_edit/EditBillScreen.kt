@@ -468,7 +468,7 @@ fun BillAdditionalDetailsSection(
 
     var categoryExpanded by remember { mutableStateOf(false) }
     val selectedCategory =
-        categories.find { it.remoteId.toInt() == viewModel.categoryRemoteId }
+        categories.find { (if (it.id > 0) it.id else it.remoteId) == viewModel.categoryId }
 
     EditableExposedDropdownMenu(
         value = selectedCategory?.name ?: "",
@@ -488,7 +488,7 @@ fun BillAdditionalDetailsSection(
         },
         content = {
             DropdownMenuItem(onClick = {
-                viewModel.categoryRemoteId = 0
+                viewModel.categoryId = 0
                 categoryExpanded = false
             }) {
                 Icon(Icons.Default.Close, tint = Color.Red, contentDescription = null)
@@ -497,7 +497,7 @@ fun BillAdditionalDetailsSection(
             }
             categories.forEach { category ->
                 DropdownMenuItem(onClick = {
-                    viewModel.categoryRemoteId = category.remoteId.toInt()
+                    viewModel.categoryId = if (category.id > 0) category.id else category.remoteId
                     categoryExpanded = false
                 }) {
                     Text(text = category.icon, fontSize = 20.sp)
@@ -512,7 +512,7 @@ fun BillAdditionalDetailsSection(
 
     var pmExpanded by remember { mutableStateOf(false) }
     val selectedPm =
-        paymentModes.find { it.remoteId.toInt() == viewModel.paymentModeRemoteId }
+        paymentModes.find { (if (it.id > 0) it.id else it.remoteId) == viewModel.paymentModeId }
 
     EditableExposedDropdownMenu(
         value = selectedPm?.name ?: "",
@@ -532,7 +532,7 @@ fun BillAdditionalDetailsSection(
         },
         content = {
             DropdownMenuItem(onClick = {
-                viewModel.paymentModeRemoteId = 0
+                viewModel.paymentModeId = 0
                 pmExpanded = false
             }) {
                 Icon(Icons.Default.Close, tint = Color.Red, contentDescription = null)
@@ -541,7 +541,7 @@ fun BillAdditionalDetailsSection(
             }
             paymentModes.forEach { pm ->
                 DropdownMenuItem(onClick = {
-                    viewModel.paymentModeRemoteId = pm.remoteId.toInt()
+                    viewModel.paymentModeId = if (pm.id > 0) pm.id else pm.remoteId
                     pmExpanded = false
                 }) {
                     Text(text = pm.icon, fontSize = 20.sp)

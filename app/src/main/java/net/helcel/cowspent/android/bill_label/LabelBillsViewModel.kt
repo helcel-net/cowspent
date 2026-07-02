@@ -43,18 +43,18 @@ class LabelBillsViewModel : ViewModel() {
             otherName == name || (name.length > 3 && otherName.contains(name)) || (otherName.length > 3 && name.contains(otherName))
         }
 
-        val counts = matches.groupBy { it.categoryRemoteId }
+        val counts = matches.groupBy { it.categoryId }
             .mapValues { it.value.size }
             .toList()
             .sortedByDescending { it.second }
             .take(2)
 
         suggestedCategories = counts.mapNotNull { (catId, _) ->
-            categoriesMap[catId.toLong()]
+            categoriesMap[catId]
         }
     }
 
-    fun labelCurrentBill(db: CowspentSQLiteOpenHelper, categoryId: Int) {
+    fun labelCurrentBill(db: CowspentSQLiteOpenHelper, categoryId: Long) {
         currentBill?.let { bill ->
             db.updateBillAndSync(
                 bill = bill,
@@ -65,11 +65,11 @@ class LabelBillsViewModel : ViewModel() {
                 newOwersIds = bill.billOwersIds,
                 newRepeat = bill.repeat,
                 newPaymentMode = bill.paymentMode,
-                newPaymentModeRemoteId = bill.paymentModeRemoteId,
+                newPaymentModeId = bill.paymentModeId,
                 newCategoryId = categoryId,
                 newComment = bill.comment
             )
-            bill.categoryRemoteId = categoryId
+            bill.categoryId = categoryId
             onBillProcessed?.invoke(bill.id)
             moveToNext()
         }
@@ -87,11 +87,11 @@ class LabelBillsViewModel : ViewModel() {
 
         val start = currentBillIndex
         var next = (start + 1) % billsToLabel.size
-        while (next != start && billsToLabel[next].categoryRemoteId != 0) {
+        while (next != start && billsToLabel[next].categoryId != 0L) {
             next = (next + 1) % billsToLabel.size
         }
 
-        currentBillIndex = if (billsToLabel[next].categoryRemoteId == 0) {
+        currentBillIndex = if (billsToLabel[next].categoryId == 0L) {
             next
         } else {
             billsToLabel.size

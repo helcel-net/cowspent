@@ -264,6 +264,10 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
 
                 val members = dbHelper.getMembersOfProject(project.id, null)
                 val memberIdToRemoteId = members.associate { it.id to it.remoteId }
+                val categories = dbHelper.getCategories(project.id)
+                val categoryIdToRemoteId = categories.associate { it.id to it.remoteId }
+                val paymentModes = dbHelper.getPaymentModes(project.id)
+                val paymentModeIdToRemoteId = paymentModes.associate { it.id to it.remoteId }
 
                 val toDelete = dbHelper.getBillsOfProjectWithState(project.id, DBBill.STATE_DELETED)
                 for (bToDel in toDelete) {
@@ -293,7 +297,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 val toEdit = dbHelper.getBillsOfProjectWithState(project.id, DBBill.STATE_EDITED)
                 for (bToEdit in toEdit) {
                     try {
-                        val editRemoteBillResponse = client!!.editRemoteBill(project, bToEdit, memberIdToRemoteId)
+                        val editRemoteBillResponse = client!!.editRemoteBill(project, bToEdit, memberIdToRemoteId, categoryIdToRemoteId, paymentModeIdToRemoteId)
                         if (editRemoteBillResponse.stringContent == bToEdit.remoteId.toString()) {
                             dbHelper.setBillState(bToEdit.id, DBBill.STATE_OK)
                             Log.d(TAG, "SUCCESSFUL remote bill edition (${editRemoteBillResponse.stringContent})")
@@ -307,7 +311,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
 
                 val toAdd = dbHelper.getBillsOfProjectWithState(project.id, DBBill.STATE_ADDED)
                 for (bToAdd in toAdd) {
-                    val createRemoteBillResponse = client!!.createRemoteBill(project, bToAdd, memberIdToRemoteId)
+                    val createRemoteBillResponse = client!!.createRemoteBill(project, bToAdd, memberIdToRemoteId, categoryIdToRemoteId, paymentModeIdToRemoteId)
                     val newRemoteId = createRemoteBillResponse.stringContent.toLong()
                     if (newRemoteId > 0) {
                         dbHelper.updateBill(
@@ -613,7 +617,15 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 val localBills = dbHelper.getBillsOfProject(project.id)
                 val localBillsByRemoteId = localBills.associateBy { it.remoteId }
 
+                val syncedCategories = dbHelper.getCategories(project.id)
+                val catRemoteToLocal = syncedCategories.associate { it.remoteId to it.id }
+                val syncedPaymentModes = dbHelper.getPaymentModes(project.id)
+                val pmRemoteToLocal = syncedPaymentModes.associate { it.remoteId to it.id }
+
                 for (remoteBill in remoteBills) {
+                    if (remoteBill.categoryId > 0) remoteBill.categoryId = catRemoteToLocal[remoteBill.categoryId] ?: 0
+                    if (remoteBill.paymentModeId > 0) remoteBill.paymentModeId = pmRemoteToLocal[remoteBill.paymentModeId] ?: 0
+
                     if (!localBillsByRemoteId.containsKey(remoteBill.remoteId)) {
                         dbHelper.addBill(remoteBill)
                         nbPulledNewBills++
@@ -626,8 +638,8 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                                 localBill.id, null, remoteBill.payerId,
                                 remoteBill.amount, remoteBill.timestamp,
                                 remoteBill.what, DBBill.STATE_OK, remoteBill.repeat,
-                                remoteBill.paymentMode, remoteBill.paymentModeRemoteId,
-                                remoteBill.categoryRemoteId, remoteBill.comment
+                                remoteBill.paymentMode, remoteBill.paymentModeId,
+                                remoteBill.categoryId, remoteBill.comment
                             )
                             nbPulledUpdatedBills++
                             updatedBillsDialogText += "✏ ${remoteBill.what}\n"
@@ -1084,8 +1096,8 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             localBill.what == remoteBill.what &&
             localBill.comment == remoteBill.comment &&
             localBill.paymentMode == remoteBill.paymentMode &&
-            localBill.paymentModeRemoteId == remoteBill.paymentModeRemoteId &&
-            localBill.categoryRemoteId == remoteBill.categoryRemoteId
+            localBill.paymentModeId == remoteBill.paymentModeId &&
+            localBill.categoryId == remoteBill.categoryId
         ) {
             val localRepeat = localBill.repeat ?: DBBill.NON_REPEATED
             val remoteRepeat = remoteBill.repeat ?: DBBill.NON_REPEATED

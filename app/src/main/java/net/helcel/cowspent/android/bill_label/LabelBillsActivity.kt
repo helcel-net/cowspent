@@ -39,15 +39,15 @@ class LabelBillsActivity : AppCompatActivity() {
 
                 val members = db.getMembersOfProject(projectId, null)
                 val allBills = db.getBillsOfProject(projectId)
-                val billsToLabel = allBills.filter { it.categoryRemoteId == 0 && it.state != DBBill.STATE_DELETED }
-                val allCategorized = allBills.filter { it.categoryRemoteId != 0 && it.state != DBBill.STATE_DELETED }
+                val billsToLabel = allBills.filter { it.categoryId == 0L && it.state != DBBill.STATE_DELETED }
+                val allCategorized = allBills.filter { it.categoryId != 0L && it.state != DBBill.STATE_DELETED }
                 
                 val syncedCategories = db.getCategories(projectId)
                 val defaultCategories = CategoryUtils.getDefaultCategories(this@LabelBillsActivity, projectId)
                 val hardcoded = if (projectType == ProjectType.LOCAL) {
                     defaultCategories
                 } else {
-                    listOfNotNull(defaultCategories.find { it.remoteId.toInt() == DBBill.CATEGORY_REIMBURSEMENT })
+                    listOfNotNull(defaultCategories.find { it.remoteId == DBBill.CATEGORY_REIMBURSEMENT.toLong() })
                 }
                 val categories = syncedCategories + hardcoded
                 
@@ -56,7 +56,7 @@ class LabelBillsActivity : AppCompatActivity() {
 
             viewModel.billsToLabel = billsToLabel
             viewModel.categories = categories
-            viewModel.categoriesMap = categories.associateBy { it.remoteId }
+            viewModel.categoriesMap = categories.associateBy { it.id }
             viewModel.allCategorizedBills = allCategorized
             viewModel.updateSuggestions()
 

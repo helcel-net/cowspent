@@ -118,8 +118,8 @@ object ProjectImportHelper {
                             val payerWeight = if (columns.containsKey("payer_weight")) line[columns["payer_weight"]!!].toDouble() else 1.0
                             val owersStr = if (columns.containsKey("owers")) line[columns["owers"]!!] else ""
                             val payerActive = columns.containsKey("payer_active") && line[columns["payer_active"]!!] == "1"
-                            val catId = if (columns.containsKey("categoryid") && line[columns["categoryid"]!!].isNotEmpty()) line[columns["categoryid"]!!].toInt() else 0
-                            val pmId = if (columns.containsKey("paymentmodeid") && line[columns["paymentmodeid"]!!].isNotEmpty()) line[columns["paymentmodeid"]!!].toInt() else 0
+                            val catId = if (columns.containsKey("categoryid") && line[columns["categoryid"]!!].isNotEmpty()) line[columns["categoryid"]!!].toLong() else 0L
+                            val pmId = if (columns.containsKey("paymentmodeid") && line[columns["paymentmodeid"]!!].isNotEmpty()) line[columns["paymentmodeid"]!!].toLong() else 0L
                             val pm = if (columns.containsKey("paymentmode")) line[columns["paymentmode"]!!] else null
                             
                             membersActive[payerName] = payerActive
@@ -150,8 +150,16 @@ object ProjectImportHelper {
             val memberNameToId = mutableMapOf<String, Long>()
             val pid = db.addProject(DBProject(0, projectRemoteId, "", projectRemoteId, null, null, null, ProjectType.LOCAL, 0L, mainCurrencyName, false, DBProject.ACCESS_LEVEL_UNKNOWN, null))
             
-            paymentModes.forEach { db.addPaymentMode(DBPaymentMode(0, it.remoteId, pid, it.name, it.icon, it.color)) }
-            categories.forEach { db.addCategory(DBCategory(0, it.remoteId, pid, it.name, it.icon, it.color)) }
+            val pmRemoteToLocal = mutableMapOf<Long, Long>()
+            paymentModes.forEach { pm ->
+                val localId = db.addPaymentMode(DBPaymentMode(0, pm.remoteId, pid, pm.name, pm.icon, pm.color))
+                pmRemoteToLocal[pm.remoteId] = localId
+            }
+            val catRemoteToLocal = mutableMapOf<Long, Long>()
+            categories.forEach { cat ->
+                val localId = db.addCategory(DBCategory(0, cat.remoteId, pid, cat.name, cat.icon, cat.color))
+                catRemoteToLocal[cat.remoteId] = localId
+            }
             currencies.forEach { db.addCurrency(DBCurrency(0, 0, pid, it.name, it.exchangeRate, DBBill.STATE_OK)) }
             
             membersWeight.keys.forEach { mName ->
@@ -160,7 +168,9 @@ object ProjectImportHelper {
             
             bills.forEach { b ->
                 val payerId = memberNameToId[billRemoteIdToPayerName[b.remoteId]] ?: 0L
-                val billId = db.addBill(DBBill(0, 0, pid, payerId, b.amount, b.timestamp, b.what, DBBill.STATE_OK, b.repeat, b.paymentMode, b.categoryRemoteId, b.comment, b.paymentModeRemoteId))
+                val localCatId = catRemoteToLocal[b.categoryId] ?: b.categoryId
+                val localPmId = pmRemoteToLocal[b.paymentModeId] ?: b.paymentModeId
+                val billId = db.addBill(DBBill(0, 0, pid, payerId, b.amount, b.timestamp, b.what, DBBill.STATE_OK, b.repeat, b.paymentMode, localCatId, b.comment, localPmId))
                 billRemoteIdToOwerStr[b.remoteId]?.split(", ")?.filter { it.isNotEmpty() }?.forEach { ower ->
                     memberNameToId[ower.trim()]?.let { owerId -> db.addBillower(billId, owerId) }
                 }

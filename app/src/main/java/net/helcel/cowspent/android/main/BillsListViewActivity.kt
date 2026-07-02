@@ -636,13 +636,13 @@ class BillsListViewActivity :
                     mid == null || mid == it.payerId || it.billOwersIds.contains(mid)
                 }
 
-                viewModel.hasUnlabeledBills = bills.any { it.categoryRemoteId == 0 && it.state != DBBill.STATE_DELETED }
+                viewModel.hasUnlabeledBills = bills.any { it.categoryId == 0L && it.state != DBBill.STATE_DELETED }
 
                 val projectMembers = db.getMembersOfProject(projId, null)
                 val memberMap = projectMembers.associateBy { it.id }
 
-                val projectPaymentModes = db.getPaymentModes(projId).associateBy { it.remoteId }
-                val projectCategories = db.getCategories(projId).associateBy { it.remoteId }
+                val projectPaymentModes = db.getPaymentModes(projId).associateBy { it.id }
+                val projectCategories = db.getCategories(projId).associateBy { it.id }
 
                 BillFormatter.formatBills(
                     bills,

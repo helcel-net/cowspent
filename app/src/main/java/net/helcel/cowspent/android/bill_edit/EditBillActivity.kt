@@ -57,7 +57,7 @@ class EditBillActivity : AppCompatActivity() {
                         val hardcoded = if (projectType == ProjectType.LOCAL) {
                             defaultCategories
                         } else {
-                            listOfNotNull(defaultCategories.find { it.remoteId.toInt() == DBBill.CATEGORY_REIMBURSEMENT })
+                            listOfNotNull(defaultCategories.find { it.remoteId == DBBill.CATEGORY_REIMBURSEMENT.toLong() })
                         }
                         syncedCategories + hardcoded
                     }
@@ -144,7 +144,7 @@ class EditBillActivity : AppCompatActivity() {
                     bill = DBBill(
                         first.id, 0, first.projectId, first.payerId, totalAmount,
                         first.timestamp, first.what, first.state, first.repeat,
-                        first.paymentMode, first.categoryRemoteId, first.comment, first.paymentModeRemoteId
+                        first.paymentMode, first.categoryId, first.comment, first.paymentModeId
                     )
                     
                     val splits = mutableMapOf<Long, Double>()
@@ -168,15 +168,15 @@ class EditBillActivity : AppCompatActivity() {
                     bill = DBBill(
                         0, 0, projectId, 0, 0.0, timeNowSeconds,
                         "", DBBill.STATE_ADDED, DBBill.NON_REPEATED,
-                        DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE, "", DBBill.PAYMODE_ID_NONE
+                        DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE.toLong(), "", DBBill.PAYMODE_ID_NONE.toLong()
                     )
                 } else {
                     val btd = db.getBill(billIdToDuplicate)!!
                     bill = DBBill(
                         0, 0, projectId, btd.payerId, btd.amount,
                         timeNowSeconds, btd.what, DBBill.STATE_ADDED,
-                        btd.repeat, btd.paymentMode, btd.categoryRemoteId,
-                        btd.comment, btd.paymentModeRemoteId
+                        btd.repeat, btd.paymentMode, btd.categoryId,
+                        btd.comment, btd.paymentModeId
                     )
                     val btdOwers = btd.billOwers
                     val newBillOwers = btdOwers.filter {
@@ -239,8 +239,8 @@ class EditBillActivity : AppCompatActivity() {
         bill = DBBill(
             0, 0, bill.projectId, viewModel.payerId, viewModel.amountAsDouble,
             System.currentTimeMillis() / 1000, viewModel.what, DBBill.STATE_ADDED,
-            viewModel.repeat, bill.paymentMode, viewModel.categoryRemoteId,
-            viewModel.getFinalComment(), viewModel.paymentModeRemoteId
+            viewModel.repeat, bill.paymentMode, viewModel.categoryId,
+            viewModel.getFinalComment(), viewModel.paymentModeId
         )
         calendar.timeInMillis = System.currentTimeMillis()
         viewModel.timestamp = calendar.timeInMillis / 1000
@@ -326,8 +326,8 @@ class EditBillActivity : AppCompatActivity() {
                 bill.payerId == viewModel.payerId &&
                 bill.comment == viewModel.getFinalComment() &&
                 bill.repeat == viewModel.repeat &&
-                bill.categoryRemoteId == viewModel.categoryRemoteId &&
-                bill.paymentModeRemoteId == viewModel.paymentModeRemoteId &&
+                bill.categoryId == viewModel.categoryId &&
+                bill.paymentModeId == viewModel.paymentModeId &&
                 !owersChanged)
     }
 
@@ -386,8 +386,8 @@ class EditBillActivity : AppCompatActivity() {
                         listOf(memberId),
                         viewModel.repeat,
                         existingBill.paymentMode,
-                        viewModel.paymentModeRemoteId,
-                        viewModel.categoryRemoteId,
+                        viewModel.paymentModeId,
+                        viewModel.categoryId,
                         finalComment
                     )
                     if (firstSavedId == 0L) firstSavedId = billToUseId
@@ -396,7 +396,7 @@ class EditBillActivity : AppCompatActivity() {
                     val newBill = DBBill(
                         0, 0, bill.projectId, viewModel.payerId, amount,
                         viewModel.timestamp, viewModel.what, DBBill.STATE_ADDED, viewModel.repeat,
-                        bill.paymentMode, viewModel.categoryRemoteId, finalComment, viewModel.paymentModeRemoteId
+                        bill.paymentMode, viewModel.categoryId, finalComment, viewModel.paymentModeId
                     )
                     newBill.billOwers = listOf(DBBillOwer(0, 0, memberId))
                     val newId = db.addBill(newBill)
@@ -441,8 +441,8 @@ class EditBillActivity : AppCompatActivity() {
                         newOwersIds,
                         viewModel.repeat,
                         bill.paymentMode,
-                        viewModel.paymentModeRemoteId,
-                        viewModel.categoryRemoteId,
+                        viewModel.paymentModeId,
+                        viewModel.categoryId,
                         finalComment
                     )
                     if (groupedBillIds != null) {
@@ -460,7 +460,7 @@ class EditBillActivity : AppCompatActivity() {
                 val newBill = DBBill(
                     0, 0, bill.projectId, viewModel.payerId, newAmount,
                     viewModel.timestamp, viewModel.what, DBBill.STATE_ADDED, viewModel.repeat,
-                    bill.paymentMode, viewModel.categoryRemoteId, finalComment, viewModel.paymentModeRemoteId
+                    bill.paymentMode, viewModel.categoryId, finalComment, viewModel.paymentModeId
                 )
                 newOwersIds.forEach { newBill.billOwers += DBBillOwer(0, 0, it) }
                 val newBillId = db.addBill(newBill)

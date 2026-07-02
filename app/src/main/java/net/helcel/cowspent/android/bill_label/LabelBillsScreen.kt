@@ -84,7 +84,7 @@ fun LabelBillsScreen(
                                     CategoryButton(
                                         icon = category.icon,
                                         name = category.name ?: "",
-                                        onClick = { viewModel.labelCurrentBill(db, category.remoteId.toInt()) }
+                                        onClick = { viewModel.labelCurrentBill(db, category.id) }
                                     )
                                 }
                             }
@@ -126,7 +126,7 @@ fun LabelBillsScreen(
                         CategoryButton(
                             icon = category.icon,
                             name = category.name ?: "",
-                            onClick = { viewModel.labelCurrentBill(db, category.remoteId.toInt()) }
+                            onClick = { viewModel.labelCurrentBill(db, category.id) }
                         )
                     }
                 }
@@ -245,7 +245,7 @@ fun CategoryButton(icon: String, name: String, onClick: () -> Unit) {
 fun LabelBillsScreenPreview() {
     val viewModel = LabelBillsViewModel().apply {
         billsToLabel = listOf(
-            DBBill(1L, 0, 1L, 1L, 120.5, System.currentTimeMillis() / 1000, "Groceries at Aldi", 0, null, null, 0, null, -1)
+            DBBill(1L, 0, 1L, 1L, 120.5, System.currentTimeMillis() / 1000, "Groceries at Aldi", 0, null, null, 0L, null, -1L)
         )
         val cats = listOf(
             DBCategory(1, 1, 1, "Groceries", "🛒", ""),
@@ -254,7 +254,7 @@ fun LabelBillsScreenPreview() {
             DBCategory(4, 4, 1, "Bills", "💸", "")
         )
         categories = cats
-        categoriesMap = cats.associateBy { it.remoteId }
+        categoriesMap = cats.associateBy { it.id }
     }
     val members = listOf(
         DBMember(1L, 0, 1L, "Alice", true, 1.0, 0, 255, 100, 100, null, null),

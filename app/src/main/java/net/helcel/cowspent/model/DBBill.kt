@@ -16,9 +16,9 @@ open class DBBill(
     var state: Int,
     var repeat: String?,
     var paymentMode: String?,
-    var categoryRemoteId: Int,
+    var categoryId: Long,
     var comment: String?,
-    var paymentModeRemoteId: Int
+    var paymentModeId: Long
 ) : Item, Serializable {
 
     var formattedWhat: String = ""
@@ -39,7 +39,6 @@ open class DBBill(
         get() {
             val cal = Calendar.getInstance()
             cal.timeInMillis = timestamp * 1000
-            Log.v("ll", "[$what] get date ts $timestamp year ${cal[Calendar.YEAR]}")
             val month = cal[Calendar.MONTH] + 1
             val day = cal[Calendar.DAY_OF_MONTH]
             return "${cal[Calendar.YEAR]}-${String.format(Locale.ROOT, "%02d", month)}-${
@@ -58,7 +57,7 @@ open class DBBill(
 
 
     override fun toString(): String {
-        return "#DBBill$id/$remoteId,$projectId, $payerId, $amount, $timestamp, $what, $state, $repeat, $paymentMode, $categoryRemoteId"
+        return "#DBBill$id/$remoteId,$projectId, $payerId, $amount, $timestamp, $what, $state, $repeat, $paymentMode, $categoryId"
     }
 
     override fun isSection(): Boolean {
@@ -73,15 +72,15 @@ open class DBBill(
         const val PAYMODE_TRANSFER = "t"
         const val PAYMODE_ONLINE_SERVICE = "o"
 
-        const val PAYMODE_ID_NONE = 0
-        const val PAYMODE_ID_CARD = -1
-        const val PAYMODE_ID_CASH = -2
-        const val PAYMODE_ID_CHECK = -3
-        const val PAYMODE_ID_TRANSFER = -4
-        const val PAYMODE_ID_ONLINE_SERVICE = -5
+        const val PAYMODE_ID_NONE = 0L
+        const val PAYMODE_ID_CARD = -1L
+        const val PAYMODE_ID_CASH = -2L
+        const val PAYMODE_ID_CHECK = -3L
+        const val PAYMODE_ID_TRANSFER = -4L
+        const val PAYMODE_ID_ONLINE_SERVICE = -5L
 
         @JvmField
-        val oldPmIdToNew: Map<String, Int> = object : HashMap<String, Int>() {
+        val oldPmIdToNew: Map<String, Long> = object : HashMap<String, Long>() {
             init {
                 put(PAYMODE_NONE, PAYMODE_ID_NONE)
                 put(PAYMODE_CARD, PAYMODE_ID_CARD)
@@ -92,19 +91,19 @@ open class DBBill(
             }
         }
 
-        const val CATEGORY_NONE = 0
-        const val CATEGORY_GROCERIES = -1
-        const val CATEGORY_LEISURE = -2
-        const val CATEGORY_RENT = -3
-        const val CATEGORY_BILLS = -4
-        const val CATEGORY_CULTURE = -5
-        const val CATEGORY_HEALTH = -6
-        const val CATEGORY_SHOPPING = -10
-        const val CATEGORY_REIMBURSEMENT = -11
-        const val CATEGORY_RESTAURANT = -12
-        const val CATEGORY_ACCOMMODATION = -13
-        const val CATEGORY_TRANSPORT = -14
-        const val CATEGORY_SPORT = -15
+        const val CATEGORY_NONE = 0L
+        const val CATEGORY_GROCERIES = -1L
+        const val CATEGORY_LEISURE = -2L
+        const val CATEGORY_RENT = -3L
+        const val CATEGORY_BILLS = -4L
+        const val CATEGORY_CULTURE = -5L
+        const val CATEGORY_HEALTH = -6L
+        const val CATEGORY_SHOPPING = -10L
+        const val CATEGORY_REIMBURSEMENT = -11L
+        const val CATEGORY_RESTAURANT = -12L
+        const val CATEGORY_ACCOMMODATION = -13L
+        const val CATEGORY_TRANSPORT = -14L
+        const val CATEGORY_SPORT = -15L
 
         const val STATE_OK = 0
         const val STATE_ADDED = 1

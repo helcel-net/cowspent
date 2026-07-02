@@ -15,9 +15,9 @@ class GroupedBill(
     sourceBills.first().state,
     sourceBills.first().repeat,
     sourceBills.first().paymentMode,
-    sourceBills.first().categoryRemoteId,
+    sourceBills.first().categoryId,
     sourceBills.first().comment,
-    sourceBills.first().paymentModeRemoteId
+    sourceBills.first().paymentModeId
 ), Serializable {
     init {
         this.formattedWhat = sourceBills.first().formattedWhat

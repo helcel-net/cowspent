@@ -99,7 +99,7 @@ fun ProjectStatisticsScreen(
                     val hardcoded = if (proj.type == ProjectType.LOCAL) {
                         defaultCategories
                     } else {
-                        listOfNotNull(defaultCategories.find { it.remoteId.toInt() == DBBill.CATEGORY_REIMBURSEMENT })
+                        listOfNotNull(defaultCategories.find { it.remoteId == DBBill.CATEGORY_REIMBURSEMENT })
                     }
                     (data.categories + hardcoded).distinctBy { it.remoteId }
                 }

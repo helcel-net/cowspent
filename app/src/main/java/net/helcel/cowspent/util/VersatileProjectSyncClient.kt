@@ -260,7 +260,13 @@ class VersatileProjectSyncClient(
     }
 
     @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
-    fun editRemoteBill(project: DBProject, bill: DBBill, memberIdToRemoteId: Map<Long, Long>): ServerResponse.EditRemoteBillResponse {
+    fun editRemoteBill(
+        project: DBProject,
+        bill: DBBill,
+        memberIdToRemoteId: Map<Long, Long>,
+        categoryIdToRemoteId: Map<Long, Long>,
+        paymentModeIdToRemoteId: Map<Long, Long>
+    ): ServerResponse.EditRemoteBillResponse {
         val paramKeys: MutableList<String> = ArrayList()
         val paramValues: MutableList<String> = ArrayList()
         paramKeys.add("date")
@@ -307,8 +313,10 @@ class VersatileProjectSyncClient(
             payedFor = payedFor.replace(",$".toRegex(), "")
             paramValues.add(payedFor)
             paramValues.add(bill.paymentMode ?: "")
-            paramValues.add(bill.categoryRemoteId.toString())
-            paramValues.add(bill.paymentModeRemoteId.toString())
+            val remoteCatId = if (bill.categoryId <= 0) bill.categoryId else categoryIdToRemoteId[bill.categoryId] ?: 0
+            val remotePmId = if (bill.paymentModeId <= 0) bill.paymentModeId else paymentModeIdToRemoteId[bill.paymentModeId] ?: 0
+            paramValues.add(remoteCatId.toString())
+            paramValues.add(remotePmId.toString())
 
             if (canAccessProjectWithNCLogin(project)) {
                 username = this.username
@@ -512,7 +520,13 @@ class VersatileProjectSyncClient(
     }
 
     @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
-    fun createRemoteBill(project: DBProject, bill: DBBill, memberIdToRemoteId: Map<Long, Long>): ServerResponse.CreateRemoteBillResponse {
+    fun createRemoteBill(
+        project: DBProject,
+        bill: DBBill,
+        memberIdToRemoteId: Map<Long, Long>,
+        categoryIdToRemoteId: Map<Long, Long>,
+        paymentModeIdToRemoteId: Map<Long, Long>
+    ): ServerResponse.CreateRemoteBillResponse {
         val paramKeys: MutableList<String> = ArrayList()
         val paramValues: MutableList<String> = ArrayList()
         paramKeys.add("date")
@@ -554,8 +568,10 @@ class VersatileProjectSyncClient(
             payedFor = payedFor.replace(",$".toRegex(), "")
             paramValues.add(payedFor)
             paramValues.add(bill.paymentMode ?: "")
-            paramValues.add(bill.categoryRemoteId.toString())
-            paramValues.add(bill.paymentModeRemoteId.toString())
+            val remoteCatId = if (bill.categoryId <= 0) bill.categoryId else categoryIdToRemoteId[bill.categoryId] ?: 0
+            val remotePmId = if (bill.paymentModeId <= 0) bill.paymentModeId else paymentModeIdToRemoteId[bill.paymentModeId] ?: 0
+            paramValues.add(remoteCatId.toString())
+            paramValues.add(remotePmId.toString())
 
             if (canAccessProjectWithNCLogin(project)) {
                 username = this.username

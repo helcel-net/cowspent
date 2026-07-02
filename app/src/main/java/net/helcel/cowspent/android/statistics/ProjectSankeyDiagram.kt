@@ -97,11 +97,11 @@ fun ProjectSankeyDiagram(
     var expanded by remember { mutableStateOf(false) }
 
     val activeBills = remember(allBills) {
-        allBills.filter { it.state != DBBill.STATE_DELETED && it.categoryRemoteId != DBBill.CATEGORY_REIMBURSEMENT }
+        allBills.filter { it.state != DBBill.STATE_DELETED && it.categoryId != DBBill.CATEGORY_REIMBURSEMENT.toLong() }
     }
 
     val membersMap = remember(allMembers) { allMembers.associateBy { it.id } }
-    val categoriesMap = remember(customCategories) { customCategories.associateBy { it.remoteId.toInt() } }
+    val categoriesMap = remember(customCategories) { customCategories.associateBy { it.id } }
 
     if (activeBills.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -112,13 +112,13 @@ fun ProjectSankeyDiagram(
 
     val spendings = remember(activeBills, selectedMemberId, membersMap) {
         val spentMap = mutableMapOf<Long, Double>().apply { membersMap.keys.forEach { put(it, 0.0) } }
-        val catMap = mutableMapOf<Int, Double>()
+        val catMap = mutableMapOf<Long, Double>()
         
         activeBills.forEach { bill ->
             val totalWeight = bill.billOwers.sumOf { membersMap[it.memberId]?.weight ?: 1.0 }
             if (totalWeight > 0) {
                 if (selectedMemberId == -1L) {
-                    catMap[bill.categoryRemoteId] = (catMap[bill.categoryRemoteId] ?: 0.0) + bill.amount
+                    catMap[bill.categoryId] = (catMap[bill.categoryId] ?: 0.0) + bill.amount
                     bill.billOwers.forEach { bo ->
                         val weight = membersMap[bo.memberId]?.weight ?: 1.0
                         spentMap[bo.memberId] = (spentMap[bo.memberId] ?: 0.0) + (bill.amount / totalWeight) * weight
@@ -126,7 +126,7 @@ fun ProjectSankeyDiagram(
                 } else {
                     bill.billOwers.find { it.memberId == selectedMemberId }?.let { bo ->
                         val weight = membersMap[bo.memberId]?.weight ?: 1.0
-                        catMap[bill.categoryRemoteId] = (catMap[bill.categoryRemoteId] ?: 0.0) + (bill.amount / totalWeight) * weight
+                        catMap[bill.categoryId] = (catMap[bill.categoryId] ?: 0.0) + (bill.amount / totalWeight) * weight
                         spentMap[selectedMemberId] = (spentMap[selectedMemberId] ?: 0.0) + (bill.amount / totalWeight) * weight
                     }
                 }
@@ -215,9 +215,9 @@ private fun SankeyContent(
     selectedMemberId: Long,
     totalAmount: Double,
     displayMemberSpendings: List<Pair<Long, Double>>,
-    displayCategorySpendings: List<Pair<Int, Double>>,
+    displayCategorySpendings: List<Pair<Long, Double>>,
     membersMap: Map<Long, DBMember>,
-    categoriesMap: Map<Int, DBCategory>
+    categoriesMap: Map<Long, DBCategory>
 ) {
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()

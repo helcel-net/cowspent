@@ -25,8 +25,8 @@ class EditBillViewModel : ViewModel() {
     var timestamp by mutableLongStateOf(0L)
     var payerId by mutableLongStateOf(0L)
     var repeat by mutableStateOf(DBBill.NON_REPEATED)
-    var paymentModeRemoteId by mutableIntStateOf(0)
-    var categoryRemoteId by mutableIntStateOf(0)
+    var paymentModeId by mutableLongStateOf(0L)
+    var categoryId by mutableLongStateOf(0L)
     var isNewBill by mutableStateOf(false)
 
     var currencies by mutableStateOf<List<DBCurrency>>(emptyList())
@@ -166,8 +166,8 @@ class EditBillViewModel : ViewModel() {
         timestamp = bill.timestamp
         payerId = bill.payerId
         repeat = bill.repeat ?: DBBill.NON_REPEATED
-        paymentModeRemoteId = bill.paymentModeRemoteId
-        categoryRemoteId = bill.categoryRemoteId
+        paymentModeId = bill.paymentModeId
+        categoryId = bill.categoryId
         
         val rawComment = bill.comment ?: ""
         

@@ -599,8 +599,8 @@ open class ServerResponse(
         var comment = ""
         var repeat = DBBill.NON_REPEATED
         var paymentMode = DBBill.PAYMODE_NONE
-        var paymentModeRemoteId = DBBill.PAYMODE_ID_NONE
-        var categoryId = DBBill.CATEGORY_NONE
+        var paymentModeId = DBBill.PAYMODE_ID_NONE.toLong()
+        var categoryId = DBBill.CATEGORY_NONE.toLong()
         if (!json.isNull("id")) {
             remoteId = json.getLong("id")
         }
@@ -641,21 +641,21 @@ open class ServerResponse(
             paymentMode = json.getString("paymentmode")
         }
         if (json.has("categoryid") && !json.isNull("categoryid")) {
-            categoryId = json.getInt("categoryid")
+            categoryId = json.getLong("categoryid")
             Log.d("PLOP", "LOADED CATTTTTTTTTTTT $categoryId")
         }
         if (json.has("paymentmodeid") && !json.isNull("paymentmodeid")) {
-            paymentModeRemoteId = json.getInt("paymentmodeid")
+            paymentModeId = json.getLong("paymentmodeid")
         }
         // old MB, new Cospend is ok as Cospend provides the old pm ID
         // new MB, old Cospend => set payment mode ID from old one
-        if (DBBill.PAYMODE_NONE != paymentMode && "" != paymentMode && paymentModeRemoteId == DBBill.PAYMODE_ID_NONE) {
+        if (DBBill.PAYMODE_NONE != paymentMode && "" != paymentMode && paymentModeId == DBBill.PAYMODE_ID_NONE.toLong()) {
             Log.d("PaymentMode", "old: $paymentMode and new: 0")
-            paymentModeRemoteId = DBBill.oldPmIdToNew[paymentMode] ?: DBBill.PAYMODE_ID_NONE
+            paymentModeId = (DBBill.oldPmIdToNew[paymentMode] ?: DBBill.PAYMODE_ID_NONE).toLong()
         }
         val bill = DBBill(
             0, remoteId, projId, payerId, amount, timestamp, what,
-            DBBill.STATE_OK, repeat, paymentMode, categoryId, comment, paymentModeRemoteId
+            DBBill.STATE_OK, repeat, paymentMode, categoryId, comment, paymentModeId
         )
         bill.billOwers = getBillOwersFromJson(json, memberRemoteIdToId)
         return bill
