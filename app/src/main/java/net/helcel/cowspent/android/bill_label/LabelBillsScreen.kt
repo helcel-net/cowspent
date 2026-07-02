@@ -248,10 +248,10 @@ fun LabelBillsScreenPreview() {
             DBBill(1L, 0, 1L, 1L, 120.5, System.currentTimeMillis() / 1000, "Groceries at Aldi", 0, null, null, 0L, null, -1L)
         )
         val cats = listOf(
-            DBCategory(1, 1, 1, "Groceries", "🛒", ""),
-            DBCategory(2, 2, 1, "Leisure", "🥳", ""),
-            DBCategory(3, 3, 1, "Rent", "🏠", ""),
-            DBCategory(4, 4, 1, "Bills", "💸", "")
+            DBCategory(-1, -1, 1, "Groceries", "🛒", ""),
+            DBCategory(-2, -2, 1, "Leisure", "🥳", ""),
+            DBCategory(-3, -3, 1, "Rent", "🏠", ""),
+            DBCategory(-4, -4, 1, "Bills", "💸", "")
         )
         categories = cats
         categoriesMap = cats.associateBy { it.id }

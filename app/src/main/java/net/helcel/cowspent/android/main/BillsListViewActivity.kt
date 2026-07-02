@@ -115,18 +115,8 @@ class BillsListViewActivity :
                 Log.d(TAG, "CREATED project id: $pid")
                 lifecycleScope.launch {
                     val addedProj = withContext(Dispatchers.IO) { db.getProject(pid) }
-                    val message: String
-                    val title: String
-                    if (created) {
-                        Log.e(TAG, "CREATED !!!")
-                        title = getString(R.string.msg_project_added)
-                        message = getString(R.string.msg_project_added, addedProj?.remoteId)
-                    } else {
-                        Log.e(TAG, "ADDED !!!")
-                        title = getString(R.string.msg_project_added)
-                        message = getString(R.string.msg_project_added, addedProj?.remoteId)
-                    }
-                    showDialog(message, title, Icons.Default.AddCircleOutline)
+                    val message = getString(R.string.msg_project_added, addedProj?.name?.ifEmpty { addedProj.remoteId } ?: pid.toString())
+                    showToast(this@BillsListViewActivity, message)
                 }
             }
         }
@@ -142,7 +132,7 @@ class BillsListViewActivity :
             }
             if (!db.cowspentServerSyncHelper.isSyncPossible) {
                 if (CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
-                    Toast.makeText(applicationContext, getString(R.string.error_sync, getString(CospendClientUtil.LoginStatus.NO_NETWORK.str)), Toast.LENGTH_LONG).show()
+                    showToast(this@BillsListViewActivity, getString(R.string.error_sync, getString(CospendClientUtil.LoginStatus.NO_NETWORK.str)), Toast.LENGTH_LONG)
                 }
             }
         }
