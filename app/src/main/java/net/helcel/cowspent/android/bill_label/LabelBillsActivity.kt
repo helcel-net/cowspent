@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.theme.ThemeUtils
-import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.ProjectType
 
@@ -42,14 +41,10 @@ class LabelBillsActivity : AppCompatActivity() {
                 val billsToLabel = allBills.filter { it.categoryId == 0L && it.state != DBBill.STATE_DELETED }
                 val allCategorized = allBills.filter { it.categoryId != 0L && it.state != DBBill.STATE_DELETED }
                 
-                val syncedCategories = db.getCategories(projectId)
-                val defaultCategories = CategoryUtils.getDefaultCategories(this@LabelBillsActivity, projectId)
-                val hardcoded = if (projectType == ProjectType.LOCAL) {
-                    defaultCategories
-                } else {
-                    listOfNotNull(defaultCategories.find { it.remoteId == DBBill.CATEGORY_REIMBURSEMENT.toLong() })
-                }
-                val categories = syncedCategories + hardcoded
+                db.ensureDefaultLabels(projectId, projectType)
+                
+                // Reload from DB to get real IDs
+                val categories = db.getCategories(projectId)
                 
                 Quadruple(members, billsToLabel, categories, allCategorized)
             }

@@ -84,6 +84,21 @@ fun ProjectStatisticsScreen(
             
             val statsData by produceState<StatisticsData?>(null, proj.id) {
                 value = withContext(Dispatchers.IO) {
+                    val syncedCategories = db.getCategories(proj.id)
+                    val defaultCategories = CategoryUtils.getDefaultCategories(context, proj.id)
+
+                    val toEnsure = if (proj.type == ProjectType.LOCAL) {
+                        defaultCategories
+                    } else {
+                        listOfNotNull(defaultCategories.find { it.remoteId == DBBill.CATEGORY_REIMBURSEMENT })
+                    }
+
+                    toEnsure.forEach { def ->
+                        if (syncedCategories.none { it.remoteId == def.remoteId }) {
+                            db.addCategory(def)
+                        }
+                    }
+
                     val members = db.getMembersOfProject(proj.id, null)
                     val bills = db.getBillsOfProject(proj.id)
                     val categories = db.getCategories(proj.id)
@@ -94,19 +109,12 @@ fun ProjectStatisticsScreen(
 
             if (statsData != null) {
                 val data = statsData!!
-                val defaultCategories = remember(proj.id) { CategoryUtils.getDefaultCategories(context, proj.id) }
-                val categories = remember(proj.type, data.categories, defaultCategories) {
-                    val hardcoded = if (proj.type == ProjectType.LOCAL) {
-                        defaultCategories
-                    } else {
-                        listOfNotNull(defaultCategories.find { it.remoteId == DBBill.CATEGORY_REIMBURSEMENT })
-                    }
-                    (data.categories + hardcoded).distinctBy { it.remoteId }
-                }
+                val categories = data.categories
+
                 val categoryNoneLabel = stringResource(R.string.category_none)
-                val sankeyCategories = remember(proj.id, data.categories, defaultCategories, categoryNoneLabel) {
+                val sankeyCategories = remember(proj.id, data.categories, categoryNoneLabel) {
                     val noneCategory = DBCategory(0, 0, proj.id, categoryNoneLabel, "❌", "#9E9E9E")
-                    (data.categories + defaultCategories + noneCategory).distinctBy { it.remoteId }
+                    (data.categories + noneCategory).distinctBy { if (it.id == 0L) "none" else it.id.toString() }
                 }
 
                 when (selectedTab) {
@@ -131,6 +139,8 @@ fun ProjectStatisticsScreen(
                     2 -> {
                         ProjectSankeyDiagram(
                             projectName = proj.name.ifEmpty { proj.remoteId },
+                            projectId = proj.id,
+                            projectRemoteId = proj.remoteId,
                             allMembers = data.members,
                             allBills = data.bills,
                             customCategories = sankeyCategories,

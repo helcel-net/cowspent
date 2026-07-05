@@ -87,14 +87,17 @@ object SupportUtil {
         membersBalance: MutableMap<Long, Double>,
         membersPaid: MutableMap<Long, Double>,
         membersSpent: MutableMap<Long, Double>,
-        catId: Int, paymentModeId: Int,
+        catId: Long, paymentModeId: Long,
         dateMin: String?, dateMax: String?
     ): Int {
+        val proj = db.getProject(projId)
+        val categories = db.getCategories(projId)
+        val reimbursementCategoryId = CategoryUtils.getReimbursementCategoryId(categories, projId, proj?.remoteId)
         return getStats(
             db.getMembersOfProject(projId, null),
             db.getBillsOfProject(projId),
             membersNbBills, membersBalance, membersPaid, membersSpent,
-            catId, paymentModeId, dateMin, dateMax
+            catId, paymentModeId, reimbursementCategoryId, dateMin, dateMax
         )
     }
 
@@ -106,7 +109,8 @@ object SupportUtil {
         membersBalance: MutableMap<Long, Double>,
         membersPaid: MutableMap<Long, Double>,
         membersSpent: MutableMap<Long, Double>,
-        catId: Int, paymentModeId: Int,
+        catId: Long, paymentModeId: Long,
+        reimbursementCategoryId: Long,
         dateMin: String?, dateMax: String?
     ): Int {
         val nbBillsTotal = 0
@@ -124,9 +128,9 @@ object SupportUtil {
         for (b in dbBills) {
             // don't take deleted bills and respect category filter
             if (b.state != DBBill.STATE_DELETED &&
-                ((catId == -1000 || catId == -100 || b.categoryId == catId.toLong()) &&
-                        (catId != -100 || b.categoryId != DBBill.CATEGORY_REIMBURSEMENT.toLong()) &&
-                        (paymentModeId == -1000 || b.paymentModeId == paymentModeId.toLong())) &&
+                ((catId == -1000L || catId == -100L || b.categoryId == catId) &&
+                        (catId != -100L || b.categoryId != reimbursementCategoryId) &&
+                        (paymentModeId == -1000L || b.paymentModeId == paymentModeId)) &&
                 (dateMin == null || b.date >= dateMin) &&
                 (dateMax == null || b.date <= dateMax)
             ) {
@@ -283,18 +287,6 @@ object SupportUtil {
         }
 
         return reduceBalance(crediters, debiters, results)
-    }
-
-    @JvmStatic
-    fun getVersionName(context: Context): String {
-        var versionName = "0.0.0"
-        try {
-            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            versionName = pInfo.versionName ?: "0.0.0"
-        } catch (e: PackageManager.NameNotFoundException) {
-            e.printStackTrace()
-        }
-        return versionName
     }
 
     @JvmStatic

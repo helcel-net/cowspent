@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.*
 import net.helcel.cowspent.model.*
+import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.util.SupportUtil
 import java.util.Date
 import kotlin.math.abs
@@ -466,9 +467,10 @@ fun BillAdditionalDetailsSection(
         modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
     )
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     var categoryExpanded by remember { mutableStateOf(false) }
     val selectedCategory =
-        categories.find { (if (it.id > 0) it.id else it.remoteId) == viewModel.categoryId }
+        categories.find { it.id == viewModel.categoryId } ?: CategoryUtils.getCategoryById(context, viewModel.categoryId)
 
     EditableExposedDropdownMenu(
         value = selectedCategory?.name ?: "",
@@ -495,9 +497,19 @@ fun BillAdditionalDetailsSection(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(stringResource(R.string.category_none))
             }
-            categories.forEach { category ->
+            
+            DropdownMenuItem(onClick = {
+                viewModel.categoryId = DBBill.CATEGORY_REIMBURSEMENT
+                categoryExpanded = false
+            }) {
+                Text(text = "\uD83D\uDCB0", fontSize = 20.sp)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(stringResource(R.string.category_reimbursement))
+            }
+
+            categories.filter { it.remoteId != DBBill.CATEGORY_REIMBURSEMENT }.forEach { category ->
                 DropdownMenuItem(onClick = {
-                    viewModel.categoryId = if (category.id > 0) category.id else category.remoteId
+                    viewModel.categoryId = category.id
                     categoryExpanded = false
                 }) {
                     Text(text = category.icon, fontSize = 20.sp)
@@ -512,7 +524,7 @@ fun BillAdditionalDetailsSection(
 
     var pmExpanded by remember { mutableStateOf(false) }
     val selectedPm =
-        paymentModes.find { (if (it.id > 0) it.id else it.remoteId) == viewModel.paymentModeId }
+        paymentModes.find { it.id == viewModel.paymentModeId } ?: CategoryUtils.getPaymentModeById(context, viewModel.paymentModeId)
 
     EditableExposedDropdownMenu(
         value = selectedPm?.name ?: "",
@@ -541,7 +553,7 @@ fun BillAdditionalDetailsSection(
             }
             paymentModes.forEach { pm ->
                 DropdownMenuItem(onClick = {
-                    viewModel.paymentModeId = if (pm.id > 0) pm.id else pm.remoteId
+                    viewModel.paymentModeId = pm.id
                     pmExpanded = false
                 }) {
                     Text(text = pm.icon, fontSize = 20.sp)

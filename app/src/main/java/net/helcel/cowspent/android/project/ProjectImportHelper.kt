@@ -149,16 +149,16 @@ object ProjectImportHelper {
             
             val memberNameToId = mutableMapOf<String, Long>()
             val pid = db.addProject(DBProject(0, projectRemoteId, "", projectRemoteId, null, null, null, ProjectType.LOCAL, 0L, mainCurrencyName, false, DBProject.ACCESS_LEVEL_UNKNOWN, null))
-            
+
             val pmRemoteToLocal = mutableMapOf<Long, Long>()
-            paymentModes.forEach { pm ->
-                val localId = db.addPaymentMode(DBPaymentMode(0, pm.remoteId, pid, pm.name, pm.icon, pm.color))
-                pmRemoteToLocal[pm.remoteId] = localId
+            paymentModes.forEach {
+                val newId = db.addPaymentMode(DBPaymentMode(0, it.remoteId, pid, it.name, it.icon, it.color))
+                pmRemoteToLocal[it.remoteId] = newId
             }
             val catRemoteToLocal = mutableMapOf<Long, Long>()
-            categories.forEach { cat ->
-                val localId = db.addCategory(DBCategory(0, cat.remoteId, pid, cat.name, cat.icon, cat.color))
-                catRemoteToLocal[cat.remoteId] = localId
+            categories.forEach {
+                val newId = db.addCategory(DBCategory(0, it.remoteId, pid, it.name, it.icon, it.color))
+                catRemoteToLocal[it.remoteId] = newId
             }
             currencies.forEach { db.addCurrency(DBCurrency(0, 0, pid, it.name, it.exchangeRate, DBBill.STATE_OK)) }
             
@@ -168,8 +168,8 @@ object ProjectImportHelper {
             
             bills.forEach { b ->
                 val payerId = memberNameToId[billRemoteIdToPayerName[b.remoteId]] ?: 0L
-                val localCatId = catRemoteToLocal[b.categoryId] ?: b.categoryId
-                val localPmId = pmRemoteToLocal[b.paymentModeId] ?: b.paymentModeId
+                val localCatId = catRemoteToLocal[b.categoryId] ?: 0L
+                val localPmId = pmRemoteToLocal[b.paymentModeId] ?: 0L
                 val billId = db.addBill(DBBill(0, 0, pid, payerId, b.amount, b.timestamp, b.what, DBBill.STATE_OK, b.repeat, b.paymentMode, localCatId, b.comment, localPmId))
                 billRemoteIdToOwerStr[b.remoteId]?.split(", ")?.filter { it.isNotEmpty() }?.forEach { ower ->
                     memberNameToId[ower.trim()]?.let { owerId -> db.addBillower(billId, owerId) }
