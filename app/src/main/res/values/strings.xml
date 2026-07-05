@@ -35,6 +35,8 @@
     <string name="title_settle">Settle Project</string>
     <string name="title_share">Share Project</string>
     <string name="title_add_project">Add Project</string>
+    <string name="title_add_category">Add Category</string>
+    <string name="title_add_payment_mode">Add Payment Mode</string>
     <string name="title_account">Nextcloud Account</string>
     <string name="title_share_web">Web link</string>
     <string name="title_share_qr">Cowspent link</string>
@@ -229,7 +231,7 @@
     <string name="settle_bill_what">Settlement</string>
 
     <!-- Currencies -->
-    <string name="currency_dialog_title">Choose Currency</string>
+    <string name="currency_dialog_title">Choose Currency (%s)</string>
     <string name="setting_none">None</string>
     <string name="setting_all">All</string>
     <string name="currency_saved_success">Currency settings saved.</string>

@@ -46,4 +46,21 @@ object CategoryUtils {
             DBPaymentMode(DBBill.PAYMODE_ID_ONLINE_SERVICE, DBBill.PAYMODE_ID_ONLINE_SERVICE, projectId, context.getString(R.string.payment_mode_online), "\uD83C\uDF0E", "#9932cc")
         )
     }
+
+    fun getReimbursementCategoryId(categories: List<DBCategory>, projectId: Long, projectRemoteId: String? = null): Long {
+        return categories.find {
+            it.projectId == projectId && (
+                    it.remoteId == DBBill.CATEGORY_REIMBURSEMENT ||
+                            (projectRemoteId != null && it.remoteId.toString() == projectRemoteId)
+                    )
+        }?.id ?: DBBill.CATEGORY_REIMBURSEMENT
+    }
+
+    fun getCategoryById(context: Context, id: Long, projectId: Long = 0): DBCategory? {
+        return getDefaultCategories(context, projectId).find { it.id == id }
+    }
+
+    fun getPaymentModeById(context: Context, id: Long, projectId: Long = 0): DBPaymentMode? {
+        return getDefaultPaymentModes(context, projectId).find { it.id == id }
+    }
 }

@@ -44,8 +44,8 @@ fun ProjectStatisticsTable(
     val sdf = remember { SimpleDateFormat("yyyy-MM-dd", Locale.ROOT) }
     val dateFormat = remember { android.text.format.DateFormat.getDateFormat(context) }
 
-    var categoryId by remember { mutableIntStateOf(-1000) }
-    var paymentModeId by remember { mutableIntStateOf(-1000) }
+    var categoryId by remember { mutableLongStateOf(-1000L) }
+    var paymentModeId by remember { mutableLongStateOf(-1000L) }
     var dateMin by remember { mutableStateOf<String?>(null) }
     var dateMax by remember { mutableStateOf<String?>(null) }
 
@@ -61,10 +61,10 @@ fun ProjectStatisticsTable(
     val shareStatsIntro = stringResource(R.string.msg_stats_intro, proj.name.ifEmpty { proj.remoteId })
 
     val categories = remember(proj.id, customCategories, categoryAll, categoryNone, categoryReimbursement, categoryAllExceptReimbursement) {
-        val list = mutableListOf<Triple<Int, String, String>>()
-        list.add(Triple(-1000, "📋", categoryAll))
-        list.add(Triple(-100, "🧾", categoryAllExceptReimbursement))
-        list.add(Triple(0, "❌", categoryNone))
+        val list = mutableListOf<Triple<Long, String, String>>()
+        list.add(Triple(-1000L, "📋", categoryAll))
+        list.add(Triple(-100L, "🧾", categoryAllExceptReimbursement))
+        list.add(Triple(0L, "❌", categoryNone))
 
         val catsToUse = if (proj.type == ProjectType.LOCAL) {
             CategoryUtils.getDefaultCategories(context, proj.id)
@@ -75,15 +75,15 @@ fun ProjectStatisticsTable(
         }
 
         catsToUse.forEach {
-            list.add(Triple(it.remoteId.toInt(), it.icon, it.name ?: ""))
+            list.add(Triple(it.id, it.icon, it.name ?: ""))
         }
         list.distinctBy { it.first }
     }
 
     val paymentModes = remember(proj.id, customPaymentModes, paymentModeAll, paymentModeNone) {
-        val list = mutableListOf<Triple<Int, String, String>>()
-        list.add(Triple(-1000, "💳", paymentModeAll))
-        list.add(Triple(0, "❌", paymentModeNone))
+        val list = mutableListOf<Triple<Long, String, String>>()
+        list.add(Triple(-1000L, "💳", paymentModeAll))
+        list.add(Triple(0L, "❌", paymentModeNone))
 
         val pmsToUse = if (proj.type == ProjectType.LOCAL) {
             CategoryUtils.getDefaultPaymentModes(context, proj.id)
@@ -94,7 +94,7 @@ fun ProjectStatisticsTable(
         }
 
         pmsToUse.forEach {
-            list.add(Triple(it.remoteId.toInt(), it.icon, it.name ?: ""))
+            list.add(Triple(it.id, it.icon, it.name ?: ""))
         }
         list.distinctBy { it.first }
     }
@@ -105,10 +105,12 @@ fun ProjectStatisticsTable(
         val membersPaid = HashMap<Long, Double>()
         val membersSpent = HashMap<Long, Double>()
 
+        val reimbursementCategoryId = CategoryUtils.getReimbursementCategoryId(customCategories, proj.id, proj.remoteId)
+
         SupportUtil.getStats(
             allMembers, allBills,
             membersNbBills, membersBalance, membersPaid, membersSpent,
-            categoryId, paymentModeId, dateMin, dateMax
+            categoryId, paymentModeId, reimbursementCategoryId, dateMin, dateMax
         )
 
         var statsText = shareStatsIntro + "\n\n"

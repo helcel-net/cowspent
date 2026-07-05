@@ -28,6 +28,7 @@ import androidx.core.graphics.toColorInt
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.ColorPicker
 import net.helcel.cowspent.android.helper.StatefulAlertDialog
+import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBCategory
 import net.helcel.cowspent.model.DBPaymentMode
 
@@ -59,10 +60,10 @@ fun LabelManagementScreenContent(
     dialogState: net.helcel.cowspent.android.helper.DialogState?,
     onBack: () -> Unit,
     onAddCategory: (String, String, String) -> Unit,
-    onUpdateCategory: (Long, String, String, String) -> Unit,
+    onUpdateCategory: (DBCategory, String, String, String) -> Unit,
     onDeleteCategory: (Long) -> Unit,
     onAddPaymentMode: (String, String, String) -> Unit,
-    onUpdatePaymentMode: (Long, String, String, String) -> Unit,
+    onUpdatePaymentMode: (DBPaymentMode, String, String, String) -> Unit,
     onDeletePaymentMode: (Long) -> Unit,
     onDismissDialog: () -> Unit,
     onShowDialog: (net.helcel.cowspent.android.helper.DialogState) -> Unit,
@@ -123,7 +124,7 @@ fun LabelManagementScreenContent(
 
             if (selectedTab == 0) {
                 CategoryList(
-                    categories = categories,
+                    categories = categories.filter { it.remoteId != DBBill.CATEGORY_REIMBURSEMENT },
                     onEdit = { 
                         editingCategory = it
                         showEditDialog = true
@@ -162,7 +163,7 @@ fun LabelManagementScreenContent(
     if (showEditDialog) {
         if (selectedTab == 0) {
             EditLabelDialog(
-                title = if (editingCategory == null) stringResource(R.string.action_add_project) else stringResource(R.string.action_edit),
+                title = if (editingCategory == null) stringResource(R.string.title_add_category) else stringResource(R.string.action_edit),
                 initialName = editingCategory?.name ?: "",
                 initialIcon = editingCategory?.icon ?: "",
                 initialColor = editingCategory?.color ?: "#FF0000",
@@ -171,14 +172,14 @@ fun LabelManagementScreenContent(
                     if (editingCategory == null) {
                         onAddCategory(name, icon, color)
                     } else {
-                        onUpdateCategory(editingCategory!!.id, name, icon, color)
+                        onUpdateCategory(editingCategory!!, name, icon, color)
                     }
                     showEditDialog = false
                 }
             )
         } else {
             EditLabelDialog(
-                title = if (editingPaymentMode == null) stringResource(R.string.action_add_project) else stringResource(R.string.action_edit),
+                title = if (editingPaymentMode == null) stringResource(R.string.title_add_payment_mode) else stringResource(R.string.action_edit),
                 initialName = editingPaymentMode?.name ?: "",
                 initialIcon = editingPaymentMode?.icon ?: "",
                 initialColor = editingPaymentMode?.color ?: "#00FF00",
@@ -187,7 +188,7 @@ fun LabelManagementScreenContent(
                     if (editingPaymentMode == null) {
                         onAddPaymentMode(name, icon, color)
                     } else {
-                        onUpdatePaymentMode(editingPaymentMode!!.id, name, icon, color)
+                        onUpdatePaymentMode(editingPaymentMode!!, name, icon, color)
                     }
                     showEditDialog = false
                 }
@@ -353,8 +354,8 @@ fun LabelManagementCategoriesPreview() {
     MaterialTheme {
         LabelManagementScreenContent(
             categories = listOf(
-                DBCategory(1, 1, 1, "Groceries", "🛒", "#FF0000"),
-                DBCategory(2, 2, 1, "Rent", "🏠", "#00FF00")
+                DBCategory(1L, 1L, 1L, "Groceries", "🛒", "#FF0000"),
+                DBCategory(2L, 2L, 1L, "Rent", "🏠", "#00FF00")
             ),
             paymentModes = emptyList(),
             dialogState = null,
@@ -379,8 +380,8 @@ fun LabelManagementPaymentModesPreview() {
         LabelManagementScreenContent(
             categories = emptyList(),
             paymentModes = listOf(
-                DBPaymentMode(1, 1, 1, "Cash", "💵", "#0000FF"),
-                DBPaymentMode(2, 2, 1, "Credit Card", "💳", "#FFFF00")
+                DBPaymentMode(1L, 1L, 1L, "Cash", "💵", "#0000FF"),
+                DBPaymentMode(2L, 2L, 1L, "Credit Card", "💳", "#FFFF00")
             ),
             dialogState = null,
             onBack = {},

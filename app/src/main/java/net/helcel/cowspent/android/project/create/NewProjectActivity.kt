@@ -320,7 +320,6 @@ class NewProjectActivity : AppCompatActivity() {
                 pid
             )
         }
-        showToast(getString(R.string.project_added_success), Toast.LENGTH_LONG)
         return pid
     }
 

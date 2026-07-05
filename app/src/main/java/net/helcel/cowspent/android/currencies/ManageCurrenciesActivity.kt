@@ -33,9 +33,11 @@ class ManageCurrenciesActivity : AppCompatActivity() {
             if (message.isEmpty()) {
                 showToast(this@ManageCurrenciesActivity,getString(R.string.currency_saved_success), Toast.LENGTH_LONG)
             } else {
-                viewModel.showDialog(title=getString(R.string.error_edit_remote_project_helper, message),
-                    message=getString(R.string.action_currencies),
-                    positiveText = getString(android.R.string.ok))
+                viewModel.showDialog(
+                    title = getString(R.string.dialog_sync_error_title),
+                    message = getString(R.string.error_edit_remote_project_helper, message),
+                    positiveText = getString(android.R.string.ok)
+                )
             }
         }
         override fun onScheduled() {}

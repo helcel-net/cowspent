@@ -13,8 +13,8 @@ import kotlinx.coroutines.withContext
 import net.helcel.cowspent.android.helper.DialogState
 import net.helcel.cowspent.model.DBCategory
 import net.helcel.cowspent.model.DBPaymentMode
+import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
-import net.helcel.cowspent.util.CategoryUtils
 
 class LabelManagementViewModel(application: Application) : AndroidViewModel(application) {
     private val db = CowspentSQLiteOpenHelper.getInstance(application)
@@ -28,44 +28,30 @@ class LabelManagementViewModel(application: Application) : AndroidViewModel(appl
     fun loadLabels(projId: Long) {
         projectId = projId
         viewModelScope.launch {
-            val cats = withContext(Dispatchers.IO) { db.getCategories(projId) }
-            val pms = withContext(Dispatchers.IO) { db.getPaymentModes(projId) }
-
-            if (cats.isEmpty()) {
-                val defaults = CategoryUtils.getDefaultCategories(getApplication(), projId)
+            val project = withContext(Dispatchers.IO) { db.getProject(projId) }
+            if (project != null) {
                 withContext(Dispatchers.IO) {
-                    defaults.forEach { db.addCategory(it) }
+                    db.ensureDefaultLabels(projId, project.type)
                 }
-                categories = withContext(Dispatchers.IO) { db.getCategories(projId) }
-            } else {
-                categories = cats
             }
-
-            if (pms.isEmpty()) {
-                val defaults = CategoryUtils.getDefaultPaymentModes(getApplication(), projId)
-                withContext(Dispatchers.IO) {
-                    defaults.forEach { db.addPaymentMode(it) }
-                }
-                paymentModes = withContext(Dispatchers.IO) { db.getPaymentModes(projId) }
-            } else {
-                paymentModes = pms
-            }
+            categories = withContext(Dispatchers.IO) { db.getCategories(projId) }
+            paymentModes = withContext(Dispatchers.IO) { db.getPaymentModes(projId) }
         }
     }
 
     fun addCategory(name: String, icon: String, color: String) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                db.addCategory(DBCategory(0, 0, projectId, name, icon, color))
+                db.addCategoryAndSync(DBCategory(0, 0, projectId, name, icon, color, DBBill.STATE_ADDED))
             }
             loadLabels(projectId)
         }
     }
 
-    fun updateCategory(id: Long, name: String, icon: String, color: String) {
+    fun updateCategory(cat: DBCategory, name: String, icon: String, color: String) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                db.updateCategory(id, name, icon, color)
+                db.updateCategoryAndSync(cat, name, icon, color)
             }
             loadLabels(projectId)
         }
@@ -74,7 +60,7 @@ class LabelManagementViewModel(application: Application) : AndroidViewModel(appl
     fun deleteCategory(id: Long) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                db.deleteCategory(id)
+                db.deleteCategoryAndSync(id)
             }
             loadLabels(projectId)
         }
@@ -83,16 +69,16 @@ class LabelManagementViewModel(application: Application) : AndroidViewModel(appl
     fun addPaymentMode(name: String, icon: String, color: String) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                db.addPaymentMode(DBPaymentMode(0, 0, projectId, name, icon, color))
+                db.addPaymentModeAndSync(DBPaymentMode(0, 0, projectId, name, icon, color, DBBill.STATE_ADDED))
             }
             loadLabels(projectId)
         }
     }
 
-    fun updatePaymentMode(id: Long, name: String, icon: String, color: String) {
+    fun updatePaymentMode(pm: DBPaymentMode, name: String, icon: String, color: String) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                db.updatePaymentMode(id, name, icon, color)
+                db.updatePaymentModeAndSync(pm, name, icon, color)
             }
             loadLabels(projectId)
         }
@@ -101,7 +87,7 @@ class LabelManagementViewModel(application: Application) : AndroidViewModel(appl
     fun deletePaymentMode(id: Long) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                db.deletePaymentMode(id)
+                db.deletePaymentModeAndSync(id)
             }
             loadLabels(projectId)
         }

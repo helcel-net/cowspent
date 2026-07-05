@@ -26,7 +26,6 @@ import net.helcel.cowspent.model.ProjectType
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.BillParser
-import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.util.SupportUtil
 import java.text.ParseException
 import java.time.ZoneId
@@ -52,23 +51,10 @@ class EditBillActivity : AppCompatActivity() {
                 ThemeUtils.CowspentTheme {
 
                     val categories = remember {
-                        val syncedCategories = db.getCategories(bill.projectId)
-                        val defaultCategories = CategoryUtils.getDefaultCategories(this@EditBillActivity, bill.projectId)
-                        val hardcoded = if (projectType == ProjectType.LOCAL) {
-                            defaultCategories
-                        } else {
-                            listOfNotNull(defaultCategories.find { it.remoteId == DBBill.CATEGORY_REIMBURSEMENT.toLong() })
-                        }
-                        syncedCategories + hardcoded
+                        db.getCategories(bill.projectId)
                     }
                     val paymentModes = remember {
-                        val syncedPaymentModes = db.getPaymentModes(bill.projectId)
-                        val defaultPaymentModes = CategoryUtils.getDefaultPaymentModes(this@EditBillActivity, bill.projectId)
-                        if (projectType == ProjectType.LOCAL) {
-                            syncedPaymentModes + defaultPaymentModes
-                        } else {
-                            syncedPaymentModes.ifEmpty { defaultPaymentModes }
-                        }
+                        db.getPaymentModes(bill.projectId)
                     }
 
                     EditBillScreen(
@@ -168,7 +154,7 @@ class EditBillActivity : AppCompatActivity() {
                     bill = DBBill(
                         0, 0, projectId, 0, 0.0, timeNowSeconds,
                         "", DBBill.STATE_ADDED, DBBill.NON_REPEATED,
-                        DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE.toLong(), "", DBBill.PAYMODE_ID_NONE.toLong()
+                        DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE, "", DBBill.PAYMODE_ID_NONE
                     )
                 } else {
                     val btd = db.getBill(billIdToDuplicate)!!
@@ -195,6 +181,11 @@ class EditBillActivity : AppCompatActivity() {
             
             val project = db.getProject(bill.projectId)
             val currencies = db.getCurrencies(bill.projectId)
+            
+            if (project != null) {
+                db.ensureDefaultLabels(bill.projectId, project.type)
+            }
+
             withContext(Dispatchers.Main) {
                 viewModel.currencies = currencies
                 viewModel.mainCurrencyName = project?.currencyName ?: ""
@@ -399,6 +390,8 @@ class EditBillActivity : AppCompatActivity() {
                         bill.paymentMode, viewModel.categoryId, finalComment, viewModel.paymentModeId
                     )
                     newBill.billOwers = listOf(DBBillOwer(0, 0, memberId))
+                    newBill.categoryId = viewModel.categoryId
+                    newBill.paymentModeId = viewModel.paymentModeId
                     val newId = db.addBill(newBill)
                     if (firstSavedId == 0L) firstSavedId = newId
                 }

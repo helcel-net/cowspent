@@ -21,9 +21,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
@@ -50,6 +48,7 @@ import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.persistence.CowspentServerSyncHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.BillFormatter
+import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.util.CospendClientUtil
 import net.helcel.cowspent.util.ExportUtil
 import net.helcel.cowspent.util.ICallback
@@ -555,11 +554,13 @@ class BillsListViewActivity :
 
                 val members = db.getMembersOfProject(proj.id, null)
                 val bills = db.getBillsOfProject(proj.id)
+                val categories = db.getCategories(proj.id)
+                val reimbursementCategoryId = CategoryUtils.getReimbursementCategoryId(categories, proj.id, proj.remoteId)
                 val balances = HashMap<Long, Double>()
                 SupportUtil.getStats(
                     members, bills,
                     mutableMapOf(), balances, mutableMapOf(), mutableMapOf(),
-                    -1000, -1000, null, null
+                    -1000L, -1000L, reimbursementCategoryId, null, null
                 )
                 Triple(proj, members, balances)
             }
@@ -696,15 +697,6 @@ class BillsListViewActivity :
                 }
             }
         }
-    }
-
-    private fun showDialog(msg: String, title: String, icon: ImageVector) {
-        viewModel.showDialog(
-            title = title,
-            message = msg,
-            positiveText = getString(android.R.string.ok),
-            icon = icon
-        )
     }
 
     private fun updateUsernameInDrawer() {

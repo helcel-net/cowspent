@@ -71,6 +71,7 @@ import net.helcel.cowspent.android.helper.formatShortValue
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBCategory
 import net.helcel.cowspent.model.DBMember
+import net.helcel.cowspent.util.CategoryUtils
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -87,6 +88,8 @@ private object SankeyDimens {
 @Composable
 fun ProjectSankeyDiagram(
     projectName: String,
+    projectId: Long,
+    projectRemoteId: String?,
     allMembers: List<DBMember>,
     allBills: List<DBBill>,
     customCategories: List<DBCategory>,
@@ -96,8 +99,11 @@ fun ProjectSankeyDiagram(
     var selectedMemberId by remember { mutableLongStateOf(-1L) }
     var expanded by remember { mutableStateOf(false) }
 
-    val activeBills = remember(allBills) {
-        allBills.filter { it.state != DBBill.STATE_DELETED && it.categoryId != DBBill.CATEGORY_REIMBURSEMENT.toLong() }
+    val reimbursementCategoryId = remember(customCategories, projectId, projectRemoteId) {
+        CategoryUtils.getReimbursementCategoryId(customCategories, projectId, projectRemoteId)
+    }
+    val activeBills = remember(allBills, reimbursementCategoryId) {
+        allBills.filter { it.state != DBBill.STATE_DELETED && it.categoryId != reimbursementCategoryId }
     }
 
     val membersMap = remember(allMembers) { allMembers.associateBy { it.id } }
@@ -399,4 +405,4 @@ private fun DrawScope.drawSankeyFlow(startX: Float, startY: Float, startWidth: F
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
-fun ProjectSankeyDiagramPreview() = MaterialTheme { ProjectSankeyDiagram("Test Project", StatisticsMockData.members, StatisticsMockData.bills, emptyList()) {} }
+fun ProjectSankeyDiagramPreview() = MaterialTheme { ProjectSankeyDiagram("Test Project", 1L, "1", StatisticsMockData.members, StatisticsMockData.bills, emptyList()) {} }
