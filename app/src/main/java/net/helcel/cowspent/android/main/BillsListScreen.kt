@@ -103,6 +103,10 @@ fun BillsListScreen(
     val context = LocalContext.current
     val sharedPreferences = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     val showArchived = sharedPreferences.getBoolean(stringResource(R.string.pref_key_show_archived), false)
+    val keyBetaFeatures = stringResource(R.string.pref_key_beta_features)
+    var showBetaFeatures by remember(keyBetaFeatures) {
+        mutableStateOf(sharedPreferences.getBoolean(keyBetaFeatures, false))
+    }
 
     StatefulAlertDialog(
         state = viewModel.dialogState,
@@ -158,7 +162,8 @@ fun BillsListScreen(
                 isArchived = proj?.isArchived == true,
                 projectType = proj?.type ?: ProjectType.LOCAL,
                 accessLevel = proj?.myAccessLevel ?: DBProject.ACCESS_LEVEL_ADMIN,
-                isShareable = proj?.isShareable() ?: true
+                isShareable = proj?.isShareable() ?: true,
+                showBetaFeatures = showBetaFeatures
             )
         }
     }
@@ -327,7 +332,7 @@ fun BillsListScreen(
                 },
                 actions = {
                     if (!isSearchExpanded) {
-                        if (viewModel.hasUnlabeledBills) {
+                        if (showBetaFeatures && viewModel.hasUnlabeledBills) {
                             IconButton(onClick = onLabelBillsClick) {
                                 Icon(
                                     Icons.Default.Category,

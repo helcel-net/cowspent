@@ -35,7 +35,8 @@ fun ProjectOptionsDialogContent(
     isArchived: Boolean = false,
     projectType: ProjectType = ProjectType.LOCAL,
     accessLevel: Int = DBProject.ACCESS_LEVEL_ADMIN,
-    isShareable: Boolean = true
+    isShareable: Boolean = true,
+    showBetaFeatures: Boolean = false
 ) {
     Surface(
         shape = MaterialTheme.shapes.large,
@@ -79,7 +80,7 @@ fun ProjectOptionsDialogContent(
             // Row 2: Manage Member, Manage Labels, Manage Currencies
             if (!isArchived && isMaintainer) {
                 row2.add(ProjectOption(stringResource(R.string.action_members), Icons.Default.Group, onManageMembers))
-                if (false && (projectType == ProjectType.LOCAL || projectType == ProjectType.COSPEND)) {
+                if (showBetaFeatures && (projectType == ProjectType.LOCAL || projectType == ProjectType.COSPEND)) {
                     row2.add(ProjectOption(stringResource(R.string.action_labels), Icons.AutoMirrored.Filled.Label, onManageLabels))
                 }
                 row2.add(ProjectOption(stringResource(R.string.action_currencies), Icons.Default.MonetizationOn, onManageCurrencies))
@@ -181,7 +182,8 @@ fun ProjectOptionsDialogPreview() {
             isArchived = false,
             projectType = ProjectType.COSPEND,
             accessLevel = DBProject.ACCESS_LEVEL_ADMIN,
-            isShareable = true
+            isShareable = true,
+            showBetaFeatures = true
         )
     }
 }
@@ -205,7 +207,8 @@ fun ProjectOptionsDialogPreview2() {
             isArchived = true,
             projectType = ProjectType.COSPEND,
             accessLevel = DBProject.ACCESS_LEVEL_ADMIN,
-            isShareable = true
+            isShareable = true,
+            showBetaFeatures = true
         )
     }
 }
@@ -228,7 +231,8 @@ fun ProjectOptionsDialogPreview3() {
             isArchived = false,
             projectType = ProjectType.LOCAL,
             accessLevel = DBProject.ACCESS_LEVEL_ADMIN,
-            isShareable = true
+            isShareable = true,
+            showBetaFeatures = true
         )
     }
 }

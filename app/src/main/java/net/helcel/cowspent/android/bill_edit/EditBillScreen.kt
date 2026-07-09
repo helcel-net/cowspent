@@ -467,7 +467,7 @@ fun BillAdditionalDetailsSection(
         modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
     )
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     var categoryExpanded by remember { mutableStateOf(false) }
     val selectedCategory =
         categories.find { it.id == viewModel.categoryId } ?: CategoryUtils.getCategoryById(context, viewModel.categoryId)

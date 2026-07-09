@@ -29,11 +29,9 @@ import net.helcel.cowspent.android.account.AccountActivity
 import net.helcel.cowspent.android.main.BillsListViewActivity
 import net.helcel.cowspent.android.main.MainConstants
 import net.helcel.cowspent.model.DBBill
-import net.helcel.cowspent.model.DBCategory
 import net.helcel.cowspent.model.DBProject
 import net.helcel.cowspent.model.ProjectType
 import net.helcel.cowspent.util.CospendClientUtil.LoginStatus
-import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.util.ICallback
 import net.helcel.cowspent.util.IProjectCreationCallback
 import net.helcel.cowspent.util.NextcloudClient

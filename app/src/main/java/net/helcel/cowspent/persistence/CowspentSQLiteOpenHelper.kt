@@ -7,16 +7,22 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.text.TextUtils
-import android.util.Log
 import androidx.annotation.WorkerThread
 import androidx.preference.PreferenceManager
 import net.helcel.cowspent.R
-import net.helcel.cowspent.android.main.BillsListViewActivity
-import net.helcel.cowspent.model.*
+import net.helcel.cowspent.model.DBAccountProject
+import net.helcel.cowspent.model.DBBill
+import net.helcel.cowspent.model.DBBillOwer
+import net.helcel.cowspent.model.DBCategory
+import net.helcel.cowspent.model.DBCurrency
+import net.helcel.cowspent.model.DBMember
+import net.helcel.cowspent.model.DBPaymentMode
+import net.helcel.cowspent.model.DBProject
+import net.helcel.cowspent.model.ProjectType
 import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.util.SecureStorage
 import net.helcel.cowspent.util.SupportUtil
-import java.util.*
+import java.util.Locale
 
 /**
  * Helps to add, get, update and delete bills, members, projects with the option to trigger a sync with the server.
@@ -1177,7 +1183,6 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @Suppress("ConstPropertyName")
     companion object {
-        private val TAG = CowspentSQLiteOpenHelper::class.java.simpleName
         private const val database_version = 1
         private const val database_name = "COWSPENT"
         private const val table_members = "MEMBERS"
