@@ -103,9 +103,6 @@ class NextcloudClient(
             val acceptHeader: MutableList<String> = ArrayList()
             acceptHeader.add("application/json")
             headers["Accept"] = acceptHeader
-            val ocsHeader: MutableList<String> = ArrayList()
-            ocsHeader.add("true")
-            headers["OCS-APIRequest"] = ocsHeader
         }
         val nextcloudRequest: NextcloudRequest = if (params == null) {
             NextcloudRequest.Builder()

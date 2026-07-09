@@ -88,7 +88,7 @@ class VersatileProjectSyncClient(
                     "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
                 else
                     "/index.php/apps/cospend/api-priv/projects/" + project.remoteId
-                return ServerResponse.ProjectResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, null, null, true), true)
+                return ServerResponse.ProjectResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, null, null, cospendVersionGT161), cospendVersionGT161)
             } else {
                 useOcsApiRequest = cospendVersionGT161
                 target = if (cospendVersionGT161)
@@ -1348,9 +1348,6 @@ class VersatileProjectSyncClient(
             val acceptHeader: MutableList<String> = ArrayList()
             acceptHeader.add("application/json")
             headers["Accept"] = acceptHeader
-            val ocsHeader: MutableList<String> = ArrayList()
-            ocsHeader.add("true")
-            headers["OCS-APIRequest"] = ocsHeader
         }
         val nextcloudRequest: NextcloudRequest = if (params == null) {
             NextcloudRequest.Builder()

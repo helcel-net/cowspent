@@ -68,7 +68,7 @@ open class ServerResponse(
         }
         val rawData = JSONObject(content)
         val data = rawData.getJSONObject("ocs")
-        return data.get("data").toString()
+        return data.getString("data")
     }
 
     class ProjectResponse(response: VersatileProjectSyncClient.ResponseData, isOcsResponse: Boolean) :

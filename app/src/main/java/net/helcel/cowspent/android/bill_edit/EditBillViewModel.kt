@@ -2,21 +2,19 @@ package net.helcel.cowspent.android.bill_edit
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
-import net.helcel.cowspent.model.DBBill
-import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.android.helper.DialogState
 import net.helcel.cowspent.android.helper.parseAmount
+import net.helcel.cowspent.model.DBBill
+import net.helcel.cowspent.model.DBCurrency
+import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.util.SupportUtil
 import net.helcel.cowspent.util.evalMath
-
-import net.helcel.cowspent.model.DBCurrency
-import androidx.compose.ui.graphics.vector.ImageVector
 
 class EditBillViewModel : ViewModel() {
     var what by mutableStateOf("")

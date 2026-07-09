@@ -135,6 +135,8 @@
     <string name="settings_color_custom">Custom color</string>
     <string name="settings_color_mode">Color Selection</string>
     <string name="settings_show_archived">Show archived projects</string>
+    <string name="settings_beta_features">Beta Features</string>
+    <string name="settings_beta_features_summary">Enable experimental features. Use at your own risk.</string>
     <string name="settings_url_warn_http">WARNING: "http" is unsafe. Use "https".</string>
     <string name="settings_colorpicker_title">Choose Color</string>
 
@@ -155,6 +157,7 @@
     <string name="pref_key_color_mode" translatable="false">colorMode</string>
     <string name="pref_key_offline_mode" translatable="false">offlineMode</string>
     <string name="pref_key_show_archived" translatable="false">showArchived</string>
+    <string name="pref_key_beta_features" translatable="false">betaFeatures</string>
     <string name="pref_value_night_mode_no" translatable="false">1</string>
     <string name="pref_value_night_mode_yes" translatable="false">2</string>
     <string name="pref_value_night_mode_system" translatable="false">-1</string>

@@ -1,6 +1,5 @@
 package net.helcel.cowspent.model
 
-import android.util.Log
 import java.io.Serializable
 import java.util.Calendar
 import java.util.Locale

@@ -79,6 +79,7 @@ fun SettingsScreen(
     val keyColor = stringResource(R.string.pref_key_color)
     val keyOfflineMode = stringResource(R.string.pref_key_offline_mode)
     val keyShowArchived = stringResource(R.string.pref_key_show_archived)
+    val keyBetaFeatures = stringResource(R.string.pref_key_beta_features)
 
     // States for preferences
     var nightMode by remember(keyNightMode) {
@@ -112,6 +113,9 @@ fun SettingsScreen(
     }
     var showArchived by remember(keyShowArchived) {
         mutableStateOf(sharedPreferences.getBoolean(keyShowArchived, false))
+    }
+    var betaFeatures by remember(keyBetaFeatures) {
+        mutableStateOf(sharedPreferences.getBoolean(keyBetaFeatures, false))
     }
 
     Scaffold(
@@ -241,6 +245,19 @@ fun SettingsScreen(
 
             // Other
             SettingsCategory(stringResource(R.string.settings_other))
+
+            SettingsSwitchPreference(
+                title = stringResource(R.string.settings_beta_features),
+                summary = stringResource(R.string.settings_beta_features_summary),
+                icon = Icons.Default.Info,
+                checked = betaFeatures,
+                onCheckedChange = {
+                    betaFeatures = it
+                    sharedPreferences.edit {
+                        putBoolean(keyBetaFeatures, it)
+                    }
+                }
+            )
 
             SettingsPreference(
                 title = stringResource(R.string.title_about),
