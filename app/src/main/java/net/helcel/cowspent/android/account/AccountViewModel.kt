@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.helcel.cowspent.util.CospendClientUtil
+import net.helcel.cowspent.util.SecureStorage
 
 class AccountViewModel(application: Application) : AndroidViewModel(application) {
     private val preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(application)
@@ -60,14 +61,15 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
         } else {
             preferences.getString(AccountActivity.SETTINGS_USERNAME, "")
         }
-        val password = if (useSso) {
-            ""
-        } else {
-            preferences.getString(AccountActivity.SETTINGS_PASSWORD, "")
-        }
 
         if (!url.isNullOrEmpty() && !username.isNullOrEmpty()) {
             viewModelScope.launch {
+                val password = if (useSso) {
+                    ""
+                } else {
+                    SecureStorage.getPassword(getApplication(), AccountActivity.SETTINGS_PASSWORD)
+                }
+
                 isValidatingLogin = true
                 isLoggedIn = withContext(Dispatchers.IO) {
                     if (useSso) {
@@ -87,6 +89,9 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun logout() {
+        viewModelScope.launch {
+            SecureStorage.removePassword(getApplication(), AccountActivity.SETTINGS_PASSWORD)
+        }
         preferences.edit {
             remove(AccountActivity.SETTINGS_USE_SSO)
             remove(AccountActivity.SETTINGS_SSO_URL)

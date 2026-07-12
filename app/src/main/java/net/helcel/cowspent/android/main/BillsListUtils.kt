@@ -5,6 +5,7 @@ import android.content.Intent
 import net.helcel.cowspent.R
 import net.helcel.cowspent.model.*
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
+import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.util.IRefreshBillsListCallback
 import java.text.SimpleDateFormat
 import java.util.*
@@ -65,11 +66,11 @@ object BillsListUtils {
         memberIdToName: Map<Long, String>
     ) {
         val projectName = proj.name.ifEmpty { proj.remoteId }
-        var text = context.getString(R.string.share_settle_intro, projectName) + "\n"
+        var text = context.getString(R.string.msg_settle_intro, projectName) + "\n"
         for (t in transactions) {
             val amount = round(t.amount * 100.0) / 100.0
             text += "\n" + context.getString(
-                R.string.share_settle_sentence,
+                R.string.msg_settle_sentence,
                 memberIdToName[t.owerMemberId],
                 memberIdToName[t.receiverMemberId],
                 amount
@@ -80,12 +81,12 @@ object BillsListUtils {
         shareIntent.type = "text/plain"
         shareIntent.putExtra(
             Intent.EXTRA_SUBJECT,
-            context.getString(R.string.share_settle_title, projectName)
+            context.getString(R.string.title_settle)
         )
         shareIntent.putExtra(Intent.EXTRA_TEXT, text)
         val chooserIntent = Intent.createChooser(
             shareIntent,
-            context.getString(R.string.share_settle_title, projectName)
+            context.getString(R.string.title_settle)
         )
         context.startActivity(chooserIntent)
     }
@@ -98,6 +99,10 @@ object BillsListUtils {
         context: Context
     ) {
         val timestamp = System.currentTimeMillis() / 1000
+        val proj = db.getProject(projectId)
+        val categories = db.getCategories(projectId)
+        val reimbursementCategoryId = CategoryUtils.getReimbursementCategoryId(categories, projectId, proj?.remoteId)
+        
         for (t in transactions) {
             val owerId = t.owerMemberId
             val receiverId = t.receiverMemberId
@@ -106,7 +111,7 @@ object BillsListUtils {
                 0, 0, projectId, owerId, amount,
                 timestamp, context.getString(R.string.settle_bill_what),
                 DBBill.STATE_ADDED, DBBill.NON_REPEATED,
-                DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE,
+                DBBill.PAYMODE_NONE, reimbursementCategoryId,
                 "", DBBill.PAYMODE_ID_NONE
             )
             bill.billOwers += DBBillOwer(0, 0, receiverId)

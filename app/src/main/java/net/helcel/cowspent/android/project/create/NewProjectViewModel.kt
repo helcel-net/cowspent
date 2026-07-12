@@ -30,6 +30,8 @@ class NewProjectViewModel : ViewModel() {
     var projectName by mutableStateOf("")
     var projectEmail by mutableStateOf("")
 
+    var isAuthenticatedAccount by mutableStateOf(false)
+
     var showAuthWarningDialog by mutableStateOf(false)
     var showNextcloudProjectDialog by mutableStateOf(false)
     var nextcloudProjects by mutableStateOf<List<DBAccountProject>>(emptyList())
@@ -39,12 +41,23 @@ class NewProjectViewModel : ViewModel() {
 
     fun isFormValid(): Boolean {
         if (whatTodoIsCreate) {
-            if (projectId.isEmpty()) return false
-            if (projectType != ProjectType.LOCAL) {
+            if (projectType == ProjectType.LOCAL) {
+                return projectId.isNotEmpty()
+            } else {
                 if (projectUrl.isEmpty()) return false
                 if (projectName.isEmpty()) return false
-                if (projectEmail.isEmpty()) return false
-                if (projectType == ProjectType.IHATEMONEY && projectPassword.isEmpty()) return false
+
+                if (projectType == ProjectType.COSPEND && isAuthenticatedAccount) {
+                    return true
+                }
+
+                if (projectId.isEmpty()) return false
+                if (projectType == ProjectType.IHATEMONEY) {
+                    if (projectEmail.isEmpty()) return false
+                    if (projectPassword.isEmpty()) return false
+                } else {
+                    if (projectEmail.isEmpty()) return false
+                }
             }
         } else {
             // Join

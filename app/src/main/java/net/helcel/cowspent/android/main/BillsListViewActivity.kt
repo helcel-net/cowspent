@@ -1,12 +1,10 @@
 package net.helcel.cowspent.android.main
 
-import android.Manifest
 import android.app.SearchManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -17,18 +15,15 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.nextcloud.android.sso.helper.SingleAccountHelper
@@ -53,6 +48,7 @@ import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.persistence.CowspentServerSyncHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.BillFormatter
+import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.util.CospendClientUtil
 import net.helcel.cowspent.util.ExportUtil
 import net.helcel.cowspent.util.ICallback
@@ -118,18 +114,8 @@ class BillsListViewActivity :
                 Log.d(TAG, "CREATED project id: $pid")
                 lifecycleScope.launch {
                     val addedProj = withContext(Dispatchers.IO) { db.getProject(pid) }
-                    val message: String
-                    val title: String
-                    if (created) {
-                        Log.e(TAG, "CREATED !!!")
-                        title = getString(R.string.project_create_success_title)
-                        message = getString(R.string.project_create_success_message, addedProj?.remoteId)
-                    } else {
-                        Log.e(TAG, "ADDED !!!")
-                        title = getString(R.string.project_add_success_title)
-                        message = getString(R.string.project_add_success_message, addedProj?.remoteId)
-                    }
-                    showDialog(message, title, Icons.Default.AddCircleOutline)
+                    val message = getString(R.string.msg_project_added, addedProj?.name?.ifEmpty { addedProj.remoteId } ?: pid.toString())
+                    showToast(this@BillsListViewActivity, message)
                 }
             }
         }
@@ -145,7 +131,7 @@ class BillsListViewActivity :
             }
             if (!db.cowspentServerSyncHelper.isSyncPossible) {
                 if (CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
-                    Toast.makeText(applicationContext, getString(R.string.error_sync, getString(CospendClientUtil.LoginStatus.NO_NETWORK.str)), Toast.LENGTH_LONG).show()
+                    showToast(this@BillsListViewActivity, getString(R.string.error_sync, getString(CospendClientUtil.LoginStatus.NO_NETWORK.str)), Toast.LENGTH_LONG)
                 }
             }
         }
@@ -193,6 +179,7 @@ class BillsListViewActivity :
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         isActivityVisible = true
         if (savedInstanceState != null) {
@@ -223,7 +210,7 @@ class BillsListViewActivity :
                             lifecycleScope.launch {
                                 val members = withContext(Dispatchers.IO) { db.getActivatedMembersOfProject(selectedProjectId) }
                                 if (members.isEmpty()) {
-                                    showToast(this@BillsListViewActivity, getString(R.string.add_bill_impossible_no_member))
+                                    showToast(this@BillsListViewActivity, getString(R.string.error_no_members))
                                 } else {
                                     val proj = withContext(Dispatchers.IO) { db.getProject(selectedProjectId) }
                                     val createIntent = Intent(applicationContext, EditBillActivity::class.java).apply {
@@ -257,13 +244,23 @@ class BillsListViewActivity :
                     onProjectAction = { pid, actionIndex ->
                         when (actionIndex) {
                             0 -> onEditProjectClick(pid)
-                            1 -> onRemoveProjectClick(pid)
+                            1 -> {
+                                val proj = db.getProject(pid)
+                                if (proj?.type == ProjectType.COSPEND) {
+                                    onArchiveProjectClick(pid)
+                                } else {
+                                    onRemoveProjectClick(pid)
+                                }
+                            }
                             2 -> onManageMembersClick(pid)
                             3 -> onManageCurrenciesClick(pid)
                             4 -> onProjectStatisticsClick(pid)
                             5 -> onSettleProjectClick(pid)
                             6 -> onShareProjectClick(pid)
                             7 -> onExportProjectClick(pid)
+                            8 -> {
+                                startActivity(net.helcel.cowspent.android.label.LabelManagementActivity.createIntent(this@BillsListViewActivity, pid))
+                            }
                         }
                     },
                     onAccountSwitcherClick = {
@@ -385,17 +382,10 @@ class BillsListViewActivity :
 
     private fun onEditProjectClick(projectId: Long) {
         if (projectId == 0L) return
-        lifecycleScope.launch {
-            val proj = withContext(Dispatchers.IO) { db.getProject(projectId) }
-            if (proj?.isLocal == false) {
-                val intent = Intent(applicationContext, EditProjectActivity::class.java).apply {
-                    putExtra(EditProjectActivity.PARAM_PROJECT_ID, projectId)
-                }
-                editProjectLauncher.launch(intent)
-            } else {
-                showToast(this@BillsListViewActivity, getString(R.string.edit_project_local_impossible))
-            }
+        val intent = Intent(applicationContext, EditProjectActivity::class.java).apply {
+            putExtra(EditProjectActivity.PARAM_PROJECT_ID, projectId)
         }
+        editProjectLauncher.launch(intent)
     }
 
     private fun onRemoveProjectClick(projectId: Long) {
@@ -404,8 +394,8 @@ class BillsListViewActivity :
             val proj = withContext(Dispatchers.IO) { db.getProject(projectId) } ?: return@launch
             
             viewModel.showDialog(
-                title = getString(R.string.confirm_remove_project_dialog_title),
-                message = if (!proj.isLocal) getString(R.string.confirm_remove_project_dialog_message) else null,
+                title = getString(R.string.title_confirm),
+                message = if (!proj.isLocal) getString(R.string.dialog_confirm_remove_project_msg) else null,
                 positiveText = getString(R.string.simple_yes),
                 onConfirm = {
                     lifecycleScope.launch {
@@ -426,6 +416,38 @@ class BillsListViewActivity :
         }
     }
 
+    private fun onArchiveProjectClick(projectId: Long) {
+        if (projectId == 0L) return
+        lifecycleScope.launch {
+            val proj = withContext(Dispatchers.IO) { db.getProject(projectId) } ?: return@launch
+            val isArchiving = !proj.isArchived
+            
+            val newArchivedTs = if (isArchiving) System.currentTimeMillis() / 1000 else 0L
+            
+            withContext(Dispatchers.IO) {
+                db.updateProject(
+                    projId = projectId,
+                    newName = null,
+                    newEmail = null,
+                    newPassword = null,
+                    newLastPayerId = null,
+                    newLastSyncedTimestamp = null,
+                    newCurrencyName = null,
+                    newDeletionDisabled = null,
+                    newMyAccessLevel = null,
+                    newBearerToken = null,
+                    newArchivedTs = newArchivedTs
+                )
+            }
+            
+            setupDrawerProjects()
+            refreshLists()
+            
+            val msgRes = if (isArchiving) R.string.action_archive else R.string.action_unarchive
+            showToast(this@BillsListViewActivity, getString(msgRes))
+        }
+    }
+
     fun onManageMembersClick(projectId: Long) {
         if (projectId == 0L) return
         lifecycleScope.launch {
@@ -435,18 +457,18 @@ class BillsListViewActivity :
                 return@launch
             }
 
-            viewModel.showMemberManagementDialogByProjectId = projectId
+            startActivity(net.helcel.cowspent.android.project.member.MemberManagementActivity.createIntent(this@BillsListViewActivity, projectId))
         }
     }
 
     fun onManageCurrenciesClick(projectId: Long) {
         lifecycleScope.launch {
             val proj = withContext(Dispatchers.IO) { db.getProject(projectId) }
-            if (proj != null && proj.type == ProjectType.COSPEND) {
+            if (proj != null) {
                 startActivity(Intent(applicationContext, ManageCurrenciesActivity::class.java).apply {
                     putExtra(ManageCurrenciesActivity.EXTRA_PROJECT_ID, projectId)
                 })
-            } else showToast(this@BillsListViewActivity, getString(R.string.currency_management_unavailable))
+            }
         }
     }
 
@@ -462,7 +484,7 @@ class BillsListViewActivity :
         lifecycleScope.launch {
             val proj = withContext(Dispatchers.IO) { db.getProject(projectId) }
             if (projectId != 0L && proj?.isShareable() == true) viewModel.showShareDialogByProjectId = projectId
-            else showToast(this@BillsListViewActivity, getString(R.string.share_impossible), Toast.LENGTH_LONG)
+            else showToast(this@BillsListViewActivity, getString(R.string.error_share_impossible), Toast.LENGTH_LONG)
         }
     }
 
@@ -532,11 +554,13 @@ class BillsListViewActivity :
 
                 val members = db.getMembersOfProject(proj.id, null)
                 val bills = db.getBillsOfProject(proj.id)
+                val categories = db.getCategories(proj.id)
+                val reimbursementCategoryId = CategoryUtils.getReimbursementCategoryId(categories, proj.id, proj.remoteId)
                 val balances = HashMap<Long, Double>()
                 SupportUtil.getStats(
                     members, bills,
                     mutableMapOf(), balances, mutableMapOf(), mutableMapOf(),
-                    -1000, -1000, null, null
+                    -1000L, -1000L, reimbursementCategoryId, null, null
                 )
                 Triple(proj, members, balances)
             }
@@ -563,7 +587,7 @@ class BillsListViewActivity :
         } else {
             val lastSyncTimestamp = proj.lastSyncedTimestamp ?: 0
             val cal = Calendar.getInstance().apply { timeInMillis = lastSyncTimestamp * 1000 }
-            val text = getString(R.string.drawer_last_sync_text, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+            val text = getString(R.string.drawer_last_sync, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
             viewModel.lastSyncText = text
         }
     }
@@ -603,13 +627,13 @@ class BillsListViewActivity :
                     mid == null || mid == it.payerId || it.billOwersIds.contains(mid)
                 }
 
-                viewModel.hasUnlabeledBills = bills.any { it.categoryRemoteId == 0 && it.state != DBBill.STATE_DELETED }
+                viewModel.hasUnlabeledBills = bills.any { it.categoryId == 0L && it.state != DBBill.STATE_DELETED }
 
                 val projectMembers = db.getMembersOfProject(projId, null)
                 val memberMap = projectMembers.associateBy { it.id }
 
-                val projectPaymentModes = db.getPaymentModes(projId).associateBy { it.remoteId }
-                val projectCategories = db.getCategories(projId).associateBy { it.remoteId }
+                val projectPaymentModes = db.getPaymentModes(projId).associateBy { it.id }
+                val projectCategories = db.getCategories(projId).associateBy { it.id }
 
                 BillFormatter.formatBills(
                     bills,
@@ -661,7 +685,7 @@ class BillsListViewActivity :
             lifecycleScope.launch {
                 val members = withContext(Dispatchers.IO) { db.getActivatedMembersOfProject(selectedProjectId) }
                 if (members.isEmpty()) {
-                    showToast(this@BillsListViewActivity, getString(R.string.add_bill_impossible_no_member))
+                    showToast(this@BillsListViewActivity, getString(R.string.error_no_member))
                 } else {
                     val projType = withContext(Dispatchers.IO) { db.getProject(selectedProjectId)?.type?.id }
                     val intent = Intent(applicationContext, EditBillActivity::class.java).apply {
@@ -673,15 +697,6 @@ class BillsListViewActivity :
                 }
             }
         }
-    }
-
-    private fun showDialog(msg: String, title: String, icon: ImageVector) {
-        viewModel.showDialog(
-            title = title,
-            message = msg,
-            positiveText = getString(android.R.string.ok),
-            icon = icon
-        )
     }
 
     private fun updateUsernameInDrawer() {
@@ -775,8 +790,8 @@ class BillsListViewActivity :
                         lifecycleScope.launch {
                             val project = withContext(Dispatchers.IO) { db.getProject(projectId) } ?: return@launch
                             viewModel.showDialog(
-                                title = getString(R.string.sync_error_dialog_title),
-                                message = getString(R.string.sync_error_dialog_full_content, project.name, errorMessage),
+                                title = getString(R.string.dialog_sync_error_title),
+                                message = getString(R.string.dialog_sync_error_msg, project.name, errorMessage),
                                 positiveText = getString(R.string.simple_close),
                                 icon = Icons.Default.Sync
                             )
@@ -796,7 +811,7 @@ class BillsListViewActivity :
                 }
                 MainConstants.BROADCAST_SSO_TOKEN_MISMATCH -> {
                     viewModel.showDialog(
-                        title = getString(R.string.sync_error_dialog_title),
+                        title = getString(R.string.dialog_sync_error_title),
                         message = getString(R.string.error_token_mismatch),
                         positiveText = getString(R.string.simple_close),
                         icon = Icons.Default.Sync

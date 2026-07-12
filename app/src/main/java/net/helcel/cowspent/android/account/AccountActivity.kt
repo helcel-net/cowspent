@@ -14,6 +14,7 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Box
@@ -32,7 +33,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.nextcloud.android.sso.AccountImporter
 import com.nextcloud.android.sso.helper.SingleAccountHelper
-import com.nextcloud.android.sso.model.SingleSignOnAccount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,6 +41,7 @@ import net.helcel.cowspent.android.main.MainConstants
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.CospendClientUtil
 import net.helcel.cowspent.util.CospendClientUtil.LoginStatus
+import net.helcel.cowspent.util.SecureStorage
 import java.net.URLDecoder
 import java.util.Locale
 
@@ -68,11 +69,11 @@ class AccountActivity : AppCompatActivity() {
     }
 
     private lateinit var preferences: SharedPreferences
-    private var oldPassword = ""
     private var useWebLogin = true
     private var showLoginDialog by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
@@ -127,8 +128,6 @@ class AccountActivity : AppCompatActivity() {
                 )
             }
         }
-        
-        oldPassword = preferences.getString(SETTINGS_PASSWORD, DEFAULT_SETTINGS) ?: ""
         viewModel.validateUrl()
     }
 
@@ -222,11 +221,7 @@ class AccountActivity : AppCompatActivity() {
     private fun legacyLogin() {
         val url = CospendClientUtil.formatURL(viewModel.serverUrl.trim())
         val username = viewModel.username
-        var password = viewModel.password
-
-        if (password.isEmpty()) {
-            password = oldPassword
-        }
+        val password = viewModel.password
 
         performLogin(url, username, password)
     }
@@ -309,10 +304,10 @@ class AccountActivity : AppCompatActivity() {
             }
 
             if (status == LoginStatus.OK) {
+                SecureStorage.savePassword(applicationContext, SETTINGS_PASSWORD, password)
                 preferences.edit {
                     putString(SETTINGS_URL, url)
                     putString(SETTINGS_USERNAME, username)
-                    putString(SETTINGS_PASSWORD, password)
                     remove(SETTINGS_KEY_ETAG)
                     remove(SETTINGS_KEY_LAST_MODIFIED)
                 }

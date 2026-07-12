@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.graphics.BitmapFactory
 import android.util.Base64
+import net.helcel.cowspent.model.DBMember
 
 @Composable
 fun UserAvatar(
@@ -89,6 +90,26 @@ fun UserAvatar(
             )
         }
     }
+}
+
+@Composable
+fun MemberAvatar(
+    member: DBMember,
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    alpha: Float = 1f
+) {
+    UserAvatar(
+        name = member.name,
+        modifier = modifier,
+        size = size,
+        r = member.r,
+        g = member.g,
+        b = member.b,
+        avatar = member.avatar,
+        disabled = !member.isActivated,
+        alpha = alpha
+    )
 }
 
 @Preview

@@ -129,8 +129,10 @@ fun ProjectSettlementUI(
                 .padding(16.dp)
         ) {
             Text(
-                text = stringResource(R.string.settle_dialog_title),
-                style = MaterialTheme.typography.h6,
+                text = stringResource(R.string.title_settle).uppercase(),
+                style = MaterialTheme.typography.subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -174,7 +176,7 @@ private fun BalancedStateMessage() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = stringResource(R.string.settle_dialog_balanced),
+            text = stringResource(R.string.dialog_balanced_msg),
             style = MaterialTheme.typography.body1
         )
     }
@@ -279,9 +281,9 @@ private fun TableHeaderText(
     Text(
         text = text.uppercase(),
         modifier = modifier,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         style = MaterialTheme.typography.overline,
-        color = colorResource(R.color.fg_default_low),
+        color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
         textAlign = textAlign,
         letterSpacing = 0.8.sp
     )

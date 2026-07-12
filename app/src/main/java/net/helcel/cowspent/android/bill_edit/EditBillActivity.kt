@@ -5,6 +5,7 @@ import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -25,7 +26,7 @@ import net.helcel.cowspent.model.ProjectType
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.BillParser
-import net.helcel.cowspent.util.CategoryUtils
+import net.helcel.cowspent.util.SupportUtil
 import java.text.ParseException
 import java.time.ZoneId
 import java.util.Calendar
@@ -39,6 +40,7 @@ class EditBillActivity : AppCompatActivity() {
     private val calendar = Calendar.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         db = CowspentSQLiteOpenHelper.getInstance(this)
 
@@ -49,23 +51,10 @@ class EditBillActivity : AppCompatActivity() {
                 ThemeUtils.CowspentTheme {
 
                     val categories = remember {
-                        val syncedCategories = db.getCategories(bill.projectId)
-                        val defaultCategories = CategoryUtils.getDefaultCategories(this@EditBillActivity, bill.projectId)
-                        val hardcoded = if (projectType == ProjectType.LOCAL) {
-                            defaultCategories
-                        } else {
-                            listOfNotNull(defaultCategories.find { it.remoteId.toInt() == DBBill.CATEGORY_REIMBURSEMENT })
-                        }
-                        syncedCategories + hardcoded
+                        db.getCategories(bill.projectId)
                     }
                     val paymentModes = remember {
-                        val syncedPaymentModes = db.getPaymentModes(bill.projectId)
-                        val defaultPaymentModes = CategoryUtils.getDefaultPaymentModes(this@EditBillActivity, bill.projectId)
-                        if (projectType == ProjectType.LOCAL) {
-                            syncedPaymentModes + defaultPaymentModes
-                        } else {
-                            syncedPaymentModes.ifEmpty { defaultPaymentModes }
-                        }
+                        db.getPaymentModes(bill.projectId)
                     }
 
                     EditBillScreen(
@@ -105,7 +94,8 @@ class EditBillActivity : AppCompatActivity() {
                             val createIntent = Intent(this@EditBillActivity, QrCodeScannerActivity::class.java)
                             scanQRCodeLauncher.launch(createIntent)
                         },
-                        onDelete = if (bill.id > 0) { { deleteBillAsked() } } else null,
+                        onDuplicate = if (!viewModel.isNewBill) { { duplicateCurrentBill() } } else null,
+                        onDelete = if (!viewModel.isNewBill) { { deleteBillAsked() } } else null,
                         accessLevel = db.getProject(bill.projectId)?.myAccessLevel ?: DBProject.ACCESS_LEVEL_ADMIN
                     )
                 }
@@ -140,7 +130,7 @@ class EditBillActivity : AppCompatActivity() {
                     bill = DBBill(
                         first.id, 0, first.projectId, first.payerId, totalAmount,
                         first.timestamp, first.what, first.state, first.repeat,
-                        first.paymentMode, first.categoryRemoteId, first.comment, first.paymentModeRemoteId
+                        first.paymentMode, first.categoryId, first.comment, first.paymentModeId
                     )
                     
                     val splits = mutableMapOf<Long, Double>()
@@ -171,8 +161,8 @@ class EditBillActivity : AppCompatActivity() {
                     bill = DBBill(
                         0, 0, projectId, btd.payerId, btd.amount,
                         timeNowSeconds, btd.what, DBBill.STATE_ADDED,
-                        btd.repeat, btd.paymentMode, btd.categoryRemoteId,
-                        btd.comment, btd.paymentModeRemoteId
+                        btd.repeat, btd.paymentMode, btd.categoryId,
+                        btd.comment, btd.paymentModeId
                     )
                     val btdOwers = btd.billOwers
                     val newBillOwers = btdOwers.filter {
@@ -183,12 +173,23 @@ class EditBillActivity : AppCompatActivity() {
                 }
             }
             calendar.timeInMillis = bill.timestamp * 1000
-            val members = db.getMembersOfProject(bill.projectId, null)
+            val allMembers = db.getMembersOfProject(bill.projectId, null)
+            val billOwerIds = bill.billOwersIds
+            val members = allMembers.filter { m ->
+                m.isActivated || m.id == bill.payerId || billOwerIds.contains(m.id)
+            }
+            
             val project = db.getProject(bill.projectId)
             val currencies = db.getCurrencies(bill.projectId)
+            
+            if (project != null) {
+                db.ensureDefaultLabels(bill.projectId, project.type)
+            }
+
             withContext(Dispatchers.Main) {
                 viewModel.currencies = currencies
                 viewModel.mainCurrencyName = project?.currencyName ?: ""
+                viewModel.isNewBill = (bill.id == 0L)
                 viewModel.initFromBill(bill, members, customSplits)
             }
         }
@@ -204,6 +205,7 @@ class EditBillActivity : AppCompatActivity() {
                         calendar.timeInMillis = austrianBill.date.time
                         viewModel.timestamp = calendar.timeInMillis / 1000
                         viewModel.amount = austrianBill.amount.toString()
+                        viewModel.updateSplits()
                         return@registerForActivityResult
                     } catch (_: ParseException) {
                     }
@@ -215,6 +217,7 @@ class EditBillActivity : AppCompatActivity() {
                             viewModel.timestamp = calendar.timeInMillis / 1000
                         }
                         viewModel.amount = croatianBill.amount.toString()
+                        viewModel.updateSplits()
                         return@registerForActivityResult
                     } catch (_: ParseException) {
                     }
@@ -223,28 +226,42 @@ class EditBillActivity : AppCompatActivity() {
             }
         }
 
+    private fun duplicateCurrentBill() {
+        bill = DBBill(
+            0, 0, bill.projectId, viewModel.payerId, viewModel.amountAsDouble,
+            System.currentTimeMillis() / 1000, viewModel.what, DBBill.STATE_ADDED,
+            viewModel.repeat, bill.paymentMode, viewModel.categoryId,
+            viewModel.getFinalComment(), viewModel.paymentModeId
+        )
+        calendar.timeInMillis = System.currentTimeMillis()
+        viewModel.timestamp = calendar.timeInMillis / 1000
+        viewModel.isNewBill = true
+        
+        showToast(this, "Duplicating bill...")
+    }
+
     private fun onBack() {
         if (!valuesHaveChanged()) {
             finish()
             return
         }
         viewModel.showDialog(
-            title = getString(R.string.save_or_discard_bill_dialog_title),
-            message = getString(R.string.save_or_discard_bill_dialog_message),
-            positiveText = getString(R.string.save_or_discard_bill_dialog_save),
+            title = getString(R.string.dialog_unsaved_changes_title),
+            message = getString(R.string.dialog_unsaved_changes_msg),
+            positiveText = getString(R.string.action_save),
             onConfirm = { saveBillAsked() },
-            negativeText = getString(R.string.save_or_discard_bill_dialog_discard),
+            negativeText = getString(R.string.action_discard),
             onCancel = { finish() }
         )
     }
 
     private fun saveBillAsked() {
         val validationError = viewModel.getValidationError(
-            getString(R.string.error_invalid_bill_what),
+            getString(R.string.error_invalid_bill_name),
             getString(R.string.error_invalid_bill_date),
-            getString(R.string.error_invalid_bill_payerid),
+            getString(R.string.error_invalid_bill_payer),
             getString(R.string.error_invalid_bill_owers),
-            getString(R.string.simple_error)
+            getString(R.string.error_generic)
         )
 
         if (validationError != null) {
@@ -262,7 +279,7 @@ class EditBillActivity : AppCompatActivity() {
 
     private fun deleteBillAsked() {
         viewModel.showDialog(
-            title = getString(R.string.confirm_remove_project_dialog_title),
+            title = getString(R.string.title_confirm),
             message = bill.what,
             positiveText = getString(R.string.action_delete),
             onConfirm = {
@@ -296,12 +313,12 @@ class EditBillActivity : AppCompatActivity() {
 
         return !(bill.what == viewModel.what &&
                 bill.timestamp == viewModel.timestamp &&
-                bill.amount == viewModel.amountAsDouble &&
+                bill.amount == viewModel.getFinalAmount() &&
                 bill.payerId == viewModel.payerId &&
-                bill.comment == viewModel.comment &&
+                bill.comment == viewModel.getFinalComment() &&
                 bill.repeat == viewModel.repeat &&
-                bill.categoryRemoteId == viewModel.categoryRemoteId &&
-                bill.paymentModeRemoteId == viewModel.paymentModeRemoteId &&
+                bill.categoryId == viewModel.categoryId &&
+                bill.paymentModeId == viewModel.paymentModeId &&
                 !owersChanged)
     }
 
@@ -310,13 +327,17 @@ class EditBillActivity : AppCompatActivity() {
         val isCustomSplit = viewModel.isCustomSplit
 
         if (isCustomSplit) {
-            val splits = viewModel.owersCustomSplit.filter { (id, amount) ->
-                viewModel.owersSelection[id] == true && (amount.replace(',', '.').toDoubleOrNull()
+            val splits: Map<Long, Double> = viewModel.owersCustomSplit.filter { (id, amountStr) ->
+                viewModel.owersSelection[id] == true && (amountStr.replace(',', '.').toDoubleOrNull()
                     ?: 0.0) > 0
-            }.mapValues { it.value.replace(',', '.').toDoubleOrNull() ?: 0.0 }
+            }.mapValues { 
+                val uiAmount = it.value.replace(',', '.').toDoubleOrNull() ?: 0.0
+                SupportUtil.round2(uiAmount / viewModel.selectedCurrencyRate)
+            }
 
             if (splits.isEmpty()) return@withContext 0L
-
+            
+            val finalComment = viewModel.getFinalComment()
             val splitEntries = splits.entries.toList()
 
             // Pool of existing bills in this group that we can potentially reuse
@@ -356,9 +377,9 @@ class EditBillActivity : AppCompatActivity() {
                         listOf(memberId),
                         viewModel.repeat,
                         existingBill.paymentMode,
-                        viewModel.paymentModeRemoteId,
-                        viewModel.categoryRemoteId,
-                        viewModel.comment
+                        viewModel.paymentModeId,
+                        viewModel.categoryId,
+                        finalComment
                     )
                     if (firstSavedId == 0L) firstSavedId = billToUseId
                 } else {
@@ -366,9 +387,11 @@ class EditBillActivity : AppCompatActivity() {
                     val newBill = DBBill(
                         0, 0, bill.projectId, viewModel.payerId, amount,
                         viewModel.timestamp, viewModel.what, DBBill.STATE_ADDED, viewModel.repeat,
-                        bill.paymentMode, viewModel.categoryRemoteId, viewModel.comment, viewModel.paymentModeRemoteId
+                        bill.paymentMode, viewModel.categoryId, finalComment, viewModel.paymentModeId
                     )
                     newBill.billOwers = listOf(DBBillOwer(0, 0, memberId))
+                    newBill.categoryId = viewModel.categoryId
+                    newBill.paymentModeId = viewModel.paymentModeId
                     val newId = db.addBill(newBill)
                     if (firstSavedId == 0L) firstSavedId = newId
                 }
@@ -396,7 +419,8 @@ class EditBillActivity : AppCompatActivity() {
 
             return@withContext firstSavedId
         } else {
-            val newAmount = viewModel.amountAsDouble
+            val newAmount = viewModel.getFinalAmount()
+            val finalComment = viewModel.getFinalComment()
             val newOwersIds = viewModel.getOwersIds()
 
             if (bill.id != 0L) {
@@ -410,9 +434,9 @@ class EditBillActivity : AppCompatActivity() {
                         newOwersIds,
                         viewModel.repeat,
                         bill.paymentMode,
-                        viewModel.paymentModeRemoteId,
-                        viewModel.categoryRemoteId,
-                        viewModel.comment
+                        viewModel.paymentModeId,
+                        viewModel.categoryId,
+                        finalComment
                     )
                     if (groupedBillIds != null) {
                         for (id in groupedBillIds) {
@@ -429,7 +453,7 @@ class EditBillActivity : AppCompatActivity() {
                 val newBill = DBBill(
                     0, 0, bill.projectId, viewModel.payerId, newAmount,
                     viewModel.timestamp, viewModel.what, DBBill.STATE_ADDED, viewModel.repeat,
-                    bill.paymentMode, viewModel.categoryRemoteId, viewModel.comment, viewModel.paymentModeRemoteId
+                    bill.paymentMode, viewModel.categoryId, finalComment, viewModel.paymentModeId
                 )
                 newOwersIds.forEach { newBill.billOwers += DBBillOwer(0, 0, it) }
                 val newBillId = db.addBill(newBill)

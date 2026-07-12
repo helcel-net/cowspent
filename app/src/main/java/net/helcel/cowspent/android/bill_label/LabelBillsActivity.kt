@@ -3,6 +3,7 @@ package net.helcel.cowspent.android.bill_label
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -12,7 +13,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.theme.ThemeUtils
-import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.ProjectType
 
@@ -20,6 +20,7 @@ class LabelBillsActivity : AppCompatActivity() {
     private val viewModel: LabelBillsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         val projectId = intent.getLongExtra(EXTRA_PROJECT_ID, -1L)
@@ -37,24 +38,20 @@ class LabelBillsActivity : AppCompatActivity() {
 
                 val members = db.getMembersOfProject(projectId, null)
                 val allBills = db.getBillsOfProject(projectId)
-                val billsToLabel = allBills.filter { it.categoryRemoteId == 0 && it.state != DBBill.STATE_DELETED }
-                val allCategorized = allBills.filter { it.categoryRemoteId != 0 && it.state != DBBill.STATE_DELETED }
+                val billsToLabel = allBills.filter { it.categoryId == 0L && it.state != DBBill.STATE_DELETED }
+                val allCategorized = allBills.filter { it.categoryId != 0L && it.state != DBBill.STATE_DELETED }
                 
-                val syncedCategories = db.getCategories(projectId)
-                val defaultCategories = CategoryUtils.getDefaultCategories(this@LabelBillsActivity, projectId)
-                val hardcoded = if (projectType == ProjectType.LOCAL) {
-                    defaultCategories
-                } else {
-                    listOfNotNull(defaultCategories.find { it.remoteId.toInt() == DBBill.CATEGORY_REIMBURSEMENT })
-                }
-                val categories = syncedCategories + hardcoded
+                db.ensureDefaultLabels(projectId, projectType)
+                
+                // Reload from DB to get real IDs
+                val categories = db.getCategories(projectId)
                 
                 Quadruple(members, billsToLabel, categories, allCategorized)
             }
 
             viewModel.billsToLabel = billsToLabel
             viewModel.categories = categories
-            viewModel.categoriesMap = categories.associateBy { it.remoteId }
+            viewModel.categoriesMap = categories.associateBy { it.id }
             viewModel.allCategorizedBills = allCategorized
             viewModel.updateSuggestions()
 

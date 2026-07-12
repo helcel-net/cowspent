@@ -13,6 +13,8 @@ class ManageCurrenciesViewModel : ViewModel() {
     var newCurrencyName by mutableStateOf("")
     var newCurrencyRate by mutableStateOf("")
 
+    var editingCurrencyId by mutableStateOf<Long?>(null)
+
     var currencies by mutableStateOf<List<DBCurrency>>(emptyList())
 
     var dialogState by mutableStateOf<DialogState?>(null)

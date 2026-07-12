@@ -14,11 +14,11 @@ object BillFormatter {
     ) {
         for (bill in bills) {
             var whatPrefix = ""
-            val pm = paymentModesMap[bill.paymentModeRemoteId.toLong()]
+            val pm = paymentModesMap[bill.paymentModeId]
             if (pm != null) {
                 whatPrefix += pm.icon + " "
             } else {
-                when (bill.paymentModeRemoteId) {
+                when (bill.paymentModeId) {
                     DBBill.PAYMODE_ID_CARD -> whatPrefix += "\uD83D\uDCB3 "
                     DBBill.PAYMODE_ID_CASH -> whatPrefix += "\uD83D\uDCB5 "
                     DBBill.PAYMODE_ID_CHECK -> whatPrefix += "\uD83C\uDFAB "
@@ -27,11 +27,11 @@ object BillFormatter {
                 }
             }
 
-            val cat = categoriesMap[bill.categoryRemoteId.toLong()]
+            val cat = categoriesMap[bill.categoryId]
             if (cat != null) {
                 whatPrefix += cat.icon + " "
             } else {
-                when (bill.categoryRemoteId) {
+                when (bill.categoryId) {
                     DBBill.CATEGORY_GROCERIES -> whatPrefix += "\uD83D\uDED2 "
                     DBBill.CATEGORY_LEISURE -> whatPrefix += "\uD83C\uDF89 "
                     DBBill.CATEGORY_RENT -> whatPrefix += "\uD83C\uDFE0 "

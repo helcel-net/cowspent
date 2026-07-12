@@ -79,6 +79,7 @@ fun SettingsScreen(
     val keyColor = stringResource(R.string.pref_key_color)
     val keyOfflineMode = stringResource(R.string.pref_key_offline_mode)
     val keyShowArchived = stringResource(R.string.pref_key_show_archived)
+    val keyBetaFeatures = stringResource(R.string.pref_key_beta_features)
 
     // States for preferences
     var nightMode by remember(keyNightMode) {
@@ -113,6 +114,9 @@ fun SettingsScreen(
     var showArchived by remember(keyShowArchived) {
         mutableStateOf(sharedPreferences.getBoolean(keyShowArchived, false))
     }
+    var betaFeatures by remember(keyBetaFeatures) {
+        mutableStateOf(sharedPreferences.getBoolean(keyBetaFeatures, false))
+    }
 
     Scaffold(
         topBar = {
@@ -135,10 +139,10 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             // Appearance
-            SettingsCategory(stringResource(R.string.settings_appearance_category))
+            SettingsCategory(stringResource(R.string.settings_appearance))
 
             SettingsSwitchPreference(
-                title = stringResource(R.string.setting_show_archived),
+                title = stringResource(R.string.settings_show_archived),
                 icon = Icons.Default.Archive,
                 checked = showArchived,
                 onCheckedChange = {
@@ -160,7 +164,7 @@ fun SettingsScreen(
             )
 
             SettingsListPreference(
-                title = stringResource(R.string.settings_night_mode_title),
+                title = stringResource(R.string.settings_night_mode),
                 icon = Icons.Default.Brightness2,
                 value = nightMode,
                 entries = mapOf(
@@ -178,7 +182,7 @@ fun SettingsScreen(
             )
 
             SettingsListPreference(
-                title = stringResource(R.string.settings_color_mode_title),
+                title = stringResource(R.string.settings_color_mode),
                 icon = Icons.Default.Palette,
                 value = colorMode,
                 entries = mapOf(
@@ -203,8 +207,8 @@ fun SettingsScreen(
 
             if (colorMode == "manual") {
                 SettingsColorPreference(
-                    title = stringResource(R.string.settings_color_title),
-                    summary = stringResource(R.string.settings_color_summary),
+                    title = stringResource(R.string.settings_color_custom),
+                    summary = stringResource(R.string.settings_color_custom),
                     icon = Icons.Default.Palette,
                     initialColor = appColor,
                     onColorSelected = {
@@ -218,10 +222,10 @@ fun SettingsScreen(
             }
 
             // Network
-            SettingsCategory(stringResource(R.string.settings_network_category))
+            SettingsCategory(stringResource(R.string.settings_network))
 
             SettingsSwitchPreference(
-                title = stringResource(R.string.settings_offline_mode_title),
+                title = stringResource(R.string.settings_offline_mode),
                 summary = stringResource(R.string.settings_offline_mode_summary),
                 icon = Icons.Default.Sync,
                 checked = offlineMode,
@@ -234,16 +238,29 @@ fun SettingsScreen(
             )
 
             SettingsPreference(
-                title = stringResource(R.string.settings_server_settings),
+                title = stringResource(R.string.title_account),
                 icon = Icons.Default.AccountCircle,
                 onClick = onAccountSettingsClick
             )
 
             // Other
-            SettingsCategory(stringResource(R.string.settings_other_category))
+            SettingsCategory(stringResource(R.string.settings_other))
+
+            SettingsSwitchPreference(
+                title = stringResource(R.string.settings_beta_features),
+                summary = stringResource(R.string.settings_beta_features_summary),
+                icon = Icons.Default.Info,
+                checked = betaFeatures,
+                onCheckedChange = {
+                    betaFeatures = it
+                    sharedPreferences.edit {
+                        putBoolean(keyBetaFeatures, it)
+                    }
+                }
+            )
 
             SettingsPreference(
-                title = stringResource(R.string.settings_about),
+                title = stringResource(R.string.title_about),
                 icon = Icons.Default.Info,
                 onClick = onAboutClick
             )
@@ -255,9 +272,9 @@ fun SettingsScreen(
 fun SettingsCategory(title: String) {
     Text(
         text = title.uppercase(),
-        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
-        color = MaterialTheme.colors.primary,
-        style = MaterialTheme.typography.overline,
+        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp),
+        color = MaterialTheme.colors.onSurface,
+        style = MaterialTheme.typography.subtitle1,
         fontWeight = FontWeight.Bold
     )
 }

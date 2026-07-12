@@ -137,6 +137,90 @@ open class ServerResponse(
                 getResponseStringData().toLong()
     }
 
+    class CreateRemoteCategoryResponse(
+        response: VersatileProjectSyncClient.ResponseData,
+        isOcsResponse: Boolean
+    ) : ServerResponse(response, isOcsResponse) {
+
+        @get:Throws(JSONException::class)
+        val stringContent: String
+            get() = getResponseStringData()
+            
+        @get:Throws(JSONException::class)
+        val remoteCategoryId: Long
+            get() {
+                val dataStr = getResponseStringData()
+                return try {
+                    dataStr.toLong()
+                } catch (_: NumberFormatException) {
+                    val obj = JSONObject(dataStr)
+                    obj.optLong("id", obj.optLong("remoteId", 0L))
+                }
+            }
+    }
+
+    class EditRemoteCategoryResponse(
+        response: VersatileProjectSyncClient.ResponseData,
+        isOcsResponse: Boolean
+    ) : ServerResponse(response, isOcsResponse) {
+
+        @get:Throws(JSONException::class)
+        val stringContent: String
+            get() = getResponseStringData()
+    }
+
+    class DeleteRemoteCategoryResponse(
+        response: VersatileProjectSyncClient.ResponseData,
+        isOcsResponse: Boolean
+    ) : ServerResponse(response, isOcsResponse) {
+
+        @get:Throws(JSONException::class)
+        val stringContent: String
+            get() = getResponseStringData()
+    }
+
+    class CreateRemotePaymentModeResponse(
+        response: VersatileProjectSyncClient.ResponseData,
+        isOcsResponse: Boolean
+    ) : ServerResponse(response, isOcsResponse) {
+
+        @get:Throws(JSONException::class)
+        val stringContent: String
+            get() = getResponseStringData()
+            
+        @get:Throws(JSONException::class)
+        val remotePaymentModeId: Long
+            get() {
+                val dataStr = getResponseStringData()
+                return try {
+                    dataStr.toLong()
+                } catch (_: NumberFormatException) {
+                    val obj = JSONObject(dataStr)
+                    obj.optLong("id", obj.optLong("remoteId", 0L))
+                }
+            }
+    }
+
+    class EditRemotePaymentModeResponse(
+        response: VersatileProjectSyncClient.ResponseData,
+        isOcsResponse: Boolean
+    ) : ServerResponse(response, isOcsResponse) {
+
+        @get:Throws(JSONException::class)
+        val stringContent: String
+            get() = getResponseStringData()
+    }
+
+    class DeleteRemotePaymentModeResponse(
+        response: VersatileProjectSyncClient.ResponseData,
+        isOcsResponse: Boolean
+    ) : ServerResponse(response, isOcsResponse) {
+
+        @get:Throws(JSONException::class)
+        val stringContent: String
+            get() = getResponseStringData()
+    }
+
     class CreateRemoteCurrencyResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
@@ -145,6 +229,18 @@ open class ServerResponse(
         @get:Throws(JSONException::class)
         val stringContent: String
             get() = getResponseStringData()
+
+        @get:Throws(JSONException::class)
+        val remoteCurrencyId: Long
+            get() {
+                val dataStr = getResponseStringData()
+                return try {
+                    dataStr.toLong()
+                } catch (_: NumberFormatException) {
+                    val obj = JSONObject(dataStr)
+                    obj.optLong("id", obj.optLong("remoteId", 0L))
+                }
+            }
     }
 
     class EditRemoteCurrencyResponse(
@@ -196,6 +292,18 @@ open class ServerResponse(
         @get:Throws(JSONException::class)
         val stringContent: String
             get() = getResponseStringData()
+
+        @get:Throws(JSONException::class)
+        val remoteBillId: Long
+            get() {
+                val dataStr = getResponseStringData()
+                return try {
+                    dataStr.toLong()
+                } catch (_: NumberFormatException) {
+                    val obj = JSONObject(dataStr)
+                    obj.optLong("id", obj.optLong("remoteId", 0L))
+                }
+            }
     }
 
     class CreateRemoteBillResponse(
@@ -206,6 +314,18 @@ open class ServerResponse(
         @get:Throws(JSONException::class)
         val stringContent: String
             get() = getResponseStringData()
+
+        @get:Throws(JSONException::class)
+        val remoteBillId: Long
+            get() {
+                val dataStr = getResponseStringData()
+                return try {
+                    dataStr.toLong()
+                } catch (_: NumberFormatException) {
+                    val obj = JSONObject(dataStr)
+                    obj.optLong("id", obj.optLong("remoteId", 0L))
+                }
+            }
     }
 
     class DeleteRemoteBillResponse(
@@ -242,13 +362,23 @@ open class ServerResponse(
         ServerResponse(response, isOcsResponse) {
 
         @Throws(JSONException::class)
-        fun getBillsCospend(projId: Long, memberRemoteIdToId: Map<Long, Long>): List<DBBill> {
-            return getBillsFromJSONObject(getResponseObjectData(), projId, memberRemoteIdToId)
+        fun getBillsCospend(
+            projId: Long,
+            memberRemoteIdToId: Map<Long, Long>,
+            catRemoteIdToId: Map<Long, Long>,
+            pmRemoteIdToId: Map<Long, Long>
+        ): List<DBBill> {
+            return getBillsFromJSONObject(projId, memberRemoteIdToId, catRemoteIdToId, pmRemoteIdToId)
         }
 
         @Throws(JSONException::class)
-        fun getBillsIHM(projId: Long, memberRemoteIdToId: Map<Long, Long>): List<DBBill> {
-            return getBillsFromJSONArray(JSONArray(content), projId, memberRemoteIdToId)
+        fun getBillsIHM(
+            projId: Long,
+            memberRemoteIdToId: Map<Long, Long>,
+            catRemoteIdToId: Map<Long, Long>,
+            pmRemoteIdToId: Map<Long, Long>
+        ): List<DBBill> {
+            return getBillsFromJSONArray(JSONArray(content), projId, memberRemoteIdToId, catRemoteIdToId, pmRemoteIdToId)
         }
 
 
@@ -267,6 +397,32 @@ open class ServerResponse(
         @Throws(JSONException::class)
         fun getMembers(projId: Long): List<DBMember> {
             return getMembersFromJSONArray(getResponseArrayData(), projId)
+        }
+    }
+
+    class CategoriesResponse(response: VersatileProjectSyncClient.ResponseData, isOcsResponse: Boolean) :
+        ServerResponse(response, isOcsResponse) {
+
+        @Throws(JSONException::class)
+        fun getCategories(projId: Long): List<DBCategory> {
+            return if (isOcsResponse) {
+                getCategoriesFromJSON(getResponseObjectData(), projId)
+            } else {
+                getCategoriesFromJSONArray(getResponseArrayData(), projId)
+            }
+        }
+    }
+
+    class PaymentModesResponse(response: VersatileProjectSyncClient.ResponseData, isOcsResponse: Boolean) :
+        ServerResponse(response, isOcsResponse) {
+
+        @Throws(JSONException::class)
+        fun getPaymentModes(projId: Long): List<DBPaymentMode> {
+            return if (isOcsResponse) {
+                getPaymentModesFromJSON(getResponseObjectData(), projId)
+            } else {
+                getPaymentModesFromJSONArray(getResponseArrayData(), projId)
+            }
         }
     }
 
@@ -367,6 +523,26 @@ open class ServerResponse(
     }
 
     @Throws(JSONException::class)
+    protected fun getCategoriesFromJSONArray(jsonCats: JSONArray, projId: Long): List<DBCategory> {
+        val categories: MutableList<DBCategory> = ArrayList()
+        for (i in 0 until jsonCats.length()) {
+            val jsonCat = jsonCats.getJSONObject(i)
+            categories.add(getCategoryFromJSON(jsonCat, projId))
+        }
+        return categories
+    }
+
+    @Throws(JSONException::class)
+    protected fun getPaymentModesFromJSONArray(jsonPms: JSONArray, projId: Long): List<DBPaymentMode> {
+        val paymentModes: MutableList<DBPaymentMode> = ArrayList()
+        for (i in 0 until jsonPms.length()) {
+            val jsonPm = jsonPms.getJSONObject(i)
+            paymentModes.add(getPaymentModeFromJSON(jsonPm, projId))
+        }
+        return paymentModes
+    }
+
+    @Throws(JSONException::class)
     protected fun getCategoriesFromJSON(json: JSONObject, projId: Long): List<DBCategory> {
         val categories: MutableList<DBCategory> = ArrayList()
         if (json.has("categories") && json.get("categories") is JSONObject) {
@@ -380,6 +556,27 @@ open class ServerResponse(
             }
         }
         return categories
+    }
+
+    @Throws(JSONException::class)
+    protected fun getCategoryFromJSON(json: JSONObject, projId: Long): DBCategory {
+        var remoteId: Long = 0
+        if (json.has("id") && !json.isNull("id")) {
+            remoteId = json.getLong("id")
+        }
+        var name = ""
+        var color = ""
+        var icon = ""
+        if (json.has("color") && !json.isNull("color")) {
+            color = json.getString("color")
+        }
+        if (json.has("icon") && !json.isNull("icon")) {
+            icon = json.getString("icon")
+        }
+        if (json.has("name") && !json.isNull("name")) {
+            name = json.getString("name")
+        }
+        return DBCategory(0, remoteId, projId, name, icon, color)
     }
 
     @Throws(JSONException::class)
@@ -414,6 +611,27 @@ open class ServerResponse(
             }
         }
         return paymentModes
+    }
+
+    @Throws(JSONException::class)
+    protected fun getPaymentModeFromJSON(json: JSONObject, projId: Long): DBPaymentMode {
+        var remoteId: Long = 0
+        if (json.has("id") && !json.isNull("id")) {
+            remoteId = json.getLong("id")
+        }
+        var name = ""
+        var color = ""
+        var icon = ""
+        if (json.has("color") && !json.isNull("color")) {
+            color = json.getString("color")
+        }
+        if (json.has("icon") && !json.isNull("icon")) {
+            icon = json.getString("icon")
+        }
+        if (json.has("name") && !json.isNull("name")) {
+            name = json.getString("name")
+        }
+        return DBPaymentMode(0, remoteId, projId, name, icon, color)
     }
 
     @Throws(JSONException::class)
@@ -556,26 +774,30 @@ open class ServerResponse(
     protected fun getBillsFromJSONArray(
         json: JSONArray,
         projId: Long,
-        memberRemoteIdToId: Map<Long, Long>
+        memberRemoteIdToId: Map<Long, Long>,
+        catRemoteIdToId: Map<Long, Long>,
+        pmRemoteIdToId: Map<Long, Long>
     ): List<DBBill> {
         val bills: MutableList<DBBill> = ArrayList()
         for (i in 0 until json.length()) {
             val jsonBill = json.getJSONObject(i)
-            bills.add(getBillFromJSON(jsonBill, projId, memberRemoteIdToId))
+            bills.add(getBillFromJSON(jsonBill, projId, memberRemoteIdToId, catRemoteIdToId, pmRemoteIdToId))
         }
         return bills
     }
 
     @Throws(JSONException::class)
     protected fun getBillsFromJSONObject(
-        json: JSONObject,
         projId: Long,
-        memberRemoteIdToId: Map<Long, Long>
+        memberRemoteIdToId: Map<Long, Long>,
+        catRemoteIdToId: Map<Long, Long>,
+        pmRemoteIdToId: Map<Long, Long>
     ): List<DBBill> {
         val bills: List<DBBill>
+        val json = getResponseObjectData()
         if (json.has("bills") && !json.isNull("bills")) {
             val jsonBills = json.getJSONArray("bills")
-            bills = getBillsFromJSONArray(jsonBills, projId, memberRemoteIdToId)
+            bills = getBillsFromJSONArray(jsonBills, projId, memberRemoteIdToId, catRemoteIdToId, pmRemoteIdToId)
         } else {
             bills = ArrayList()
         }
@@ -586,7 +808,9 @@ open class ServerResponse(
     protected fun getBillFromJSON(
         json: JSONObject,
         projId: Long,
-        memberRemoteIdToId: Map<Long, Long>
+        memberRemoteIdToId: Map<Long, Long>,
+        catRemoteIdToId: Map<Long, Long>,
+        pmRemoteIdToId: Map<Long, Long>
     ): DBBill {
         var remoteId: Long = 0
         var payerRemoteId: Long
@@ -600,7 +824,7 @@ open class ServerResponse(
         var repeat = DBBill.NON_REPEATED
         var paymentMode = DBBill.PAYMODE_NONE
         var paymentModeRemoteId = DBBill.PAYMODE_ID_NONE
-        var categoryId = DBBill.CATEGORY_NONE
+        var categoryRemoteId = DBBill.CATEGORY_NONE
         if (!json.isNull("id")) {
             remoteId = json.getLong("id")
         }
@@ -639,23 +863,29 @@ open class ServerResponse(
         }
         if (json.has("paymentmode") && !json.isNull("paymentmode")) {
             paymentMode = json.getString("paymentmode")
+        } else if (json.has("paymentMode") && !json.isNull("paymentMode")) {
+            paymentMode = json.getString("paymentMode")
         }
         if (json.has("categoryid") && !json.isNull("categoryid")) {
-            categoryId = json.getInt("categoryid")
-            Log.d("PLOP", "LOADED CATTTTTTTTTTTT $categoryId")
+            categoryRemoteId = json.getLong("categoryid")
+        } else if (json.has("categoryId") && !json.isNull("categoryId")) {
+            categoryRemoteId = json.getLong("categoryId")
         }
         if (json.has("paymentmodeid") && !json.isNull("paymentmodeid")) {
-            paymentModeRemoteId = json.getInt("paymentmodeid")
+            paymentModeRemoteId = json.getLong("paymentmodeid")
+        } else if (json.has("paymentModeId") && !json.isNull("paymentModeId")) {
+            paymentModeRemoteId = json.getLong("paymentModeId")
         }
-        // old MB, new Cospend is ok as Cospend provides the old pm ID
-        // new MB, old Cospend => set payment mode ID from old one
         if (DBBill.PAYMODE_NONE != paymentMode && "" != paymentMode && paymentModeRemoteId == DBBill.PAYMODE_ID_NONE) {
-            Log.d("PaymentMode", "old: $paymentMode and new: 0")
             paymentModeRemoteId = DBBill.oldPmIdToNew[paymentMode] ?: DBBill.PAYMODE_ID_NONE
         }
+
+        val categoryId = catRemoteIdToId[categoryRemoteId] ?: 0L
+        val paymentModeId = pmRemoteIdToId[paymentModeRemoteId] ?: 0L
+
         val bill = DBBill(
             0, remoteId, projId, payerId, amount, timestamp, what,
-            DBBill.STATE_OK, repeat, paymentMode, categoryId, comment, paymentModeRemoteId
+            DBBill.STATE_OK, repeat, paymentMode, categoryId, comment, paymentModeId
         )
         bill.billOwers = getBillOwersFromJson(json, memberRemoteIdToId)
         return bill
