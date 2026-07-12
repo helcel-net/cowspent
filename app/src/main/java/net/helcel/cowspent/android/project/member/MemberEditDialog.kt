@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -57,8 +58,10 @@ fun MemberEditDialogContent(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = stringResource(R.string.edit_member_dialog_title),
-                style = MaterialTheme.typography.h6,
+                text = stringResource(R.string.edit_member_dialog_title).uppercase(),
+                style = MaterialTheme.typography.subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -66,7 +69,7 @@ fun MemberEditDialogContent(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text(stringResource(R.string.member_edit_name)) },
+                placeholder = { Text(stringResource(R.string.label_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
                     Icon(Icons.Default.Person, contentDescription = null)
@@ -80,7 +83,7 @@ fun MemberEditDialogContent(
             OutlinedTextField(
                 value = weight,
                 onValueChange = { weight = it },
-                label = { Text(stringResource(R.string.member_edit_weight)) },
+                placeholder = { Text(stringResource(R.string.label_weight)) },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
                     Icon(Icons.Default.LineWeight, contentDescription = null)
@@ -98,9 +101,17 @@ fun MemberEditDialogContent(
                     .clickable { isActivated = !isActivated }
                     .padding(vertical = 8.dp)
             ) {
-                Icon(Icons.Default.Block, contentDescription = null)
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(stringResource(R.string.member_edit_toggle), modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.Default.Block, 
+                    contentDescription = null,
+                    tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                )
+                Spacer(modifier = Modifier.width(32.dp))
+                Text(
+                    text = stringResource(R.string.label_activated), 
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.subtitle1
+                )
                 Checkbox(checked = isActivated, onCheckedChange = { isActivated = it })
             }
 
@@ -113,9 +124,17 @@ fun MemberEditDialogContent(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             ) {
-                Icon(Icons.Default.Palette, contentDescription = null)
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(stringResource(R.string.member_edit_color), modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.Default.Palette, 
+                    contentDescription = null,
+                    tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+                )
+                Spacer(modifier = Modifier.width(32.dp))
+                Text(
+                    text = stringResource(R.string.label_color), 
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.subtitle1
+                )
                 Box(
                     modifier = Modifier
                         .size(40.dp)

@@ -48,7 +48,7 @@ object ExportUtil {
             }
             owersTxt = owersTxt.replace(",$".toRegex(), "")
             fileContent += "\"${b.what}\",${b.amount},${b.date},${b.timestamp},\"$payerName\"," +
-                    "$payerWeight,$payerActive,\"$owersTxt\",${b.repeat},${b.categoryRemoteId}," +
+                    "$payerWeight,$payerActive,\"$owersTxt\",${b.repeat},${b.categoryId}," +
                     "${b.paymentMode}\n"
         }
 

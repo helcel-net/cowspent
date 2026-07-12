@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.*
 import net.helcel.cowspent.model.*
+import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.util.SupportUtil
 import java.util.Date
 import kotlin.math.abs
@@ -45,6 +47,7 @@ fun EditBillScreen(
     onDateClick: () -> Unit,
     onTimeClick: () -> Unit,
     onScan: () -> Unit,
+    onDuplicate: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     accessLevel: Int = DBProject.ACCESS_LEVEL_ADMIN
 ) {
@@ -59,7 +62,7 @@ fun EditBillScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (viewModel.what.isEmpty()) R.string.simple_new_bill else R.string.simple_edit_bill)) },
+                title = { Text(stringResource(if (viewModel.isNewBill) R.string.action_new_bill else R.string.action_edit)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -69,6 +72,11 @@ fun EditBillScreen(
                     if (canEdit) {
                         IconButton(onClick = onScan) {
                             Icon(Icons.Default.QrCodeScanner, contentDescription = null)
+                        }
+                        if (onDuplicate != null) {
+                            IconButton(onClick = onDuplicate) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate")
+                            }
                         }
                         if (onDelete != null) {
                             IconButton(onClick = onDelete) {
@@ -83,11 +91,11 @@ fun EditBillScreen(
         },
         floatingActionButton = {
             if (canEdit) {
-                val errorWhat = stringResource(R.string.error_invalid_bill_what)
+                val errorWhat = stringResource(R.string.error_invalid_bill_name)
                 val errorDate = stringResource(R.string.error_invalid_bill_date)
-                val errorPayer = stringResource(R.string.error_invalid_bill_payerid)
+                val errorPayer = stringResource(R.string.error_invalid_bill_payer)
                 val errorOwers = stringResource(R.string.error_invalid_bill_owers)
-                val errorInvalidForm = stringResource(R.string.simple_error)
+                val errorInvalidForm = stringResource(R.string.error_generic)
 
                 FloatingActionButton(onClick = {
                     val validationError = viewModel.getValidationError(
@@ -101,7 +109,7 @@ fun EditBillScreen(
                 }) {
                     Icon(
                         Icons.Default.Done,
-                        contentDescription = stringResource(R.string.action_save_bill)
+                        contentDescription = stringResource(R.string.action_save)
                     )
                 }
             }
@@ -111,6 +119,7 @@ fun EditBillScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
+                .imePadding()
                 .padding(16.dp)
                 .fillMaxSize()
                 .verticalScroll(scrollState)
@@ -157,16 +166,23 @@ fun BillBasicInfoSection(
     onDateClick: () -> Unit,
     onTimeClick: () -> Unit
 ) {
+    Text(
+        text = "GENERAL",
+        style = MaterialTheme.typography.subtitle1,
+        color = MaterialTheme.colors.onSurface,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
+
     val context = LocalContext.current
     val currencyDialogTitle =
         stringResource(R.string.currency_dialog_title, viewModel.mainCurrencyName)
-    val noCurrencyError = stringResource(R.string.no_currency_error)
 
     OutlinedTextField(
         value = viewModel.what,
         onValueChange = { viewModel.what = it },
         enabled = canEdit,
-        placeholder = { Text(stringResource(R.string.setting_what)) },
+        placeholder = { Text(stringResource(R.string.label_what)) },
         modifier = Modifier.fillMaxWidth(),
         leadingIcon = { Icon(Icons.Default.Title, contentDescription = null) }
     )
@@ -182,25 +198,37 @@ fun BillBasicInfoSection(
         enabled = canEdit,
         placeholder = { Text("0") },
         modifier = Modifier.fillMaxWidth(),
-        leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = null) },
+        leadingIcon = {
+            val currencyToShow = viewModel.selectedCurrencyName.ifEmpty { 
+                viewModel.mainCurrencyName.ifEmpty { "$" } 
+            }
+            TextIconDisplay(
+                textIcon = TextIcon.Symbol(currencyToShow),
+                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+            )
+        },
         trailingIcon = {
             IconButton(
                 enabled = canEdit,
                 onClick = {
-                    if (viewModel.currencies.isNotEmpty()) {
-                        viewModel.showDialog(
-                            title = currencyDialogTitle,
-                            items = viewModel.currencies.map { "${it.name} (${it.exchangeRate})" },
-                            onItemSelected = { index ->
-                                viewModel.convertCurrency(viewModel.currencies[index])
-                            }
-                        )
-                    } else {
-                        showToast(context, noCurrencyError)
+                    val mainLabel = viewModel.mainCurrencyName.ifEmpty { "$" }
+                    val options = listOf("$mainLabel | Base") + viewModel.currencies.map { 
+                        "${it.name} | 1 $mainLabel = ${it.exchangeRate} ${it.name}" 
                     }
+                    viewModel.showDialog(
+                        title = currencyDialogTitle,
+                        items = options,
+                        onItemSelected = { index ->
+                            if (index == 0) {
+                                viewModel.resetCurrency()
+                            } else {
+                                viewModel.convertCurrency(viewModel.currencies[index - 1])
+                            }
+                        }
+                    )
                 }
             ) {
-                Icon(Icons.Default.CurrencyExchange, contentDescription = null)
+                Icon(Icons.Default.SwapHoriz, contentDescription = "Change Currency")
             }
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -221,7 +249,7 @@ fun BillBasicInfoSection(
             onClick = onDateClick,
             modifier = Modifier.weight(1f),
             enabled = canEdit,
-            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) }
+            leadingIcon = { Icon(Icons.Default.Event, contentDescription = "Select Date") }
         )
         Spacer(modifier = Modifier.width(8.dp))
         ClickableOutlinedTextField(
@@ -229,7 +257,7 @@ fun BillBasicInfoSection(
             onClick = onTimeClick,
             modifier = Modifier.weight(1f),
             enabled = canEdit,
-            leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) }
+            leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = "Select Time") }
         )
     }
 }
@@ -244,20 +272,16 @@ fun PayerSection(
 
     EditableExposedDropdownMenu(
         value = selectedPayer?.name ?: "",
-        placeholder = stringResource(R.string.setting_payer),
+        placeholder = stringResource(R.string.label_payer),
         expanded = payerExpanded,
         onExpandedChange = { payerExpanded = it },
         onDismissRequest = { payerExpanded = false },
         enabled = canEdit,
         leadingIcon = {
-            Box(modifier = Modifier.padding(start = 12.dp)) {
+            Box(modifier = Modifier) {
                 if (selectedPayer != null) {
-                    UserAvatar(
-                        name = selectedPayer.name,
-                        r = selectedPayer.r,
-                        g = selectedPayer.g,
-                        b = selectedPayer.b,
-                        disabled = !selectedPayer.isActivated,
+                    MemberAvatar(
+                        member = selectedPayer,
                         size = 24.dp
                     )
                 } else {
@@ -271,12 +295,8 @@ fun PayerSection(
                     viewModel.payerId = member.id
                     payerExpanded = false
                 }) {
-                    UserAvatar(
-                        name = member.name,
-                        r = member.r,
-                        g = member.g,
-                        b = member.b,
-                        disabled = !member.isActivated,
+                    MemberAvatar(
+                        member = member,
                         size = 24.dp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -330,8 +350,10 @@ fun OwerSelectionSection(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            stringResource(R.string.setting_owers), fontSize = 12.sp,
-            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+            text = stringResource(R.string.label_owers).uppercase(),
+            style = MaterialTheme.typography.subtitle1,
+            color = MaterialTheme.colors.onSurface,
+            fontWeight = FontWeight.Bold
         )
         Spacer(Modifier.weight(1f))
 
@@ -381,12 +403,8 @@ fun OwerSelectionSection(
                 enabled = canEdit,
                 onCheckedChange = { viewModel.toggleMember(member.id, it) }
             )
-            UserAvatar(
-                name = member.name,
-                r = member.r,
-                g = member.g,
-                b = member.b,
-                disabled = !member.isActivated,
+            MemberAvatar(
+                member = member,
                 size = 32.dp
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -441,19 +459,28 @@ fun BillAdditionalDetailsSection(
     paymentModes: List<DBPaymentMode>,
     canEdit: Boolean
 ) {
+    Text(
+        text = "DETAILS",
+        style = MaterialTheme.typography.subtitle1,
+        color = MaterialTheme.colors.onSurface,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
+    )
+
+    val context = LocalContext.current
     var categoryExpanded by remember { mutableStateOf(false) }
     val selectedCategory =
-        categories.find { it.remoteId.toInt() == viewModel.categoryRemoteId }
+        categories.find { it.id == viewModel.categoryId } ?: CategoryUtils.getCategoryById(context, viewModel.categoryId)
 
     EditableExposedDropdownMenu(
         value = selectedCategory?.name ?: "",
-        placeholder = stringResource(R.string.setting_category),
+        placeholder = stringResource(R.string.label_category),
         expanded = categoryExpanded,
         onExpandedChange = { categoryExpanded = it },
         onDismissRequest = { categoryExpanded = false },
         enabled = canEdit,
         leadingIcon = {
-            Box(modifier = Modifier.padding(start = 12.dp)) {
+            Box(modifier = Modifier) {
                 if (selectedCategory != null) {
                     Text(text = selectedCategory.icon, fontSize = 20.sp)
                 } else {
@@ -463,16 +490,26 @@ fun BillAdditionalDetailsSection(
         },
         content = {
             DropdownMenuItem(onClick = {
-                viewModel.categoryRemoteId = 0
+                viewModel.categoryId = 0
                 categoryExpanded = false
             }) {
                 Icon(Icons.Default.Close, tint = Color.Red, contentDescription = null)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(stringResource(R.string.category_none))
             }
-            categories.forEach { category ->
+            
+            DropdownMenuItem(onClick = {
+                viewModel.categoryId = DBBill.CATEGORY_REIMBURSEMENT
+                categoryExpanded = false
+            }) {
+                Text(text = "\uD83D\uDCB0", fontSize = 20.sp)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(stringResource(R.string.category_reimbursement))
+            }
+
+            categories.filter { it.remoteId != DBBill.CATEGORY_REIMBURSEMENT }.forEach { category ->
                 DropdownMenuItem(onClick = {
-                    viewModel.categoryRemoteId = category.remoteId.toInt()
+                    viewModel.categoryId = category.id
                     categoryExpanded = false
                 }) {
                     Text(text = category.icon, fontSize = 20.sp)
@@ -487,17 +524,17 @@ fun BillAdditionalDetailsSection(
 
     var pmExpanded by remember { mutableStateOf(false) }
     val selectedPm =
-        paymentModes.find { it.remoteId.toInt() == viewModel.paymentModeRemoteId }
+        paymentModes.find { it.id == viewModel.paymentModeId } ?: CategoryUtils.getPaymentModeById(context, viewModel.paymentModeId)
 
     EditableExposedDropdownMenu(
         value = selectedPm?.name ?: "",
-        placeholder = stringResource(R.string.setting_payment_mode),
+        placeholder = stringResource(R.string.label_mode),
         expanded = pmExpanded,
         onExpandedChange = { pmExpanded = it },
         onDismissRequest = { pmExpanded = false },
         enabled = canEdit,
         leadingIcon = {
-            Box(modifier = Modifier.padding(start = 12.dp)) {
+            Box(modifier = Modifier) {
                 if (selectedPm != null) {
                     Text(text = selectedPm.icon, fontSize = 20.sp)
                 } else {
@@ -507,7 +544,7 @@ fun BillAdditionalDetailsSection(
         },
         content = {
             DropdownMenuItem(onClick = {
-                viewModel.paymentModeRemoteId = 0
+                viewModel.paymentModeId = 0
                 pmExpanded = false
             }) {
                 Icon(Icons.Default.Close, tint = Color.Red, contentDescription = null)
@@ -516,7 +553,7 @@ fun BillAdditionalDetailsSection(
             }
             paymentModes.forEach { pm ->
                 DropdownMenuItem(onClick = {
-                    viewModel.paymentModeRemoteId = pm.remoteId.toInt()
+                    viewModel.paymentModeId = pm.id
                     pmExpanded = false
                 }) {
                     Text(text = pm.icon, fontSize = 20.sp)
@@ -542,7 +579,7 @@ fun BillAdditionalDetailsSection(
 
     EditableExposedDropdownMenu(
         value = selectedRepeat?.second ?: "",
-        placeholder = stringResource(R.string.setting_project_repetition),
+        placeholder = stringResource(R.string.label_repeat),
         expanded = repeatExpanded,
         onExpandedChange = { repeatExpanded = it },
         onDismissRequest = { repeatExpanded = false },
@@ -566,7 +603,7 @@ fun BillAdditionalDetailsSection(
         value = viewModel.comment,
         onValueChange = { viewModel.comment = it },
         enabled = canEdit,
-        placeholder = { Text(stringResource(R.string.setting_comment)) },
+        placeholder = { Text(stringResource(R.string.label_comment)) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = false,
         leadingIcon = {
@@ -587,6 +624,7 @@ fun EditBillScreenPreview() {
             viewModel = EditBillViewModel().apply {
                 what = "Pizza"
                 amount = "12.50"
+                mainCurrencyName = "EUR"
                 members = listOf(
                     DBMember(1, 0, 0, "Alice", true, 1.0, 0, null, null, null, null, null),
                     DBMember(2, 0, 0, "Bob", true, 1.0, 0, null, null, null, null, null)

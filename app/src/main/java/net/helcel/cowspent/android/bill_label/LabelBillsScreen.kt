@@ -42,7 +42,7 @@ fun LabelBillsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.label_bills_title)) },
+                title = { Text(stringResource(R.string.title_label_bills)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -64,10 +64,11 @@ fun LabelBillsScreen(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = stringResource(R.string.label_bills_suggested),
+                    text = stringResource(R.string.label_bills_suggested).uppercase(),
                     style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 
@@ -83,7 +84,7 @@ fun LabelBillsScreen(
                                     CategoryButton(
                                         icon = category.icon,
                                         name = category.name ?: "",
-                                        onClick = { viewModel.labelCurrentBill(db, category.remoteId.toInt()) }
+                                        onClick = { viewModel.labelCurrentBill(db, category.id) }
                                     )
                                 }
                             }
@@ -93,7 +94,7 @@ fun LabelBillsScreen(
                         }
                     } else {
                         Text(
-                            text = stringResource(R.string.label_bills_no_suggestions),
+                            text = stringResource(R.string.msg_no_suggestions),
                             style = MaterialTheme.typography.caption,
                             color = MaterialTheme.colors.onSurface.copy(alpha = 0.4f),
                             modifier = Modifier.fillMaxWidth(),
@@ -105,10 +106,11 @@ fun LabelBillsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = stringResource(R.string.setting_category),
+                    text = stringResource(R.string.label_category).uppercase(),
                     style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -124,7 +126,7 @@ fun LabelBillsScreen(
                         CategoryButton(
                             icon = category.icon,
                             name = category.name ?: "",
-                            onClick = { viewModel.labelCurrentBill(db, category.remoteId.toInt()) }
+                            onClick = { viewModel.labelCurrentBill(db, category.id) }
                         )
                     }
                 }
@@ -141,7 +143,7 @@ fun LabelBillsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.label_bills_no_more))
+                    Text(stringResource(R.string.msg_bill_labeled_done))
                 }
             }
         }
@@ -243,16 +245,16 @@ fun CategoryButton(icon: String, name: String, onClick: () -> Unit) {
 fun LabelBillsScreenPreview() {
     val viewModel = LabelBillsViewModel().apply {
         billsToLabel = listOf(
-            DBBill(1L, 0, 1L, 1L, 120.5, System.currentTimeMillis() / 1000, "Groceries at Aldi", 0, null, null, 0, null, -1)
+            DBBill(1L, 0, 1L, 1L, 120.5, System.currentTimeMillis() / 1000, "Groceries at Aldi", 0, null, null, 0L, null, -1L)
         )
         val cats = listOf(
-            DBCategory(1, 1, 1, "Groceries", "🛒", ""),
-            DBCategory(2, 2, 1, "Leisure", "🥳", ""),
-            DBCategory(3, 3, 1, "Rent", "🏠", ""),
-            DBCategory(4, 4, 1, "Bills", "💸", "")
+            DBCategory(1L, 1L, 1L, "Groceries", "🛒", ""),
+            DBCategory(2L, 2L, 1L, "Leisure", "🥳", ""),
+            DBCategory(3L, 3L, 1L, "Rent", "🏠", ""),
+            DBCategory(4L, 4L, 1L, "Bills", "💸", "")
         )
         categories = cats
-        categoriesMap = cats.associateBy { it.remoteId }
+        categoriesMap = cats.associateBy { it.id }
     }
     val members = listOf(
         DBMember(1L, 0, 1L, "Alice", true, 1.0, 0, 255, 100, 100, null, null),

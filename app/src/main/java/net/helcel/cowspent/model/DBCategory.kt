@@ -8,7 +8,8 @@ class DBCategory(
     var projectId: Long,
     var name: String?,
     var icon: String,
-    var color: String
+    var color: String,
+    var state: Int = DBBill.STATE_OK
 ) : Serializable {
 
     override fun toString(): String {

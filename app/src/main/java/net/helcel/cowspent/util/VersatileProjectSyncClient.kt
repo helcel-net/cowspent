@@ -11,8 +11,10 @@ import com.nextcloud.android.sso.exceptions.NextcloudHttpRequestFailedException
 import com.nextcloud.android.sso.exceptions.TokenMismatchException
 import com.nextcloud.android.sso.model.SingleSignOnAccount
 import net.helcel.cowspent.model.DBBill
+import net.helcel.cowspent.model.DBCategory
 import net.helcel.cowspent.model.DBCurrency
 import net.helcel.cowspent.model.DBMember
+import net.helcel.cowspent.model.DBPaymentMode
 import net.helcel.cowspent.model.DBProject
 import net.helcel.cowspent.model.ProjectType
 import org.json.JSONException
@@ -81,25 +83,18 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for getProjectInfo")
-                }
             } else if (canAccessProjectWithSSO(project)) {
-                return if (cospendVersionGT161) {
-                    target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
-                    Log.i(TAG, "using new API for getProjectInfo")
-                    ServerResponse.ProjectResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, null, null, true), true)
-                } else {
-                    target = "/index.php/apps/cospend/api-priv/projects/" + project.remoteId
-                    ServerResponse.ProjectResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, null, null, false), false)
-                }
+                target = if (cospendVersionGT161)
+                    "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
+                else
+                    "/index.php/apps/cospend/api-priv/projects/" + project.remoteId
+                return ServerResponse.ProjectResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, null, null, cospendVersionGT161), cospendVersionGT161)
             } else {
                 useOcsApiRequest = cospendVersionGT161
                 target = if (cospendVersionGT161)
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
-                Log.i(TAG, "using public API, target is: ${target}for getProjectInfo")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId
@@ -172,13 +167,9 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for editRemoteProject")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
-                    Log.i(TAG, "using new API for editRemoteProject")
                     ServerResponse.EditRemoteProjectResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_PUT, paramKeys, paramValues, true), true)
                 } else {
                     target = "/index.php/apps/cospend/api-priv/projects/" + project.remoteId
@@ -190,7 +181,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
-                Log.i(TAG, "using public API, target is: ${target}for editRemoteProject")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId
@@ -239,13 +229,9 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/members/" + member.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for editRemoteMember")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/members/" + member.remoteId
-                    Log.i(TAG, "using new API for editRemoteMember")
                     ServerResponse.EditRemoteMemberResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_PUT, paramKeys, paramValues, true), true)
                 } else {
                     target = "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/members/" + member.remoteId
@@ -257,7 +243,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members/" + member.remoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members/" + member.remoteId
-                Log.i(TAG, "using public API, target is: ${target}for editRemoteMember")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/members/" + member.remoteId
@@ -275,7 +260,13 @@ class VersatileProjectSyncClient(
     }
 
     @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
-    fun editRemoteBill(project: DBProject, bill: DBBill, memberIdToRemoteId: Map<Long, Long>): ServerResponse.EditRemoteBillResponse {
+    fun editRemoteBill(
+        project: DBProject,
+        bill: DBBill,
+        memberIdToRemoteId: Map<Long, Long>,
+        categoryIdToRemoteId: Map<Long, Long>,
+        paymentModeIdToRemoteId: Map<Long, Long>
+    ): ServerResponse.EditRemoteBillResponse {
         val paramKeys: MutableList<String> = ArrayList()
         val paramValues: MutableList<String> = ArrayList()
         paramKeys.add("date")
@@ -322,8 +313,8 @@ class VersatileProjectSyncClient(
             payedFor = payedFor.replace(",$".toRegex(), "")
             paramValues.add(payedFor)
             paramValues.add(bill.paymentMode ?: "")
-            paramValues.add(bill.categoryRemoteId.toString())
-            paramValues.add(bill.paymentModeRemoteId.toString())
+            paramValues.add((categoryIdToRemoteId[bill.categoryId] ?: 0L).toString())
+            paramValues.add((paymentModeIdToRemoteId[bill.paymentModeId] ?: 0L).toString())
 
             if (canAccessProjectWithNCLogin(project)) {
                 username = this.username
@@ -333,9 +324,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills/" + bill.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for editRemoteBill")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/bills/" + bill.remoteId
@@ -351,7 +339,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + bill.remoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + bill.remoteId
-                Log.i(TAG, "using public API, target is: ${target}for editRemoteBill")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/bills/" + bill.remoteId
@@ -389,9 +376,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for deleteRemoteProject")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
@@ -407,7 +391,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
-                Log.i(TAG, "using public API, target is: ${target}for deleteRemoteProject")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId
@@ -439,9 +422,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills/" + billRemoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for deleteRemoteBill")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/bills/" + billRemoteId
@@ -457,7 +437,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + billRemoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills/" + billRemoteId
-                Log.i(TAG, "using public API, target is: ${target}for deleteRemoteProject")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/bills/" + billRemoteId
@@ -528,9 +507,7 @@ class VersatileProjectSyncClient(
             else
                 project.getRequestBaseUrl(false) + "/api-priv/projects"
             useOcsApiRequest = cospendVersionGT161
-            if (cospendVersionGT161) {
-                Log.i(TAG, "using new API (weblogin, $username:$password) for createAuthenticatedRemoteProject")
-            }
+
             return ServerResponse.CreateRemoteProjectResponse(
                 requestServer(
                     target, METHOD_POST, paramKeys, paramValues,
@@ -541,7 +518,13 @@ class VersatileProjectSyncClient(
     }
 
     @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
-    fun createRemoteBill(project: DBProject, bill: DBBill, memberIdToRemoteId: Map<Long, Long>): ServerResponse.CreateRemoteBillResponse {
+    fun createRemoteBill(
+        project: DBProject,
+        bill: DBBill,
+        memberIdToRemoteId: Map<Long, Long>,
+        categoryIdToRemoteId: Map<Long, Long>,
+        paymentModeIdToRemoteId: Map<Long, Long>
+    ): ServerResponse.CreateRemoteBillResponse {
         val paramKeys: MutableList<String> = ArrayList()
         val paramValues: MutableList<String> = ArrayList()
         paramKeys.add("date")
@@ -583,8 +566,8 @@ class VersatileProjectSyncClient(
             payedFor = payedFor.replace(",$".toRegex(), "")
             paramValues.add(payedFor)
             paramValues.add(bill.paymentMode ?: "")
-            paramValues.add(bill.categoryRemoteId.toString())
-            paramValues.add(bill.paymentModeRemoteId.toString())
+            paramValues.add((categoryIdToRemoteId[bill.categoryId] ?: 0L).toString())
+            paramValues.add((paymentModeIdToRemoteId[bill.paymentModeId] ?: 0L).toString())
 
             if (canAccessProjectWithNCLogin(project)) {
                 username = this.username
@@ -594,9 +577,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills"
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for createRemoteBill")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/bills"
@@ -612,7 +592,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills"
-                Log.i(TAG, "using public API, target is: ${target}for createRemoteBill")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/bills"
@@ -664,13 +643,9 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/members"
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for createRemoteMember")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/members"
-                    Log.i(TAG, "using new API for createRemoteBill")
                     ServerResponse.CreateRemoteMemberResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_POST, paramKeys, paramValues, true), isOcsResponse=true, isJsonMember=true)
                 } else {
                     target = "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/members"
@@ -682,7 +657,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
-                Log.i(TAG, "using public API, target is: ${target}for createRemoteBill")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/members"
@@ -717,9 +691,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills?lastchanged=" + tsLastSync
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for getBills")
-                }
                 return ServerResponse.BillsResponse(
                     requestServer(
                         target, METHOD_GET, null, null,
@@ -738,7 +709,6 @@ class VersatileProjectSyncClient(
                 paramValues.add(tsLastSync.toString())
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/bills"
-                    Log.i(TAG, "using new API for getBills")
                     ServerResponse.BillsResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, paramKeys, paramValues, true), true)
                 } else {
                     target = "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/bills"
@@ -750,7 +720,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills?lastChanged=" + tsLastSync
                 else
                     project.getRequestBaseUrl(false) + "/apiv2/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills?lastchanged=" + tsLastSync
-                Log.i(TAG, "using public API, target is: ${target}for getBills")
                 return ServerResponse.BillsResponse(
                     requestServer(
                          target, METHOD_GET, null, null,
@@ -775,6 +744,92 @@ class VersatileProjectSyncClient(
     }
 
     @Throws(JSONException::class, IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
+    fun getCategories(project: DBProject): ServerResponse.CategoriesResponse {
+        var target: String
+        var username: String? = null
+        var password: String? = null
+        var bearerToken: String? = null
+        var useOcsApiRequest = false
+        if (ProjectType.COSPEND == project.type) {
+            if (canAccessProjectWithNCLogin(project)) {
+                username = this.username
+                password = this.password
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/projects/" + project.remoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/categories"
+                useOcsApiRequest = cospendVersionGT161
+            } else if (canAccessProjectWithSSO(project)) {
+                target = if (cospendVersionGT161)
+                    "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
+                else
+                    "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/categories"
+                return ServerResponse.CategoriesResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, null, null, cospendVersionGT161), cospendVersionGT161)
+            } else {
+                useOcsApiRequest = cospendVersionGT161
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
+                else
+                    project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/categories"
+            }
+        } else {
+            target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/categories"
+            username = project.remoteId
+            password = project.password
+            bearerToken = project.bearerToken
+        }
+        return ServerResponse.CategoriesResponse(
+            requestServer(
+                target, METHOD_GET, null, null,
+                null, username, password, bearerToken, useOcsApiRequest
+            ), useOcsApiRequest
+        )
+    }
+
+    @Throws(JSONException::class, IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
+    fun getPaymentModes(project: DBProject): ServerResponse.PaymentModesResponse {
+        var target: String
+        var username: String? = null
+        var password: String? = null
+        var bearerToken: String? = null
+        var useOcsApiRequest = false
+        if (ProjectType.COSPEND == project.type) {
+            if (canAccessProjectWithNCLogin(project)) {
+                username = this.username
+                password = this.password
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/projects/" + project.remoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/paymentmodes"
+                useOcsApiRequest = cospendVersionGT161
+            } else if (canAccessProjectWithSSO(project)) {
+                target = if (cospendVersionGT161)
+                    "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId
+                else
+                    "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/paymentmodes"
+                return ServerResponse.PaymentModesResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, null, null, cospendVersionGT161), cospendVersionGT161)
+            } else {
+                useOcsApiRequest = cospendVersionGT161
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password)
+                else
+                    project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/paymentmodes"
+            }
+        } else {
+            target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/paymentmodes"
+            username = project.remoteId
+            password = project.password
+            bearerToken = project.bearerToken
+        }
+        return ServerResponse.PaymentModesResponse(
+            requestServer(
+                target, METHOD_GET, null, null,
+                null, username, password, bearerToken, useOcsApiRequest
+            ), useOcsApiRequest
+        )
+    }
+
+    @Throws(JSONException::class, IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
     fun getMembers(project: DBProject): ServerResponse.MembersResponse {
         var target: String
         var username: String? = null
@@ -790,9 +845,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/members"
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for getMembers, projectId: " + project.remoteId)
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/members"
@@ -808,7 +860,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/members"
-                Log.i(TAG, "using public API, target is: ${target}for getMembers")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/members"
@@ -819,6 +870,305 @@ class VersatileProjectSyncClient(
         return ServerResponse.MembersResponse(
             requestServer(
                 target, METHOD_GET, null, null,
+                null, username, password, bearerToken, useOcsApiRequest
+            ), useOcsApiRequest
+        )
+    }
+
+    @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
+    fun createRemoteCategory(project: DBProject, category: DBCategory): ServerResponse.CreateRemoteCategoryResponse {
+        val paramKeys: MutableList<String> = ArrayList()
+        val paramValues: MutableList<String> = ArrayList()
+        paramKeys.add("name")
+        paramValues.add(category.name ?: "")
+        paramKeys.add("icon")
+        paramValues.add(category.icon)
+        paramKeys.add("color")
+        paramValues.add(category.color)
+
+        var target: String
+        var username: String? = null
+        var password: String? = null
+        var bearerToken: String? = null
+        var useOcsApiRequest = false
+        if (ProjectType.COSPEND == project.type) {
+            if (canAccessProjectWithNCLogin(project)) {
+                username = this.username
+                password = this.password
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/projects/" + project.remoteId + "/category"
+                else
+                    project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/categories"
+                useOcsApiRequest = cospendVersionGT161
+            } else if (canAccessProjectWithSSO(project)) {
+                target = if (cospendVersionGT161)
+                    "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/category"
+                else
+                    "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/categories"
+                return ServerResponse.CreateRemoteCategoryResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_POST, paramKeys, paramValues, cospendVersionGT161), cospendVersionGT161)
+            } else {
+                useOcsApiRequest = cospendVersionGT161
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/category"
+                else
+                    project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/categories"
+            }
+        } else {
+            target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/categories"
+            username = project.remoteId
+            password = project.password
+            bearerToken = project.bearerToken
+        }
+
+        val response = requestServer(
+            target, METHOD_POST, paramKeys, paramValues, null,
+            username, password, bearerToken, useOcsApiRequest
+        )
+        return ServerResponse.CreateRemoteCategoryResponse(response, useOcsApiRequest)
+    }
+
+    @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
+    fun editRemoteCategory(project: DBProject, category: DBCategory): ServerResponse.EditRemoteCategoryResponse {
+        val paramKeys: MutableList<String> = ArrayList()
+        val paramValues: MutableList<String> = ArrayList()
+        paramKeys.add("name")
+        paramValues.add(category.name ?: "")
+        paramKeys.add("icon")
+        paramValues.add(category.icon)
+        paramKeys.add("color")
+        paramValues.add(category.color)
+
+        var target: String
+        var username: String? = null
+        var password: String? = null
+        var bearerToken: String? = null
+        var useOcsApiRequest = false
+        if (ProjectType.COSPEND == project.type) {
+            if (canAccessProjectWithNCLogin(project)) {
+                username = this.username
+                password = this.password
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/projects/" + project.remoteId + "/category/" + category.remoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/categories/" + category.remoteId
+                useOcsApiRequest = cospendVersionGT161
+            } else if (canAccessProjectWithSSO(project)) {
+                target = if (cospendVersionGT161)
+                    "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/category/" + category.remoteId
+                else
+                    "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/categories/" + category.remoteId
+                return ServerResponse.EditRemoteCategoryResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_PUT, paramKeys, paramValues, cospendVersionGT161), cospendVersionGT161)
+            } else {
+                useOcsApiRequest = cospendVersionGT161
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/category/" + category.remoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/categories/" + category.remoteId
+            }
+        } else {
+            target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/categories/" + category.remoteId
+            username = project.remoteId
+            password = project.password
+            bearerToken = project.bearerToken
+        }
+
+        return ServerResponse.EditRemoteCategoryResponse(
+            requestServer(
+                target, METHOD_PUT, paramKeys, paramValues, null,
+                username, password, bearerToken, useOcsApiRequest
+            ), useOcsApiRequest
+        )
+    }
+
+    @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
+    fun deleteRemoteCategory(project: DBProject, categoryRemoteId: Long): ServerResponse.DeleteRemoteCategoryResponse {
+        var target: String
+        var username: String? = null
+        var password: String? = null
+        var bearerToken: String? = null
+        var useOcsApiRequest = false
+        if (ProjectType.COSPEND == project.type) {
+            if (canAccessProjectWithNCLogin(project)) {
+                username = this.username
+                password = this.password
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/projects/" + project.remoteId + "/category/" + categoryRemoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/categories/" + categoryRemoteId
+                useOcsApiRequest = cospendVersionGT161
+            } else if (canAccessProjectWithSSO(project)) {
+                target = if (cospendVersionGT161)
+                    "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/category/" + categoryRemoteId
+                else
+                    "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/categories/" + categoryRemoteId
+                return ServerResponse.DeleteRemoteCategoryResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_DELETE, null, null, cospendVersionGT161), cospendVersionGT161)
+            } else {
+                useOcsApiRequest = cospendVersionGT161
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/category/" + categoryRemoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/categories/" + categoryRemoteId
+            }
+        } else {
+            target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/categories/" + categoryRemoteId
+            username = project.remoteId
+            password = project.password
+            bearerToken = project.bearerToken
+        }
+
+        return ServerResponse.DeleteRemoteCategoryResponse(
+            requestServer(
+                target, METHOD_DELETE, null, null,
+                null, username, password, bearerToken, useOcsApiRequest
+            ), useOcsApiRequest
+        )
+    }
+
+    @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
+    fun createRemotePaymentMode(project: DBProject, paymentMode: DBPaymentMode): ServerResponse.CreateRemotePaymentModeResponse {
+        val paramKeys: MutableList<String> = ArrayList()
+        val paramValues: MutableList<String> = ArrayList()
+        paramKeys.add("name")
+        paramValues.add(paymentMode.name ?: "")
+        paramKeys.add("icon")
+        paramValues.add(paymentMode.icon)
+        paramKeys.add("color")
+        paramValues.add(paymentMode.color)
+
+        var target: String
+        var username: String? = null
+        var password: String? = null
+        var bearerToken: String? = null
+        var useOcsApiRequest = false
+        if (ProjectType.COSPEND == project.type) {
+            if (canAccessProjectWithNCLogin(project)) {
+                username = this.username
+                password = this.password
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/projects/" + project.remoteId + "/paymentmode"
+                else
+                    project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/paymentmodes"
+                useOcsApiRequest = cospendVersionGT161
+            } else if (canAccessProjectWithSSO(project)) {
+                target = if (cospendVersionGT161)
+                    "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/paymentmode"
+                else
+                    "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/paymentmodes"
+                return ServerResponse.CreateRemotePaymentModeResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_POST, paramKeys, paramValues, cospendVersionGT161), cospendVersionGT161)
+            } else {
+                useOcsApiRequest = cospendVersionGT161
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/paymentmode"
+                else
+                    project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/paymentmodes"
+            }
+        } else {
+            target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/paymentmodes"
+            username = project.remoteId
+            password = project.password
+            bearerToken = project.bearerToken
+        }
+
+        return ServerResponse.CreateRemotePaymentModeResponse(
+            requestServer(
+                target, METHOD_POST, paramKeys, paramValues, null,
+                username, password, bearerToken, useOcsApiRequest
+            ), useOcsApiRequest
+        )
+    }
+
+    @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
+    fun editRemotePaymentMode(project: DBProject, paymentMode: DBPaymentMode): ServerResponse.EditRemotePaymentModeResponse {
+        val paramKeys: MutableList<String> = ArrayList()
+        val paramValues: MutableList<String> = ArrayList()
+        paramKeys.add("name")
+        paramValues.add(paymentMode.name ?: "")
+        paramKeys.add("icon")
+        paramValues.add(paymentMode.icon)
+        paramKeys.add("color")
+        paramValues.add(paymentMode.color)
+
+        var target: String
+        var username: String? = null
+        var password: String? = null
+        var bearerToken: String? = null
+        var useOcsApiRequest = false
+        if (ProjectType.COSPEND == project.type) {
+            if (canAccessProjectWithNCLogin(project)) {
+                username = this.username
+                password = this.password
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/projects/" + project.remoteId + "/paymentmode/" + paymentMode.remoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/paymentmodes/" + paymentMode.remoteId
+                useOcsApiRequest = cospendVersionGT161
+            } else if (canAccessProjectWithSSO(project)) {
+                target = if (cospendVersionGT161)
+                    "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/paymentmode/" + paymentMode.remoteId
+                else
+                    "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/paymentmodes/" + paymentMode.remoteId
+                return ServerResponse.EditRemotePaymentModeResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_PUT, paramKeys, paramValues, cospendVersionGT161), cospendVersionGT161)
+            } else {
+                useOcsApiRequest = cospendVersionGT161
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/paymentmode/" + paymentMode.remoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/paymentmodes/" + paymentMode.remoteId
+            }
+        } else {
+            target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/paymentmodes/" + paymentMode.remoteId
+            username = project.remoteId
+            password = project.password
+            bearerToken = project.bearerToken
+        }
+
+        return ServerResponse.EditRemotePaymentModeResponse(
+            requestServer(
+                target, METHOD_PUT, paramKeys, paramValues, null,
+                username, password, bearerToken, useOcsApiRequest
+            ), useOcsApiRequest
+        )
+    }
+
+    @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
+    fun deleteRemotePaymentMode(project: DBProject, paymentModeRemoteId: Long): ServerResponse.DeleteRemotePaymentModeResponse {
+        var target: String
+        var username: String? = null
+        var password: String? = null
+        var bearerToken: String? = null
+        var useOcsApiRequest = false
+        if (ProjectType.COSPEND == project.type) {
+            if (canAccessProjectWithNCLogin(project)) {
+                username = this.username
+                password = this.password
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/projects/" + project.remoteId + "/paymentmode/" + paymentModeRemoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/paymentmodes/" + paymentModeRemoteId
+                useOcsApiRequest = cospendVersionGT161
+            } else if (canAccessProjectWithSSO(project)) {
+                target = if (cospendVersionGT161)
+                    "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/paymentmode/" + paymentModeRemoteId
+                else
+                    "/index.php/apps/cospend/api-priv/projects/" + project.remoteId + "/paymentmodes/" + paymentModeRemoteId
+                return ServerResponse.DeleteRemotePaymentModeResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_DELETE, null, null, cospendVersionGT161), cospendVersionGT161)
+            } else {
+                useOcsApiRequest = cospendVersionGT161
+                target = if (cospendVersionGT161)
+                    project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/paymentmode/" + paymentModeRemoteId
+                else
+                    project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/paymentmodes/" + paymentModeRemoteId
+            }
+        } else {
+            target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/paymentmodes/" + paymentModeRemoteId
+            username = project.remoteId
+            password = project.password
+            bearerToken = project.bearerToken
+        }
+
+        return ServerResponse.DeleteRemotePaymentModeResponse(
+            requestServer(
+                target, METHOD_DELETE, null, null,
                 null, username, password, bearerToken, useOcsApiRequest
             ), useOcsApiRequest
         )
@@ -847,9 +1197,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/currency"
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for createRemoteCurrency")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/currency"
@@ -865,7 +1212,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency"
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency"
-                Log.i(TAG, "using public API, target is: ${target}for createRemoteCurrency")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/currency"
@@ -904,9 +1250,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/currency/" + currency.remoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for editRemoteCurrency")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/currency/" + currency.remoteId
@@ -922,7 +1265,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currency.remoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currency.remoteId
-                Log.i(TAG, "using public API, target is: ${target}for createRemoteCurrency")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/currency/" + currency.remoteId
@@ -954,9 +1296,6 @@ class VersatileProjectSyncClient(
                 else
                     project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/currency/" + currencyRemoteId
                 useOcsApiRequest = cospendVersionGT161
-                if (cospendVersionGT161) {
-                    Log.i(TAG, "using new API (weblogin, $username:$password) for deleteRemoteCurrency")
-                }
             } else if (canAccessProjectWithSSO(project)) {
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/currency/" + currencyRemoteId
@@ -972,7 +1311,6 @@ class VersatileProjectSyncClient(
                     project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currencyRemoteId
                 else
                     project.getRequestBaseUrl(false) + "/api/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/currency/" + currencyRemoteId
-                Log.i(TAG, "using public API, target is: ${target}for deleteRemoteCurrency")
             }
         } else {
             target = project.serverUrl!!.replace("/+$".toRegex(), "") + "/api/projects/" + project.remoteId + "/currency/" + currencyRemoteId
@@ -993,6 +1331,10 @@ class VersatileProjectSyncClient(
         nextcloudAPI: NextcloudAPI, target: String, method: String,
         paramKeys: List<String>?, paramValues: List<String>?, isOCSRequest: Boolean
     ): ResponseData {
+        var finalTarget = target
+        if (finalTarget.contains("/ocs/v2.php") && !finalTarget.contains("format=json")) {
+            finalTarget += if (finalTarget.contains("?")) "&format=json" else "?format=json"
+        }
         val result = StringBuilder()
         var params: MutableList<QueryParam>? = null
         if (paramKeys != null && paramValues != null) {
@@ -1010,13 +1352,13 @@ class VersatileProjectSyncClient(
         val nextcloudRequest: NextcloudRequest = if (params == null) {
             NextcloudRequest.Builder()
                 .setMethod(method)
-                .setUrl(target)
+                .setUrl(finalTarget)
                 .setHeader(headers)
                 .build()
         } else {
             NextcloudRequest.Builder()
                 .setMethod(method)
-                .setUrl(target)
+                .setUrl(finalTarget)
                 .setParameter(params)
                 .setHeader(headers)
                 .build()
@@ -1050,8 +1392,12 @@ class VersatileProjectSyncClient(
         lastETag: String?, username: String?, password: String?,
         bearerToken: String?, isOCSRequest: Boolean
     ): ResponseData {
+        var finalTarget = target
+        if (finalTarget.contains("/ocs/v2.php") && !finalTarget.contains("format=json")) {
+            finalTarget += if (finalTarget.contains("?")) "&format=json" else "?format=json"
+        }
         val result = StringBuilder()
-        val httpCon = SupportUtil.getHttpURLConnection(target)
+        val httpCon = SupportUtil.getHttpURLConnection(finalTarget)
         httpCon.requestMethod = method
         if (bearerToken != null) {
             httpCon.setRequestProperty("Authorization", "Bearer $bearerToken")
@@ -1062,7 +1408,7 @@ class VersatileProjectSyncClient(
             )
         }
         httpCon.setRequestProperty("Connection", "Close")
-        httpCon.setRequestProperty("User-Agent", "Cowspent/" + SupportUtil.getAppVersionName(context))
+        httpCon.setRequestProperty("User-Agent", "Cowspent-android/" + SupportUtil.getAppVersionName(context))
         if (lastETag != null && METHOD_GET == method) {
             httpCon.setRequestProperty("If-None-Match", lastETag)
         }
@@ -1071,7 +1417,6 @@ class VersatileProjectSyncClient(
             httpCon.setRequestProperty("Accept", "application/json")
         }
         httpCon.connectTimeout = 10 * 1000 // 10 seconds
-        Log.d(javaClass.simpleName, "$method $target")
         if (paramKeys != null && paramValues != null) {
             var dataString = ""
             for (i in paramKeys.indices) {
@@ -1084,7 +1429,6 @@ class VersatileProjectSyncClient(
                 dataString += URLEncoder.encode(value, "UTF-8")
             }
             val data = dataString.toByteArray()
-            Log.d(javaClass.simpleName, "Params: $dataString")
             httpCon.setFixedLengthStreamingMode(data.size)
             httpCon.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
             httpCon.setRequestProperty("Content-Length", data.size.toString())

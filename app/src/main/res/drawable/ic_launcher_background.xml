@@ -2,10 +2,39 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="100"
-    android:viewportHeight="100">
-    <!-- Matches #0F172A Base -->
-    <path
-        android:pathData="M0,0h100v100h-100z"
-        android:fillColor="#0F172A"/>
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <group android:translateY="-0.33333334">
+        <group android:scaleX="0.63461536"
+            android:scaleY="0.63461536"
+            android:translateX="13.153846"
+            android:translateY="13.153846">
+            <path
+                android:fillColor="#FFD700"
+                android:pathData="M36,2 C17.22,2 2,17.22 2,36 C2,54.78 17.22,70 36,70 C54.78,70 70,54.78 70,36 C70,17.22 54.78,2 36,2 Z" />
+
+            <!-- Inner Face (Expanded path) -->
+            <path
+                android:fillColor="#DAA520"
+                android:pathData="M36,8 C20.54,8 8,20.54 8,36 C8,51.46 20.54,64 36,64 C51.46,64 64,51.46 64,36 C64,20.54 51.46,8 36,8 Z" />
+
+            <!-- Center Detail (Pure path replacement for the center circle) -->
+            <path
+                android:fillColor="#FFD700"
+                android:pathData="M36,22 C28.27,22 22,28.27 22,36 C22,43.73 28.27,50 36,50 C43.73,50 50,43.73 50,36 C50,28.27 43.73,22 36,22 Z" />
+
+
+            <!-- Massive Background Coin Base -->
+            <path
+                android:pathData="M 256,76 A 180,180 0 1,1 255.9,76 Z"
+                android:fillColor="#FBBF24"/>
+
+            <!-- Coin Decorative Dotted Inner Rim -->
+            <path
+                android:pathData="M 256,101 A 155,155 0 1,1 255.9,101 Z"
+                android:strokeColor="#D97706"
+                android:strokeWidth="4"/>
+
+        </group>
+    </group>
 </vector>

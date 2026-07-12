@@ -44,8 +44,8 @@ fun ProjectStatisticsTable(
     val sdf = remember { SimpleDateFormat("yyyy-MM-dd", Locale.ROOT) }
     val dateFormat = remember { android.text.format.DateFormat.getDateFormat(context) }
 
-    var categoryId by remember { mutableIntStateOf(-1000) }
-    var paymentModeId by remember { mutableIntStateOf(-1000) }
+    var categoryId by remember { mutableLongStateOf(-1000L) }
+    var paymentModeId by remember { mutableLongStateOf(-1000L) }
     var dateMin by remember { mutableStateOf<String?>(null) }
     var dateMax by remember { mutableStateOf<String?>(null) }
 
@@ -57,14 +57,14 @@ fun ProjectStatisticsTable(
     val paymentModeAll = stringResource(R.string.payment_mode_all)
     val paymentModeNone = stringResource(R.string.payment_mode_none)
 
-    val shareStatsHeader = stringResource(R.string.share_stats_header)
-    val shareStatsIntro = stringResource(R.string.share_stats_intro, proj.name.ifEmpty { proj.remoteId })
+    val shareStatsHeader = stringResource(R.string.msg_stats_header)
+    val shareStatsIntro = stringResource(R.string.msg_stats_intro, proj.name.ifEmpty { proj.remoteId })
 
     val categories = remember(proj.id, customCategories, categoryAll, categoryNone, categoryReimbursement, categoryAllExceptReimbursement) {
-        val list = mutableListOf<Triple<Int, String, String>>()
-        list.add(Triple(-1000, "📋", categoryAll))
-        list.add(Triple(-100, "🧾", categoryAllExceptReimbursement))
-        list.add(Triple(0, "❌", categoryNone))
+        val list = mutableListOf<Triple<Long, String, String>>()
+        list.add(Triple(-1000L, "📋", categoryAll))
+        list.add(Triple(-100L, "🧾", categoryAllExceptReimbursement))
+        list.add(Triple(0L, "❌", categoryNone))
 
         val catsToUse = if (proj.type == ProjectType.LOCAL) {
             CategoryUtils.getDefaultCategories(context, proj.id)
@@ -75,15 +75,15 @@ fun ProjectStatisticsTable(
         }
 
         catsToUse.forEach {
-            list.add(Triple(it.remoteId.toInt(), it.icon, it.name ?: ""))
+            list.add(Triple(it.id, it.icon, it.name ?: ""))
         }
         list.distinctBy { it.first }
     }
 
     val paymentModes = remember(proj.id, customPaymentModes, paymentModeAll, paymentModeNone) {
-        val list = mutableListOf<Triple<Int, String, String>>()
-        list.add(Triple(-1000, "💳", paymentModeAll))
-        list.add(Triple(0, "❌", paymentModeNone))
+        val list = mutableListOf<Triple<Long, String, String>>()
+        list.add(Triple(-1000L, "💳", paymentModeAll))
+        list.add(Triple(0L, "❌", paymentModeNone))
 
         val pmsToUse = if (proj.type == ProjectType.LOCAL) {
             CategoryUtils.getDefaultPaymentModes(context, proj.id)
@@ -94,7 +94,7 @@ fun ProjectStatisticsTable(
         }
 
         pmsToUse.forEach {
-            list.add(Triple(it.remoteId.toInt(), it.icon, it.name ?: ""))
+            list.add(Triple(it.id, it.icon, it.name ?: ""))
         }
         list.distinctBy { it.first }
     }
@@ -105,10 +105,12 @@ fun ProjectStatisticsTable(
         val membersPaid = HashMap<Long, Double>()
         val membersSpent = HashMap<Long, Double>()
 
+        val reimbursementCategoryId = CategoryUtils.getReimbursementCategoryId(customCategories, proj.id, proj.remoteId)
+
         SupportUtil.getStats(
             allMembers, allBills,
             membersNbBills, membersBalance, membersPaid, membersSpent,
-            categoryId, paymentModeId, dateMin, dateMax
+            categoryId, paymentModeId, reimbursementCategoryId, dateMin, dateMax
         )
 
         var statsText = shareStatsIntro + "\n\n"
@@ -164,12 +166,12 @@ fun ProjectStatisticsTable(
 
                 EditableExposedDropdownMenu(
                     value = selectedCategory?.third ?: "",
-                    placeholder = stringResource(R.string.setting_category),
+                    placeholder = stringResource(R.string.label_category),
                     expanded = categoryExpanded,
                     onExpandedChange = { categoryExpanded = it },
                     onDismissRequest = { categoryExpanded = false },
                     leadingIcon = {
-                        Box(modifier = Modifier.padding(start = 12.dp)) {
+                        Box(modifier = Modifier) {
                             if (selectedCategory != null) {
                                 Text(text = selectedCategory.second, fontSize = 20.sp)
                             } else {
@@ -198,12 +200,12 @@ fun ProjectStatisticsTable(
 
                 EditableExposedDropdownMenu(
                     value = selectedPm?.third ?: "",
-                    placeholder = stringResource(R.string.setting_payment_mode),
+                    placeholder = stringResource(R.string.label_mode),
                     expanded = pmExpanded,
                     onExpandedChange = { pmExpanded = it },
                     onDismissRequest = { pmExpanded = false },
                     leadingIcon = {
-                        Box(modifier = Modifier.padding(start = 12.dp)) {
+                        Box(modifier = Modifier) {
                             if (selectedPm != null) {
                                 Text(text = selectedPm.second, fontSize = 20.sp)
                             } else {
@@ -269,17 +271,15 @@ fun ProjectStatisticsTable(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Table Header
         Surface(
-            color = MaterialTheme.colors.onSurface.copy(alpha = 0.05f),
-            shape = MaterialTheme.shapes.small,
+            color = MaterialTheme.colors.background,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)) {
-                Text(stringResource(R.string.stats_who), modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
-                Text(stringResource(R.string.stats_paid), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
-                Text(stringResource(R.string.stats_spent), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
-                Text(stringResource(R.string.stats_balance), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp)) {
+                Text(stringResource(R.string.stats_who).uppercase(), modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold, color = MaterialTheme.colors.onSurface, style = MaterialTheme.typography.overline)
+                Text(stringResource(R.string.stats_paid).uppercase(), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface, style = MaterialTheme.typography.overline)
+                Text(stringResource(R.string.stats_spent).uppercase(), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface, style = MaterialTheme.typography.overline)
+                Text(stringResource(R.string.stats_balance).uppercase(), modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colors.onSurface, style = MaterialTheme.typography.overline)
             }
         }
 

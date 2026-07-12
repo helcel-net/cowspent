@@ -15,6 +15,7 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -65,8 +66,10 @@ fun LoginDialogContent(
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Text(
-                text = "Login",
-                style = MaterialTheme.typography.h6,
+                text = "LOGIN",
+                style = MaterialTheme.typography.subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colors.onSurface,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 

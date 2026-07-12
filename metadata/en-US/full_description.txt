@@ -19,8 +19,6 @@ This means you can choose where your data is going and preserve your privacy.
 * Dark theme and customizable main app color
 * Share/import projects with link/QRCode
 * Connect to a Nextcloud account to automatically add projects
-* Background sync service with notifications on bills events
-* Multi-lingual user-interface (translated on Crowdin: https://crowdin.com/project/cowspent)
 
 # Requirements
 

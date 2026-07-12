@@ -1,9 +1,10 @@
 <!--suppress ALL -->
 <div align="center">
   <h1>Cowspent</h1>
-  <img width="100px" src="./metadata/en-US/images/icon.webp" alt="Logo">
+  <img width="100px" src="./metadata/en-US/images/icon.png" alt="Logo">
 
   <p>
+  
 Shared budget manager able to sync with [Nextcloud Cospend](https://github.com/julien-nc/cospend-nc).
 
 This work is based upon [MoneyBuster](https://gitlab.com/eneiluj/moneybuster).

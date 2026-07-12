@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -31,8 +32,6 @@ import androidx.compose.material.Text
 import androidx.compose.material.contentColorFor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -42,10 +41,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -69,7 +66,7 @@ fun ProjectShareDialogContent(
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    val qrCodeLinkWarn = stringResource(R.string.qrcode_link_open_attempt_warning)
+    val qrCodeLinkWarn = stringResource(R.string.msg_share_qr_warn)
     
     val shareUrl = remember { proj.getShareUrl() }
     val publicWebUrl = remember { proj.getPublicWebUrl() }
@@ -93,35 +90,24 @@ fun ProjectShareDialogContent(
                 .heightIn(max = 650.dp)
                 .padding(16.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom =  8.dp)
-            ) {
-                Icon(
-                    Icons.Default.Share,
-                    contentDescription = null,
-                    tint = MaterialTheme.colors.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = stringResource(R.string.share_dialog_title),
-                    style = MaterialTheme.typography.h6,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            Text(
+                text = stringResource(R.string.title_share).uppercase(),
+                style = MaterialTheme.typography.subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colors.onSurface,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
             Column(
                 modifier = Modifier
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 ShareCard(
-                    title = stringResource(R.string.share_project_public_url_title),
+                    title = stringResource(R.string.title_share_web),
                     url = publicWebUrl,
-                    description = stringResource(R.string.share_project_public_url_dialog_message),
-                    icon = Icons.Default.Link,
+                    description = stringResource(R.string.msg_share_web),
                     onUrlClick = {
                         val i = Intent(Intent.ACTION_VIEW).apply {
                             data = publicWebUrl.toUri()
@@ -130,22 +116,21 @@ fun ProjectShareDialogContent(
                     },
                     onCopyClick = {
                         clipboardManager.setText(AnnotatedString(publicWebUrl))
-                        Toast.makeText(context, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, R.string.msg_link_copied, Toast.LENGTH_SHORT).show()
                     }
                 )
 
                 ShareCard(
-                    title = stringResource(R.string.share_project_public_qrcode_title),
+                    title = stringResource(R.string.title_share_qr),
                     url = shareUrl,
-                    description = stringResource(R.string.share_project_dialog_message),
-                    icon = Icons.Default.QrCode,
+                    description = stringResource(R.string.msg_share_qr),
                     qrBitmap = qrBitmap,
                     onUrlClick = {
                         Toast.makeText(context, qrCodeLinkWarn, Toast.LENGTH_SHORT).show()
                     },
                     onCopyClick = {
                         clipboardManager.setText(AnnotatedString(shareUrl))
-                        Toast.makeText(context, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, R.string.msg_link_copied, Toast.LENGTH_SHORT).show()
                     }
                 )
             }
@@ -165,43 +150,31 @@ private fun ShareCard(
     title: String,
     url: String,
     description: String,
-    icon: ImageVector,
     onUrlClick: () -> Unit,
     onCopyClick: () -> Unit,
     qrBitmap: Bitmap? = null
 ) {
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        color = colorResource(R.color.fg_default_low).copy(alpha = 0.04f),
+    Column(
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colors.primary.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.subtitle2,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.8f)
-                )
-            }
+        Text(
+            text = title.uppercase(),
+            style = MaterialTheme.typography.subtitle1,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colors.onSurface,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
-            if (qrBitmap != null) {
-                Spacer(modifier = Modifier.height(8.dp))
+        if (qrBitmap != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Box(
-                    modifier = Modifier.size(128.dp)
+                    modifier = Modifier
+                        .size(128.dp)
                         .clip(MaterialTheme.shapes.small)
                         .background(Color.White),
                     contentAlignment = Alignment.Center
@@ -209,55 +182,53 @@ private fun ShareCard(
                     Image(
                         bitmap = qrBitmap.asImageBitmap(),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colors.surface,
-                modifier = Modifier.fillMaxWidth()
+        Surface(
+            shape = MaterialTheme.shapes.small,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.05f),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .clickable { onUrlClick() }
+                    .padding(start = 12.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .clickable { onUrlClick() }
-                        .padding(start = 12.dp, end = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = url,
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colors.primary,
-                        style = MaterialTheme.typography.body2,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.Medium
+                Text(
+                    text = url,
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colors.primary,
+                    style = MaterialTheme.typography.body2,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.Medium
+                )
+                IconButton(onClick = onCopyClick) {
+                    Icon(
+                        Icons.Default.ContentCopy,
+                        contentDescription = "Copy",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colors.onSurface.copy(alpha = 0.4f)
                     )
-                    IconButton(onClick = onCopyClick) {
-                        Icon(
-                            Icons.Default.ContentCopy,
-                            contentDescription = "Copy",
-                            modifier = Modifier.size(18.dp),
-                            tint = colorResource(R.color.fg_default_low)
-                        )
-                    }
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
-            CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.caption,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 16.sp,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-            }
+        CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.caption,
+                textAlign = TextAlign.Start,
+                lineHeight = 16.sp,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
         }
     }
 }
@@ -291,7 +262,7 @@ private fun DialogActions(
                 Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = stringResource(R.string.simple_share_share).uppercase(),
+                    text = stringResource(R.string.action_share).uppercase(),
                     style = MaterialTheme.typography.button,
                     fontWeight = FontWeight.Bold
                 )

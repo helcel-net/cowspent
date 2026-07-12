@@ -43,10 +43,10 @@ fun ProjectSpendingGraph(
     allBills: List<DBBill>,
     onShareReady: (String) -> Unit
 ) {
-    val shareStatsIntro = stringResource(R.string.share_stats_intro, projectName)
+    val shareStatsIntro = stringResource(R.string.msg_stats_intro, projectName)
     if (allBills.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No data to display", style = MaterialTheme.typography.h6)
+            Text("No data to display", style = MaterialTheme.typography.subtitle1, fontWeight = FontWeight.Bold, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f))
         }
         return
     }

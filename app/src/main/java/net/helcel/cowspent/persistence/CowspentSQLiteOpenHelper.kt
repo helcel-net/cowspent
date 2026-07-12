@@ -7,15 +7,22 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.text.TextUtils
-import android.util.Log
 import androidx.annotation.WorkerThread
 import androidx.preference.PreferenceManager
 import net.helcel.cowspent.R
-import net.helcel.cowspent.android.main.BillsListViewActivity
-import net.helcel.cowspent.model.*
+import net.helcel.cowspent.model.DBAccountProject
+import net.helcel.cowspent.model.DBBill
+import net.helcel.cowspent.model.DBBillOwer
+import net.helcel.cowspent.model.DBCategory
+import net.helcel.cowspent.model.DBCurrency
+import net.helcel.cowspent.model.DBMember
+import net.helcel.cowspent.model.DBPaymentMode
+import net.helcel.cowspent.model.DBProject
+import net.helcel.cowspent.model.ProjectType
+import net.helcel.cowspent.util.CategoryUtils
+import net.helcel.cowspent.util.SecureStorage
 import net.helcel.cowspent.util.SupportUtil
-import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 
 /**
  * Helps to add, get, update and delete bills, members, projects with the option to trigger a sync with the server.
@@ -124,7 +131,8 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
                     "$key_projectid INTEGER, " +
                     "$key_name TEXT, " +
                     "$key_icon TEXT, " +
-                    "$key_color TEXT)"
+                    "$key_color TEXT, " +
+                    "$key_state INTEGER DEFAULT 0)"
         )
     }
 
@@ -136,7 +144,8 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
                     "$key_projectid INTEGER, " +
                     "$key_name TEXT, " +
                     "$key_icon TEXT, " +
-                    "$key_color TEXT)"
+                    "$key_color TEXT, " +
+                    "$key_state INTEGER DEFAULT 0)"
         )
     }
 
@@ -153,123 +162,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     }
 
     @SuppressLint("Range")
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        if (oldVersion < 2) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_lastPayerId INTEGER DEFAULT 0")
-        }
-        if (oldVersion < 3) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_repeat TEXT")
-        }
-        if (oldVersion < 4) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_type TEXT")
-            val projects = getProjectsCustom("", arrayOf(), default_order, db)
-            for (project in projects) {
-                val url = project.serverUrl
-                project.type = if (url == null) ProjectType.LOCAL else ProjectType.COSPEND
-                updateProject(
-                    project.id, project.name, project.email,
-                    project.password, project.lastPayerId, project.type,
-                    project.lastSyncedTimestamp, project.currencyName,
-                    project.isDeletionDisabled, project.myAccessLevel, project.bearerToken,
-                    project.archivedTs, db
-                )
-            }
-        }
-        if (oldVersion < 5) {
-            createTableAccountProjects(db)
-            createIndex(db, table_account_projects)
-        }
-        if (oldVersion < 6) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_payment_mode TEXT DEFAULT \"n\"")
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_category_id INTEGER DEFAULT 0")
-        }
-        if (oldVersion < 7) {
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_r INTEGER DEFAULT NULL")
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_g INTEGER DEFAULT NULL")
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_b INTEGER DEFAULT NULL")
-        }
-        if (oldVersion < 8) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_lastSyncTimestamp INTEGER DEFAULT 0")
-        }
-        if (oldVersion < 9) {
-            createTableCategories(db)
-            createIndex(db, table_categories)
-        }
-        if (oldVersion < 10) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_currencyName TEXT")
-            createTableCurrencies(db)
-            createIndex(db, table_currencies)
-        }
-        if (oldVersion < 11) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_timestamp INTEGER")
-            val idToTs: MutableMap<Long, Long> = HashMap()
-            val sdfDate = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
-            val cursor = db.query(table_bills, arrayOf(key_id, "DATE"), "", arrayOf(), null, null, null)
-            val dateNow = Date()
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(cursor.getColumnIndex(key_id))
-                val dateStr = cursor.getString(cursor.getColumnIndex("DATE"))
-                val date = try {
-                    sdfDate.parse(dateStr)
-                } catch (_: Exception) {
-                    dateNow
-                }
-                val timestamp = (date?.time ?: System.currentTimeMillis()) / 1000
-                idToTs[id] = timestamp
-            }
-            cursor.close()
-            for (billId in idToTs.keys) {
-                val timestamp = idToTs[billId]!!
-                val values = ContentValues()
-                values.put(key_timestamp, timestamp)
-                db.update(table_bills, values, "$key_id = ?", arrayOf(billId.toString()))
-            }
-        }
-        if (oldVersion < 12) {
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_nc_userid TEXT DEFAULT NULL")
-            db.execSQL("ALTER TABLE $table_members ADD COLUMN $key_avatar TEXT DEFAULT NULL")
-        }
-        if (oldVersion < 13) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_comment TEXT DEFAULT \"\"")
-        }
-        if (oldVersion < 14) {
-            val projects = getProjectsCustom("", arrayOf(), default_order, db)
-            for (project in projects) {
-                updateProject(
-                    project.id, project.name, project.email,
-                    project.password, project.lastPayerId, project.type,
-                    0L, project.currencyName, project.isDeletionDisabled, project.myAccessLevel, project.bearerToken,
-                    project.archivedTs, db
-                )
-            }
-        }
-        if (oldVersion < 15) {
-            db.execSQL("ALTER TABLE $table_bills ADD COLUMN $key_payment_mode_id INTEGER DEFAULT 0")
-            for (key in DBBill.oldPmIdToNew.keys) {
-                val values = ContentValues()
-                values.put(key_payment_mode_id, DBBill.oldPmIdToNew[key])
-                db.update(table_bills, values, "$key_payment_mode = ?", arrayOf(key))
-            }
-            createTablePaymentModes(db)
-            createIndex(db, table_payment_modes)
-        }
-        if (oldVersion < 16) {
-            db.execSQL("ALTER TABLE $table_currencies ADD COLUMN $key_state INTEGER DEFAULT ${DBBill.STATE_OK}")
-        }
-        if (oldVersion < 17) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_deletionDisabled INTEGER")
-        }
-        if (oldVersion < 18) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_myAccessLevel INTEGER DEFAULT ${DBProject.ACCESS_LEVEL_UNKNOWN}")
-        }
-        if (oldVersion < 19) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_bearer_token TEXT")
-        }
-        if (oldVersion < 20) {
-            db.execSQL("ALTER TABLE $table_projects ADD COLUMN $key_archived INTEGER DEFAULT 0")
-            db.execSQL("ALTER TABLE $table_account_projects ADD COLUMN $key_archived INTEGER DEFAULT 0")
-        }
-    }
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
 
     override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         recreateDatabase(db)
@@ -312,306 +205,21 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         db.execSQL("CREATE INDEX IF NOT EXISTS $indexName ON $table($key_id)")
     }
 
-    fun addAccountProject(accountProject: DBAccountProject): Long {
-        val db = writableDatabase
-        val values = ContentValues()
-        values.put(key_remoteId, accountProject.remoteId)
-        values.put(key_password, accountProject.password)
-        values.put(key_ncUrl, accountProject.ncUrl)
-        values.put(key_name, accountProject.name)
-        values.put(key_archived, accountProject.archivedTs ?: 0L)
-        return db.insert(table_account_projects, null, values)
-    }
-
-    val accountProjects: List<DBAccountProject>
-        get() = getAccountProjectsCustom("", arrayOf(), default_order)
-
-    @WorkerThread
-    private fun getAccountProjectsCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBAccountProject> {
-        return getAccountProjectsCustom(selection, selectionArgs, orderBy, readableDatabase)
-    }
-
-    @WorkerThread
-    private fun getAccountProjectsCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBAccountProject> {
-        val cursor = db.query(table_account_projects, columnsAccountProjects, selection, selectionArgs, null, null, orderBy)
-        val accountProjects: MutableList<DBAccountProject> = ArrayList()
-        while (cursor.moveToNext()) {
-            accountProjects.add(getAccountProjectFromCursor(cursor))
-        }
-        cursor.close()
-        return accountProjects
-    }
-
-    @SuppressLint("Range")
-    private fun getAccountProjectFromCursor(cursor: Cursor): DBAccountProject {
-        val archivedTs = cursor.getLong(cursor.getColumnIndex(key_archived))
-        return DBAccountProject(
-            cursor.getLong(cursor.getColumnIndex(key_id)),
-            cursor.getString(cursor.getColumnIndex(key_remoteId)),
-            cursor.getString(cursor.getColumnIndex(key_password)),
-            cursor.getString(cursor.getColumnIndex(key_name)),
-            cursor.getString(cursor.getColumnIndex(key_ncUrl)),
-            if (archivedTs > 0) archivedTs else null
-        )
-    }
-
-    fun clearAccountProjects() {
-        val db = writableDatabase
-        db.delete(table_account_projects, null, null)
-    }
-
-    fun addPaymentMode(paymentMode: DBPaymentMode): Long {
-        val db = writableDatabase
-        val values = ContentValues()
-        values.put(key_remoteId, paymentMode.remoteId)
-        values.put(key_projectid, paymentMode.projectId)
-        values.put(key_name, paymentMode.name)
-        values.put(key_icon, paymentMode.icon)
-        values.put(key_color, paymentMode.color)
-        return db.insert(table_payment_modes, null, values)
-    }
-
-    fun getPaymentMode(remoteId: Long, projectId: Long): DBPaymentMode? {
-        val paymentModes = getPaymentModesCustom(
-            "$key_remoteId = ? AND $key_projectid = ?",
-            arrayOf(remoteId.toString(), projectId.toString()),
-            null
-        )
-        return if (paymentModes.isEmpty()) null else paymentModes[0]
-    }
-
-    fun getPaymentModes(projectId: Long): List<DBPaymentMode> {
-        return getPaymentModesCustom("$key_projectid = ?", arrayOf(projectId.toString()), null)
-    }
-
-    @WorkerThread
-    private fun getPaymentModesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBPaymentMode> {
-        return getPaymentModesCustom(selection, selectionArgs, orderBy, readableDatabase)
-    }
-
-    @WorkerThread
-    private fun getPaymentModesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBPaymentMode> {
-        val cursor = db.query(table_payment_modes, columnsPaymentModes, selection, selectionArgs, null, null, orderBy)
-        val paymentModes: MutableList<DBPaymentMode> = ArrayList()
-        while (cursor.moveToNext()) {
-            paymentModes.add(getPaymentModeFromCursor(cursor))
-        }
-        cursor.close()
-        return paymentModes
-    }
-
-    @SuppressLint("Range")
-    private fun getPaymentModeFromCursor(cursor: Cursor): DBPaymentMode {
-        return DBPaymentMode(
-            cursor.getLong(cursor.getColumnIndex(key_id)),
-            cursor.getLong(cursor.getColumnIndex(key_remoteId)),
-            cursor.getLong(cursor.getColumnIndex(key_projectid)),
-            cursor.getString(cursor.getColumnIndex(key_name)),
-            cursor.getString(cursor.getColumnIndex(key_icon)),
-            cursor.getString(cursor.getColumnIndex(key_color))
-        )
-    }
-
-    fun updatePaymentMode(id: Long, name: String?, icon: String?, color: String?) {
-        val db = writableDatabase
-        val values = ContentValues()
-        if (name != null) values.put(key_name, name)
-        if (icon != null) values.put(key_icon, icon)
-        if (color != null) values.put(key_color, color)
-        if (values.size() > 0) {
-            db.update(table_payment_modes, values, "$key_id = ?", arrayOf(id.toString()))
-        }
-    }
-
-    fun deletePaymentMode(id: Long) {
-        val db = writableDatabase
-        db.delete(table_payment_modes, "$key_id = ?", arrayOf(id.toString()))
-    }
-
-    fun addCategory(category: DBCategory): Long {
-        val db = writableDatabase
-        val values = ContentValues()
-        values.put(key_remoteId, category.remoteId)
-        values.put(key_projectid, category.projectId)
-        values.put(key_name, category.name)
-        values.put(key_icon, category.icon)
-        values.put(key_color, category.color)
-        return db.insert(table_categories, null, values)
-    }
-
-    fun getCategory(remoteId: Long, projectId: Long): DBCategory? {
-        val categories = getCategoriesCustom(
-            "$key_remoteId = ? AND $key_projectid = ?",
-            arrayOf(remoteId.toString(), projectId.toString()),
-            null
-        )
-        return if (categories.isEmpty()) null else categories[0]
-    }
-
-    fun getCategories(projectId: Long): List<DBCategory> {
-        return getCategoriesCustom("$key_projectid = ?", arrayOf(projectId.toString()), null)
-    }
-
-    @WorkerThread
-    private fun getCategoriesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBCategory> {
-        return getCategoriesCustom(selection, selectionArgs, orderBy, readableDatabase)
-    }
-
-    @WorkerThread
-    private fun getCategoriesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBCategory> {
-        val cursor = db.query(table_categories, columnsCategories, selection, selectionArgs, null, null, orderBy)
-        val categories: MutableList<DBCategory> = ArrayList()
-        while (cursor.moveToNext()) {
-            categories.add(getCategoryFromCursor(cursor))
-        }
-        cursor.close()
-        return categories
-    }
-
-    @SuppressLint("Range")
-    private fun getCategoryFromCursor(cursor: Cursor): DBCategory {
-        return DBCategory(
-            cursor.getLong(cursor.getColumnIndex(key_id)),
-            cursor.getLong(cursor.getColumnIndex(key_remoteId)),
-            cursor.getLong(cursor.getColumnIndex(key_projectid)),
-            cursor.getString(cursor.getColumnIndex(key_name)),
-            cursor.getString(cursor.getColumnIndex(key_icon)),
-            cursor.getString(cursor.getColumnIndex(key_color))
-        )
-    }
-
-    fun updateCategory(id: Long, name: String?, icon: String?, color: String?) {
-        val db = writableDatabase
-        val values = ContentValues()
-        if (name != null) values.put(key_name, name)
-        if (icon != null) values.put(key_icon, icon)
-        if (color != null) values.put(key_color, color)
-        if (values.size() > 0) {
-            db.update(table_categories, values, "$key_id = ?", arrayOf(id.toString()))
-        }
-    }
-
-    fun deleteCategory(id: Long) {
-        val db = writableDatabase
-        db.delete(table_categories, "$key_id = ?", arrayOf(id.toString()))
-    }
-
-    fun addCurrency(currency: DBCurrency): Long {
-        val db = writableDatabase
-        val values = ContentValues()
-        values.put(key_remoteId, currency.remoteId)
-        values.put(key_projectid, currency.projectId)
-        values.put(key_name, currency.name)
-        values.put(key_exchangeRate, currency.exchangeRate)
-        values.put(key_state, currency.state)
-        return db.insert(table_currencies, null, values)
-    }
-
-    fun addCurrencyAndSync(m: DBCurrency) {
-        addCurrency(m)
-        val proj = getProject(m.projectId)
-        if (proj != null) syncIfRemote(proj)
-    }
-
-    fun syncIfRemote(proj: DBProject) {
-        if (!proj.isLocal) {
-            val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-            val offlineMode = preferences.getBoolean(context.getString(R.string.pref_key_offline_mode), false)
-            if (!offlineMode) {
-                cowspentServerSyncHelper.scheduleSync(true, proj.id)
-            }
-        }
-    }
-
-    fun getCurrency(remoteId: Long, projectId: Long): DBCurrency? {
-        val currencies = getCurrenciesCustom(
-            "$key_remoteId = ? AND $key_projectid = ?",
-            arrayOf(remoteId.toString(), projectId.toString()),
-            null
-        )
-        return if (currencies.isEmpty()) null else currencies[0]
-    }
-
-    fun getCurrency(id: Long): DBCurrency? {
-        val currencies = getCurrenciesCustom("$key_id = ?", arrayOf(id.toString()), null)
-        return if (currencies.isEmpty()) null else currencies[0]
-    }
-
-    fun updateCurrency(id: Long, name: String?, exchangeRate: Double?) {
-        val db = writableDatabase
-        val values = ContentValues()
-        if (name != null) values.put(key_name, name)
-        if (exchangeRate != null) values.put(key_exchangeRate, exchangeRate)
-        if (values.size() > 0) {
-            db.update(table_currencies, values, "$key_id = ?", arrayOf(id.toString()))
-        }
-    }
-
-    fun deleteCurrency(id: Long) {
-        val db = writableDatabase
-        db.delete(table_currencies, "$key_id = ?", arrayOf(id.toString()))
-    }
-
-    fun getCurrencies(projectId: Long): List<DBCurrency> {
-        return getCurrenciesCustom("$key_projectid = ?", arrayOf(projectId.toString()), null)
-    }
-
-    @WorkerThread
-    private fun getCurrenciesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBCurrency> {
-        return getCurrenciesCustom(selection, selectionArgs, orderBy, readableDatabase)
-    }
-
-    @WorkerThread
-    private fun getCurrenciesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBCurrency> {
-        val cursor = db.query(table_currencies, columnsCurrencies, selection, selectionArgs, null, null, orderBy)
-        val currencies: MutableList<DBCurrency> = ArrayList()
-        while (cursor.moveToNext()) {
-            currencies.add(getCurrencyFromCursor(cursor))
-        }
-        cursor.close()
-        return currencies
-    }
-
-    @SuppressLint("Range")
-    private fun getCurrencyFromCursor(cursor: Cursor): DBCurrency {
-        return DBCurrency(
-            cursor.getLong(cursor.getColumnIndex(key_id)),
-            cursor.getLong(cursor.getColumnIndex(key_remoteId)),
-            cursor.getLong(cursor.getColumnIndex(key_projectid)),
-            cursor.getString(cursor.getColumnIndex(key_name)),
-            cursor.getDouble(cursor.getColumnIndex(key_exchangeRate)),
-            cursor.getInt(cursor.getColumnIndex(key_state))
-        )
-    }
-
-    fun setCurrencyStateSync(currencyId: Long, state: Int) {
-        setCurrencyState(currencyId, state)
-        val currency = getCurrency(currencyId)
-        if (currency != null) {
-            val project = getProject(currency.projectId)
-            if (project != null) syncIfRemote(project)
-        }
-    }
-
-    fun setCurrencyState(currencyId: Long, state: Int) {
-        val db = writableDatabase
-        val values = ContentValues()
-        values.put(key_state, state)
-        db.update(table_currencies, values, "$key_id = ?", arrayOf(currencyId.toString()))
-    }
+    // --- Projects logic ---
 
     fun addProject(project: DBProject): Long {
         val db = writableDatabase
         val values = ContentValues()
         values.put(key_remoteId, project.remoteId)
-        values.put(key_password, project.password)
         values.put(key_bearer_token, project.bearerToken)
         values.put(key_email, project.email)
         values.put(key_name, project.name)
         values.put(key_ihmUrl, project.serverUrl)
         values.put(key_type, project.type.id)
         values.put(key_archived, project.archivedTs ?: 0L)
-        return db.insert(table_projects, null, values)
+        val id = db.insert(table_projects, null, values)
+        SecureStorage.savePasswordSync(context, "ProjectPassword_$id", project.password)
+        return id
     }
 
     fun getProject(id: Long): DBProject? {
@@ -640,11 +248,13 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @SuppressLint("Range")
     private fun getProjectFromCursor(cursor: Cursor): DBProject {
+        val id = cursor.getLong(cursor.getColumnIndex(key_id))
         val archivedTs = cursor.getLong(cursor.getColumnIndex(key_archived))
+        val password = SecureStorage.getPasswordSync(context, "ProjectPassword_$id") ?: ""
         return DBProject(
-            cursor.getLong(cursor.getColumnIndex(key_id)),
+            id,
             cursor.getString(cursor.getColumnIndex(key_remoteId)),
-            cursor.getString(cursor.getColumnIndex(key_password)),
+            password,
             cursor.getString(cursor.getColumnIndex(key_name)),
             cursor.getString(cursor.getColumnIndex(key_ihmUrl)),
             cursor.getString(cursor.getColumnIndex(key_email)),
@@ -660,15 +270,6 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         )
     }
 
-    fun deleteProject(id: Long) {
-        val db = writableDatabase
-        for (b in getBillsOfProject(id)) {
-            deleteBill(b.id)
-        }
-        db.delete(table_members, "$key_projectid = ?", arrayOf(id.toString()))
-        db.delete(table_projects, "$key_id = ?", arrayOf(id.toString()))
-    }
-
     fun updateProject(
         projId: Long, newName: String?, newEmail: String?,
         newPassword: String?, newLastPayerId: Long?,
@@ -681,7 +282,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         val values = ContentValues()
         if (newName != null) values.put(key_name, newName)
         if (newEmail != null) values.put(key_email, newEmail)
-        if (newPassword != null) values.put(key_password, newPassword)
+        if (newPassword != null) SecureStorage.savePasswordSync(context, "ProjectPassword_$projId", newPassword)
         if (newBearerToken != null) values.put(key_bearer_token, newBearerToken)
         if (newLastPayerId != null) values.put(key_lastPayerId, newLastPayerId)
         if (newLastSyncedTimestamp != null) values.put(key_lastSyncTimestamp, newLastSyncedTimestamp)
@@ -721,7 +322,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         val values = ContentValues()
         if (newName != null) values.put(key_name, newName)
         if (newEmail != null) values.put(key_email, newEmail)
-        if (newPassword != null) values.put(key_password, newPassword)
+        if (newPassword != null) SecureStorage.savePasswordSync(context, "ProjectPassword_$projId", newPassword)
         if (newBearerToken != null) values.put(key_bearer_token, newBearerToken)
         if (newLastPayerId != null) values.put(key_lastPayerId, newLastPayerId)
         if (newLastSyncedTimestamp != null) values.put(key_lastSyncTimestamp, newLastSyncedTimestamp)
@@ -735,8 +336,19 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         }
     }
 
+    fun deleteProject(id: Long) {
+        val db = writableDatabase
+        for (b in getBillsOfProject(id)) {
+            deleteBill(b.id)
+        }
+        db.delete(table_members, "$key_projectid = ?", arrayOf(id.toString()))
+        db.delete(table_projects, "$key_id = ?", arrayOf(id.toString()))
+        SecureStorage.removePasswordSync(context, "ProjectPassword_$id")
+    }
+
+    // --- Members logic ---
+
     fun addMember(m: DBMember): Long {
-        if (BillsListViewActivity.DEBUG) { Log.d(TAG, "[add member]") }
         val db = writableDatabase
         val values = ContentValues()
         values.put(key_remoteId, m.remoteId)
@@ -793,7 +405,6 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             m.id, newName, newWeight, newActivated, newState, null,
             newR, newG, newB, newNcUserId, newAvatar
         )
-        Log.v(TAG, "UPDATE MEMBER AND SYNC")
         val proj = getProject(m.projectId)
         if (proj != null) syncIfRemote(proj)
     }
@@ -868,8 +479,9 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         db.delete(table_members, "$key_id = ?", arrayOf(id.toString()))
     }
 
+    // --- Bills logic ---
+
     fun addBill(b: DBBill): Long {
-        if (BillsListViewActivity.DEBUG) { Log.d(TAG, "[add bill]") }
         val db = writableDatabase
         val values = ContentValues()
         values.put(key_remoteId, b.remoteId)
@@ -881,8 +493,8 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         values.put(key_state, b.state)
         values.put(key_repeat, b.repeat)
         values.put(key_payment_mode, b.paymentMode)
-        values.put(key_payment_mode_id, b.paymentModeRemoteId)
-        values.put(key_category_id, b.categoryRemoteId)
+        values.put(key_payment_mode_id, b.paymentModeId)
+        values.put(key_category_id, b.categoryId)
         values.put(key_comment, b.comment)
         val billId = db.insert(table_bills, null, values)
         for (bo in b.billOwers) {
@@ -903,8 +515,8 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         newAmount: Double?, newTimestamp: Long?,
         newWhat: String?, newState: Int?,
         newRepeat: String?,
-        newPaymentMode: String?, newPaymentModeRemoteId: Int?,
-        newCategoryId: Int?, newComment: String?
+        newPaymentMode: String?, newPaymentModeId: Long?,
+        newCategoryId: Long?, newComment: String?
     ) {
         val db = writableDatabase
         val values = ContentValues()
@@ -916,7 +528,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         if (newState != null) values.put(key_state, newState)
         if (newRepeat != null) values.put(key_repeat, newRepeat)
         if (newPaymentMode != null) values.put(key_payment_mode, newPaymentMode)
-        if (newPaymentModeRemoteId != null) values.put(key_payment_mode_id, newPaymentModeRemoteId)
+        if (newPaymentModeId != null) values.put(key_payment_mode_id, newPaymentModeId)
         if (newCategoryId != null) values.put(key_category_id, newCategoryId)
         if (newComment != null) values.put(key_comment, newComment)
         if (values.size() > 0) {
@@ -928,14 +540,14 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         bill: DBBill, newPayerId: Long, newAmount: Double,
         newTimestamp: Long?, newWhat: String?,
         newOwersIds: List<Long>?, newRepeat: String?,
-        newPaymentMode: String?, newPaymentModeRemoteId: Int?,
-        newCategoryId: Int?,
+        newPaymentMode: String?, newPaymentModeId: Long?,
+        newCategoryId: Long?,
         newComment: String?
     ) {
         val newState = if (bill.state == DBBill.STATE_ADDED) DBBill.STATE_ADDED else DBBill.STATE_EDITED
         updateBill(
             bill.id, null, newPayerId, newAmount, newTimestamp, newWhat, newState,
-            newRepeat, newPaymentMode, newPaymentModeRemoteId, newCategoryId, newComment
+            newRepeat, newPaymentMode, newPaymentModeId, newCategoryId, newComment
         )
         val dbBillOwers = getBillowersOfBill(bill.id)
         val dbBillOwersByMemberId: MutableMap<Long, DBBillOwer> = HashMap()
@@ -954,7 +566,6 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
                 }
             }
         }
-        Log.v(TAG, "UPDATE BILL AND SYNC")
         val proj = getProject(bill.projectId)
         if (proj != null) syncIfRemote(proj)
     }
@@ -975,27 +586,9 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         return getBillsCustom("$key_payer_id = ?", arrayOf(memberId.toString()), "$key_timestamp ASC")
     }
 
-    @Suppress("unused")
-    fun getBill(remoteId: Long, projId: Long): DBBill? {
-        val bills = getBillsCustom(
-            "$key_remoteId = ? AND $key_projectid = ?",
-            arrayOf(remoteId.toString(), projId.toString()),
-            null
-        )
+    fun getBill(id: Long): DBBill? {
+        val bills = getBillsCustom("$key_id = ?", arrayOf(id.toString()), null)
         return if (bills.isEmpty()) null else bills[0]
-    }
-
-    fun getBill(billId: Long): DBBill? {
-        val bills = getBillsCustom("$key_id = ?", arrayOf(billId.toString()), null)
-        return if (bills.isEmpty()) null else bills[0]
-    }
-
-    fun getCurrenciesOfProjectWithState(projId: Long, state: Int): List<DBCurrency> {
-        return getCurrenciesCustom(
-            "$key_projectid = ? AND $key_state = ?",
-            arrayOf(projId.toString(), state.toString()),
-            null
-        )
     }
 
     @WorkerThread
@@ -1095,9 +688,9 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             cursor.getInt(cursor.getColumnIndex(key_state)),
             cursor.getString(cursor.getColumnIndex(key_repeat)),
             cursor.getString(cursor.getColumnIndex(key_payment_mode)),
-            cursor.getInt(cursor.getColumnIndex(key_category_id)),
+            cursor.getLong(cursor.getColumnIndex(key_category_id)),
             cursor.getString(cursor.getColumnIndex(key_comment)),
-            cursor.getInt(cursor.getColumnIndex(key_payment_mode_id))
+            cursor.getLong(cursor.getColumnIndex(key_payment_mode_id))
         )
     }
 
@@ -1107,8 +700,9 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         db.delete(table_bills, "$key_id = ?", arrayOf(id.toString()))
     }
 
+    // --- Billowers logic ---
+
     fun addBillower(billId: Long, memberId: Long) {
-        if (BillsListViewActivity.DEBUG) { Log.d(TAG, "[add billower]") }
         val db = writableDatabase
         val values = ContentValues()
         values.put(key_billId, billId)
@@ -1150,10 +744,446 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         db.delete(table_billowers, "$key_id = ?", arrayOf(id.toString()))
     }
 
+    // --- Categories logic ---
+
+    fun addCategory(category: DBCategory): Long {
+        val db = writableDatabase
+        val values = ContentValues()
+        values.put(key_remoteId, category.remoteId)
+        values.put(key_projectid, category.projectId)
+        values.put(key_name, category.name)
+        values.put(key_icon, category.icon)
+        values.put(key_color, category.color)
+        values.put(key_state, category.state)
+        return db.insert(table_categories, null, values)
+    }
+
+    fun addCategoryAndSync(cat: DBCategory) {
+        addCategory(cat)
+        val proj = getProject(cat.projectId)
+        if (proj != null) syncIfRemote(proj)
+    }
+
+    fun getCategory(remoteId: Long, projectId: Long): DBCategory? {
+        val categories = getCategoriesCustom(
+            "$key_remoteId = ? AND $key_projectid = ?",
+            arrayOf(remoteId.toString(), projectId.toString()),
+            null
+        )
+        return if (categories.isEmpty()) null else categories[0]
+    }
+
+    fun getCategory(id: Long): DBCategory? {
+        val categories = getCategoriesCustom("$key_id = ?", arrayOf(id.toString()), null)
+        return if (categories.isEmpty()) null else categories[0]
+    }
+
+    fun getCategories(projectId: Long, includeDeleted: Boolean = false): List<DBCategory> {
+        val selection = if (includeDeleted) "$key_projectid = ?" else "$key_projectid = ? AND $key_state != ?"
+        val selectionArgs = if (includeDeleted) arrayOf(projectId.toString()) else arrayOf(projectId.toString(), DBBill.STATE_DELETED.toString())
+        return getCategoriesCustom(selection, selectionArgs, null)
+    }
+
+    fun getCategoriesOfProjectWithState(projId: Long, state: Int): List<DBCategory> {
+        return getCategoriesCustom(
+            "$key_projectid = ? AND $key_state = ?",
+            arrayOf(projId.toString(), state.toString()),
+            null
+        )
+    }
+
+    @WorkerThread
+    private fun getCategoriesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBCategory> {
+        val db = readableDatabase
+        val cursor = db.query(table_categories, columnsCategories, selection, selectionArgs, null, null, orderBy)
+        val categories: MutableList<DBCategory> = ArrayList()
+        while (cursor.moveToNext()) {
+            categories.add(getCategoryFromCursor(cursor))
+        }
+        cursor.close()
+        return categories
+    }
+
+    @SuppressLint("Range")
+    private fun getCategoryFromCursor(cursor: Cursor): DBCategory {
+        return DBCategory(
+            cursor.getLong(cursor.getColumnIndex(key_id)),
+            cursor.getLong(cursor.getColumnIndex(key_remoteId)),
+            cursor.getLong(cursor.getColumnIndex(key_projectid)),
+            cursor.getString(cursor.getColumnIndex(key_name)),
+            cursor.getString(cursor.getColumnIndex(key_icon)),
+            cursor.getString(cursor.getColumnIndex(key_color)),
+            cursor.getInt(cursor.getColumnIndex(key_state))
+        )
+    }
+
+    fun updateCategory(id: Long, name: String?, icon: String?, color: String?, state: Int? = null, remoteId: Long? = null) {
+        val db = writableDatabase
+        val values = ContentValues()
+        if (name != null) values.put(key_name, name)
+        if (icon != null) values.put(key_icon, icon)
+        if (color != null) values.put(key_color, color)
+        if (state != null) values.put(key_state, state)
+        if (remoteId != null) values.put(key_remoteId, remoteId)
+        if (values.size() > 0) {
+            db.update(table_categories, values, "$key_id = ?", arrayOf(id.toString()))
+        }
+    }
+
+    fun updateCategoryAndSync(cat: DBCategory, name: String?, icon: String?, color: String?, remoteId: Long? = null) {
+        val newState = if (cat.state == DBBill.STATE_ADDED) DBBill.STATE_ADDED else DBBill.STATE_EDITED
+        updateCategory(cat.id, name, icon, color, newState, remoteId)
+        val proj = getProject(cat.projectId)
+        if (proj != null) syncIfRemote(proj)
+    }
+
+    fun deleteCategoryAndSync(catId: Long) {
+        val cat = getCategory(catId)
+        if (cat != null) {
+            if (cat.state == DBBill.STATE_ADDED) {
+                deleteCategory(catId)
+            } else {
+                updateCategory(catId, null, null, null, DBBill.STATE_DELETED)
+            }
+            val proj = getProject(cat.projectId)
+            if (proj != null) syncIfRemote(proj)
+        }
+    }
+
+    fun deleteCategory(id: Long) {
+        val db = writableDatabase
+        db.delete(table_categories, "$key_id = ?", arrayOf(id.toString()))
+    }
+
+    // --- Payment Modes logic ---
+
+    fun addPaymentMode(paymentMode: DBPaymentMode): Long {
+        val db = writableDatabase
+        val values = ContentValues()
+        values.put(key_remoteId, paymentMode.remoteId)
+        values.put(key_projectid, paymentMode.projectId)
+        values.put(key_name, paymentMode.name)
+        values.put(key_icon, paymentMode.icon)
+        values.put(key_color, paymentMode.color)
+        values.put(key_state, paymentMode.state)
+        return db.insert(table_payment_modes, null, values)
+    }
+
+    fun addPaymentModeAndSync(pm: DBPaymentMode) {
+        addPaymentMode(pm)
+        val proj = getProject(pm.projectId)
+        if (proj != null) syncIfRemote(proj)
+    }
+
+    fun getPaymentMode(remoteId: Long, projectId: Long): DBPaymentMode? {
+        val paymentModes = getPaymentModesCustom(
+            "$key_remoteId = ? AND $key_projectid = ?",
+            arrayOf(remoteId.toString(), projectId.toString()),
+            null
+        )
+        return if (paymentModes.isEmpty()) null else paymentModes[0]
+    }
+
+    fun getPaymentMode(id: Long): DBPaymentMode? {
+        val pms = getPaymentModesCustom("$key_id = ?", arrayOf(id.toString()), null)
+        return if (pms.isEmpty()) null else pms[0]
+    }
+
+    fun getPaymentModes(projectId: Long, includeDeleted: Boolean = false): List<DBPaymentMode> {
+        val selection = if (includeDeleted) "$key_projectid = ?" else "$key_projectid = ? AND $key_state != ?"
+        val selectionArgs = if (includeDeleted) arrayOf(projectId.toString()) else arrayOf(projectId.toString(), DBBill.STATE_DELETED.toString())
+        return getPaymentModesCustom(selection, selectionArgs, null)
+    }
+
+    fun getPaymentModesOfProjectWithState(projId: Long, state: Int): List<DBPaymentMode> {
+        return getPaymentModesCustom(
+            "$key_projectid = ? AND $key_state = ?",
+            arrayOf(projId.toString(), state.toString()),
+            null
+        )
+    }
+
+    @WorkerThread
+    private fun getPaymentModesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBPaymentMode> {
+        return getPaymentModesCustom(selection, selectionArgs, orderBy, readableDatabase)
+    }
+
+    @WorkerThread
+    private fun getPaymentModesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBPaymentMode> {
+        val cursor = db.query(table_payment_modes, columnsPaymentModes, selection, selectionArgs, null, null, orderBy)
+        val paymentModes: MutableList<DBPaymentMode> = ArrayList()
+        while (cursor.moveToNext()) {
+            paymentModes.add(getPaymentModeFromCursor(cursor))
+        }
+        cursor.close()
+        return paymentModes
+    }
+
+    @SuppressLint("Range")
+    private fun getPaymentModeFromCursor(cursor: Cursor): DBPaymentMode {
+        return DBPaymentMode(
+            cursor.getLong(cursor.getColumnIndex(key_id)),
+            cursor.getLong(cursor.getColumnIndex(key_remoteId)),
+            cursor.getLong(cursor.getColumnIndex(key_projectid)),
+            cursor.getString(cursor.getColumnIndex(key_name)),
+            cursor.getString(cursor.getColumnIndex(key_icon)),
+            cursor.getString(cursor.getColumnIndex(key_color)),
+            cursor.getInt(cursor.getColumnIndex(key_state))
+        )
+    }
+
+    fun updatePaymentMode(id: Long, name: String?, icon: String?, color: String?, state: Int? = null, remoteId: Long? = null) {
+        val db = writableDatabase
+        val values = ContentValues()
+        if (name != null) values.put(key_name, name)
+        if (icon != null) values.put(key_icon, icon)
+        if (color != null) values.put(key_color, color)
+        if (state != null) values.put(key_state, state)
+        if (remoteId != null) values.put(key_remoteId, remoteId)
+        if (values.size() > 0) {
+            db.update(table_payment_modes, values, "$key_id = ?", arrayOf(id.toString()))
+        }
+    }
+
+    fun updatePaymentModeAndSync(pm: DBPaymentMode, name: String?, icon: String?, color: String?, remoteId: Long? = null) {
+        val newState = if (pm.state == DBBill.STATE_ADDED) DBBill.STATE_ADDED else DBBill.STATE_EDITED
+        updatePaymentMode(pm.id, name, icon, color, newState, remoteId)
+        val proj = getProject(pm.projectId)
+        if (proj != null) syncIfRemote(proj)
+    }
+
+    fun deletePaymentModeAndSync(pmId: Long) {
+        val pm = getPaymentMode(pmId)
+        if (pm != null) {
+            if (pm.state == DBBill.STATE_ADDED) {
+                deletePaymentMode(pmId)
+            } else {
+                updatePaymentMode(pmId, null, null, null, DBBill.STATE_DELETED)
+            }
+            val proj = getProject(pm.projectId)
+            if (proj != null) syncIfRemote(proj)
+        }
+    }
+
+    fun deletePaymentMode(id: Long) {
+        val db = writableDatabase
+        db.delete(table_payment_modes, "$key_id = ?", arrayOf(id.toString()))
+    }
+
+    // --- Currencies logic ---
+
+    fun addCurrency(currency: DBCurrency): Long {
+        val db = writableDatabase
+        val values = ContentValues()
+        values.put(key_remoteId, currency.remoteId)
+        values.put(key_projectid, currency.projectId)
+        values.put(key_name, currency.name)
+        values.put(key_exchangeRate, currency.exchangeRate)
+        values.put(key_state, currency.state)
+        return db.insert(table_currencies, null, values)
+    }
+
+    fun addCurrencyAndSync(m: DBCurrency) {
+        addCurrency(m)
+        val proj = getProject(m.projectId)
+        if (proj != null) syncIfRemote(proj)
+    }
+
+    fun getCurrency(id: Long): DBCurrency? {
+        val currencies = getCurrenciesCustom("$key_id = ?", arrayOf(id.toString()), null)
+        return if (currencies.isEmpty()) null else currencies[0]
+    }
+
+    fun getCurrency(remoteId: Long, projectId: Long): DBCurrency? {
+        val currencies = getCurrenciesCustom(
+            "$key_remoteId = ? AND $key_projectid = ?",
+            arrayOf(remoteId.toString(), projectId.toString()),
+            null
+        )
+        return if (currencies.isEmpty()) null else currencies[0]
+    }
+
+    fun getCurrencies(projectId: Long): List<DBCurrency> {
+        return getCurrenciesCustom(
+            "$key_projectid = ? AND $key_state != ?",
+            arrayOf(projectId.toString(), DBBill.STATE_DELETED.toString()),
+            null
+        )
+    }
+
+    fun getCurrenciesOfProjectWithState(projId: Long, state: Int): List<DBCurrency> {
+        return getCurrenciesCustom(
+            "$key_projectid = ? AND $key_state = ?",
+            arrayOf(projId.toString(), state.toString()),
+            null
+        )
+    }
+
+    @WorkerThread
+    private fun getCurrenciesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBCurrency> {
+        return getCurrenciesCustom(selection, selectionArgs, orderBy, readableDatabase)
+    }
+
+    @WorkerThread
+    private fun getCurrenciesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBCurrency> {
+        val cursor = db.query(table_currencies, columnsCurrencies, selection, selectionArgs, null, null, orderBy)
+        val currencies: MutableList<DBCurrency> = ArrayList()
+        while (cursor.moveToNext()) {
+            currencies.add(getCurrencyFromCursor(cursor))
+        }
+        cursor.close()
+        return currencies
+    }
+
+    @SuppressLint("Range")
+    private fun getCurrencyFromCursor(cursor: Cursor): DBCurrency {
+        return DBCurrency(
+            cursor.getLong(cursor.getColumnIndex(key_id)),
+            cursor.getLong(cursor.getColumnIndex(key_remoteId)),
+            cursor.getLong(cursor.getColumnIndex(key_projectid)),
+            cursor.getString(cursor.getColumnIndex(key_name)),
+            cursor.getDouble(cursor.getColumnIndex(key_exchangeRate)),
+            cursor.getInt(cursor.getColumnIndex(key_state))
+        )
+    }
+
+    fun updateCurrency(id: Long, name: String?, exchangeRate: Double?) {
+        val db = writableDatabase
+        val values = ContentValues()
+        if (name != null) values.put(key_name, name)
+        if (exchangeRate != null) values.put(key_exchangeRate, exchangeRate)
+        if (values.size() > 0) {
+            db.update(table_currencies, values, "$key_id = ?", arrayOf(id.toString()))
+        }
+    }
+
+    fun setCurrencyState(currencyId: Long, state: Int) {
+        val db = writableDatabase
+        val values = ContentValues()
+        values.put(key_state, state)
+        db.update(table_currencies, values, "$key_id = ?", arrayOf(currencyId.toString()))
+    }
+
+    fun setCurrencyStateSync(currencyId: Long, state: Int) {
+        setCurrencyState(currencyId, state)
+        val currency = getCurrency(currencyId)
+        if (currency != null) {
+            val project = getProject(currency.projectId)
+            if (project != null) syncIfRemote(project)
+        }
+    }
+
+    fun deleteCurrency(id: Long) {
+        val db = writableDatabase
+        db.delete(table_currencies, "$key_id = ?", arrayOf(id.toString()))
+    }
+
+    // --- Common Helpers ---
+
+    fun syncIfRemote(proj: DBProject) {
+        if (!proj.isLocal) {
+            val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+            val offlineMode = preferences.getBoolean(context.getString(R.string.pref_key_offline_mode), false)
+            if (!offlineMode) {
+                cowspentServerSyncHelper.scheduleSync(true, proj.id)
+            }
+        }
+    }
+
+    fun ensureDefaultLabels(projectId: Long, projectType: ProjectType) {
+        val allCats = getCategories(projectId, includeDeleted = true)
+        val defaultCats = CategoryUtils.getDefaultCategories(context, projectId)
+        val isLocal = projectType == ProjectType.LOCAL
+        
+        // Cleanup existing "fake" Reimbursement categories from DB to avoid duplicates
+        // and migrate bills to use the virtual constant directly.
+        allCats.filter { it.remoteId == DBBill.CATEGORY_REIMBURSEMENT }.forEach { cat ->
+            val db = writableDatabase
+            val values = ContentValues()
+            values.put(key_category_id, DBBill.CATEGORY_REIMBURSEMENT)
+            db.update(table_bills, values, "$key_category_id = ?", arrayOf(cat.id.toString()))
+            db.delete(table_categories, "$key_id = ?", arrayOf(cat.id.toString()))
+        }
+
+        // Only ensure other default categories for local projects.
+        // Reimbursement is now virtual and handled in UI/Sync.
+        val catsToEnsure = if (isLocal) defaultCats.filter { it.remoteId != DBBill.CATEGORY_REIMBURSEMENT } else emptyList()
+        
+        catsToEnsure.forEach { def ->
+            if (allCats.none { it.remoteId == def.remoteId }) {
+                if (!isLocal) def.state = DBBill.STATE_ADDED
+                addCategory(def)
+            }
+        }
+        
+        val allPms = getPaymentModes(projectId, includeDeleted = true)
+        val defaultPms = CategoryUtils.getDefaultPaymentModes(context, projectId)
+        val pmsToEnsure = if (isLocal) defaultPms else emptyList()
+        
+        pmsToEnsure.forEach { def ->
+            if (allPms.none { it.remoteId == def.remoteId }) {
+                if (!isLocal) def.state = DBBill.STATE_ADDED
+                addPaymentMode(def)
+            }
+        }
+    }
+
+    // --- AccountProjects logic ---
+
+    fun addAccountProject(accountProject: DBAccountProject): Long {
+        val db = writableDatabase
+        val values = ContentValues()
+        values.put(key_remoteId, accountProject.remoteId)
+        values.put(key_ncUrl, accountProject.ncUrl)
+        values.put(key_name, accountProject.name)
+        values.put(key_archived, accountProject.archivedTs ?: 0L)
+        val id = db.insert(table_account_projects, null, values)
+        SecureStorage.savePasswordSync(context, "AccountProjectPassword_$id", accountProject.password)
+        return id
+    }
+
+    val accountProjects: List<DBAccountProject>
+        get() = getAccountProjectsCustom("", arrayOf(), default_order)
+
+    @WorkerThread
+    private fun getAccountProjectsCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBAccountProject> {
+        return getAccountProjectsCustom(selection, selectionArgs, orderBy, readableDatabase)
+    }
+
+    @WorkerThread
+    private fun getAccountProjectsCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBAccountProject> {
+        val cursor = db.query(table_account_projects, columnsAccountProjects, selection, selectionArgs, null, null, orderBy)
+        val accountProjects: MutableList<DBAccountProject> = ArrayList()
+        while (cursor.moveToNext()) {
+            accountProjects.add(getAccountProjectFromCursor(cursor))
+        }
+        cursor.close()
+        return accountProjects
+    }
+
+    @SuppressLint("Range")
+    private fun getAccountProjectFromCursor(cursor: Cursor): DBAccountProject {
+        val id = cursor.getLong(cursor.getColumnIndex(key_id))
+        val archivedTs = cursor.getLong(cursor.getColumnIndex(key_archived))
+        val password = SecureStorage.getPasswordSync(context, "AccountProjectPassword_$id")
+        return DBAccountProject(
+            id,
+            cursor.getString(cursor.getColumnIndex(key_remoteId)),
+            password,
+            cursor.getString(cursor.getColumnIndex(key_name)),
+            cursor.getString(cursor.getColumnIndex(key_ncUrl)),
+            if (archivedTs > 0) archivedTs else null
+        )
+    }
+
+    fun clearAccountProjects() {
+        val db = writableDatabase
+        db.delete(table_account_projects, null, null)
+    }
+
     @Suppress("ConstPropertyName")
     companion object {
-        private val TAG = CowspentSQLiteOpenHelper::class.java.simpleName
-        private const val database_version = 20
+        private const val database_version = 1
         private const val database_name = "COWSPENT"
         private const val table_members = "MEMBERS"
         const val key_id = "ID"
@@ -1188,16 +1218,16 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         private const val key_repeat = "REPEAT"
         private const val key_payment_mode = "PAYMENTMODE"
         private const val key_payment_mode_id = "PAYMENTMODEID"
-        private const val key_category_id = "CATEGORYID"
-        private const val key_comment = "COMMENT"
+        const val key_category_id = "CATEGORYID"
+        const val key_comment = "COMMENT"
         private const val table_billowers = "BILLOWERS"
         private const val key_billId = "BILLID"
         private const val key_member_id = "MEMBERID"
         private const val table_account_projects = "ACCOUNTPROJECTS"
         private const val key_ncUrl = "NCURL"
         private const val table_categories = "CATEGORIES"
-        private const val key_icon = "ICON"
-        private const val key_color = "COLOR"
+        const val key_icon = "ICON"
+        const val key_color = "COLOR"
         private const val table_payment_modes = "PAYMENTMODES"
         private const val key_latest_bill_ts = "LATEST_BILL_TS"
         private const val table_currencies = "CURRENCIES"
@@ -1225,10 +1255,10 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             key_id, key_remoteId, key_password, key_name, key_ncUrl, key_archived
         )
         private val columnsCategories = arrayOf(
-            key_id, key_remoteId, key_projectid, key_name, key_icon, key_color
+            key_id, key_remoteId, key_projectid, key_name, key_icon, key_color, key_state
         )
         private val columnsPaymentModes = arrayOf(
-            key_id, key_remoteId, key_projectid, key_name, key_icon, key_color
+            key_id, key_remoteId, key_projectid, key_name, key_icon, key_color, key_state
         )
         private val columnsCurrencies = arrayOf(
             key_id, key_remoteId, key_projectid, key_name, key_exchangeRate, key_state

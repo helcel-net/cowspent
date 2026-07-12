@@ -35,13 +35,13 @@ class NextcloudClient(
         val method = if (useOcsApi) METHOD_GET else METHOD_POST
         return if (nextcloudAPI != null) {
             Log.d(javaClass.simpleName, "using SSO to get/sync account projects")
-            Log.d(javaClass.simpleName, "Sync projects target $target")
+//            Log.d(javaClass.simpleName, "Sync projects target $target")
             ServerResponse.AccountProjectsResponse(
                 requestServerWithSSO(nextcloudAPI, target, method, null, useOcsApi),
                 useOcsApi
             )
         } else {
-            Log.d(javaClass.simpleName, "Sync projects target $target")
+//            Log.d(javaClass.simpleName, "Sync projects target $target")
             ServerResponse.AccountProjectsResponse(
                 requestServer(target, method, null, "", true, useOcsApi),
                 useOcsApi
@@ -93,6 +93,10 @@ class NextcloudClient(
         params: Collection<QueryParam>?,
         isOCSRequest: Boolean
     ): VersatileProjectSyncClient.ResponseData {
+        var finalTarget = target
+        if (finalTarget.contains("/ocs/v2.php") && !finalTarget.contains("format=json")) {
+            finalTarget += if (finalTarget.contains("?")) "&format=json" else "?format=json"
+        }
         val result = StringBuilder()
         val headers: MutableMap<String, List<String>> = HashMap()
         if (isOCSRequest) {
@@ -103,13 +107,13 @@ class NextcloudClient(
         val nextcloudRequest: NextcloudRequest = if (params == null) {
             NextcloudRequest.Builder()
                 .setMethod(method)
-                .setUrl(target)
+                .setUrl(finalTarget)
                 .setHeader(headers)
                 .build()
         } else {
             NextcloudRequest.Builder()
                 .setMethod(method)
-                .setUrl(target)
+                .setUrl(finalTarget)
                 .setParameter(params)
                 .setHeader(headers)
                 .build()
@@ -182,9 +186,13 @@ class NextcloudClient(
         target: String,
         method: String, params: JSONObject?, lastETag: String?, needLogin: Boolean, isOCSRequest: Boolean
     ): VersatileProjectSyncClient.ResponseData {
+        var finalTarget = target
+        if (finalTarget.contains("/ocs/v2.php") && !finalTarget.contains("format=json")) {
+            finalTarget += if (finalTarget.contains("?")) "&format=json" else "?format=json"
+        }
         val result = StringBuilder()
-        val targetURL = url + target.replace("^/".toRegex(), "")
-        Log.d(javaClass.simpleName, "method and target URL: $method $targetURL")
+        val targetURL = url + finalTarget.replace("^/".toRegex(), "")
+//        Log.d(javaClass.simpleName, "method and target URL: $method $targetURL")
         val httpCon = SupportUtil.getHttpURLConnection(targetURL)
         httpCon.requestMethod = method
         if (needLogin) {
@@ -194,7 +202,7 @@ class NextcloudClient(
             )
         }
         httpCon.setRequestProperty("Connection", "Close")
-        httpCon.setRequestProperty("User-Agent", "cowspent-android/" + SupportUtil.getAppVersionName(context))
+        httpCon.setRequestProperty("User-Agent", "Cowspent-android/" + SupportUtil.getAppVersionName(context))
         if (lastETag != null && METHOD_GET == method) {
             httpCon.setRequestProperty("If-None-Match", lastETag)
         }
@@ -206,7 +214,7 @@ class NextcloudClient(
         var paramData: ByteArray? = null
         if (params != null) {
             paramData = params.toString().toByteArray()
-            Log.d(javaClass.simpleName, "Params: $params")
+//            Log.d(javaClass.simpleName, "Params: $params")
             httpCon.setFixedLengthStreamingMode(paramData.size)
             httpCon.setRequestProperty("Content-Type", application_json)
             httpCon.doOutput = true
@@ -244,8 +252,12 @@ class NextcloudClient(
         target: String,
         method: String, params: JSONObject?, lastETag: String?, needLogin: Boolean, isOCSRequest: Boolean
     ): VersatileProjectSyncClient.ResponseData {
+        var finalTarget = target
+        if (finalTarget.contains("/ocs/v2.php") && !finalTarget.contains("format=json")) {
+            finalTarget += if (finalTarget.contains("?")) "&format=json" else "?format=json"
+        }
         var strBase64: String
-        val targetURL = url + target.replace("^/".toRegex(), "")
+        val targetURL = url + finalTarget.replace("^/".toRegex(), "")
         val httpCon = SupportUtil.getHttpURLConnection( targetURL)
         httpCon.requestMethod = method
         if (needLogin) {
@@ -263,11 +275,11 @@ class NextcloudClient(
             httpCon.setRequestProperty("OCS-APIRequest", "true")
         }
         httpCon.connectTimeout = 10 * 1000 // 10 seconds
-        Log.d(javaClass.simpleName, "$method $targetURL")
+//        Log.d(javaClass.simpleName, "$method $targetURL")
         var paramData: ByteArray?
         if (params != null) {
             paramData = params.toString().toByteArray()
-            Log.d(javaClass.simpleName, "Params: $params")
+//            Log.d(javaClass.simpleName, "Params: $params")
             httpCon.setFixedLengthStreamingMode(paramData.size)
             httpCon.setRequestProperty("Content-Type", application_json)
             httpCon.doOutput = true

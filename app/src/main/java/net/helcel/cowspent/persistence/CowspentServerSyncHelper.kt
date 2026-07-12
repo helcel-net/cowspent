@@ -265,6 +265,121 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 val members = dbHelper.getMembersOfProject(project.id, null)
                 val memberIdToRemoteId = members.associate { it.id to it.remoteId }
 
+                val categoriesToAdd = dbHelper.getCategoriesOfProjectWithState(project.id, DBBill.STATE_ADDED)
+                for (catToAdd in categoriesToAdd) {
+                    try {
+                        val categoriesResponse = client!!.getCategories(project)
+                        val remoteCategories = categoriesResponse.getCategories(project.id)
+                        val matchingRemote = remoteCategories.find { it.name == catToAdd.name }
+                        
+                        if (matchingRemote != null) {
+                            dbHelper.updateCategory(catToAdd.id, null, null, null, DBBill.STATE_OK, matchingRemote.remoteId)
+                            catToAdd.remoteId = matchingRemote.remoteId
+                        } else {
+                            val createResponse = client!!.createRemoteCategory(project, catToAdd)
+                            val newRemoteId = createResponse.remoteCategoryId
+                            if (newRemoteId > 0) {
+                                dbHelper.updateCategory(catToAdd.id, null, null, null, DBBill.STATE_OK, newRemoteId)
+                                catToAdd.remoteId = newRemoteId
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "CATEGORY SYNC FAILED for ${catToAdd.name}", e)
+                    }
+                }
+
+                val categoriesToEdit = dbHelper.getCategoriesOfProjectWithState(project.id, DBBill.STATE_EDITED)
+                for (catToEdit in categoriesToEdit) {
+                    try {
+                        client!!.editRemoteCategory(project, catToEdit)
+                        dbHelper.updateCategory(catToEdit.id, null, null, null, DBBill.STATE_OK)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "EDIT CATEGORY FAILED for ${catToEdit.name}, might not exist remotely", e)
+                        // If it fails, we keep the state as EDITED so it tries again next time, 
+                        // or we could set it to OK if we think it's a permanent mismatch.
+                        // For now just log it.
+                    }
+                }
+
+                val categoriesToDelete = dbHelper.getCategoriesOfProjectWithState(project.id, DBBill.STATE_DELETED)
+                for (catToDel in categoriesToDelete) {
+                    try {
+                        client!!.deleteRemoteCategory(project, catToDel.remoteId)
+                        dbHelper.deleteCategory(catToDel.id)
+                    } catch (e: NextcloudHttpRequestFailedException) {
+                        if (e.statusCode == 404 || e.statusCode == 400) {
+                            Log.d(TAG, "failed to delete category on remote project (code ${e.statusCode}) : delete it locally anyway")
+                            dbHelper.deleteCategory(catToDel.id)
+                        } else {
+                            throw e
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "DELETE CATEGORY FAILED for ${catToDel.name}", e)
+                    }
+                }
+
+                val paymentModesToAdd = dbHelper.getPaymentModesOfProjectWithState(project.id, DBBill.STATE_ADDED)
+                if (paymentModesToAdd.isNotEmpty()) {
+                    try {
+                        val pmsResponse = client!!.getPaymentModes(project)
+                        val remotePms = pmsResponse.getPaymentModes(project.id)
+                        val remotePmsNames = remotePms.map { it.name }
+                        for (pmToAdd in paymentModesToAdd) {
+                            val searchIndex = remotePmsNames.indexOf(pmToAdd.name)
+                            if (searchIndex != -1) {
+                                val remotePm = remotePms[searchIndex]
+                                dbHelper.updatePaymentMode(pmToAdd.id, null, null, null, DBBill.STATE_OK, remotePm.remoteId)
+                                pmToAdd.remoteId = remotePm.remoteId
+                            } else {
+                                val createRemotePaymentModeResponse = client!!.createRemotePaymentMode(project, pmToAdd)
+                                val newRemoteId = createRemotePaymentModeResponse.remotePaymentModeId
+                                if (newRemoteId > 0) {
+                                    dbHelper.updatePaymentMode(pmToAdd.id, null, null, null, DBBill.STATE_OK, newRemoteId)
+                                    pmToAdd.remoteId = newRemoteId
+                                }
+                            }
+                        }
+                    } catch (e: NextcloudHttpRequestFailedException) {
+                        Log.e(TAG, "GET PAYMENT MODES FAILED : " + e.message)
+                    }
+                }
+
+                val paymentModesToEdit = dbHelper.getPaymentModesOfProjectWithState(project.id, DBBill.STATE_EDITED)
+                for (pmToEdit in paymentModesToEdit) {
+                    try {
+                        client!!.editRemotePaymentMode(project, pmToEdit)
+                        dbHelper.updatePaymentMode(pmToEdit.id, null, null, null, DBBill.STATE_OK)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "EDIT PAYMENT MODE FAILED for ${pmToEdit.name}, might not exist remotely", e)
+                    }
+                }
+
+                val paymentModesToDelete = dbHelper.getPaymentModesOfProjectWithState(project.id, DBBill.STATE_DELETED)
+                for (pmToDel in paymentModesToDelete) {
+                    try {
+                        client!!.deleteRemotePaymentMode(project, pmToDel.remoteId)
+                        dbHelper.deletePaymentMode(pmToDel.id)
+                    } catch (e: NextcloudHttpRequestFailedException) {
+                        if (e.statusCode == 404 || e.statusCode == 400) {
+                            Log.d(TAG, "failed to delete payment mode on remote project (code ${e.statusCode}) : delete it locally anyway")
+                            dbHelper.deletePaymentMode(pmToDel.id)
+                        } else {
+                            throw e
+                        }
+                    } catch (_: Exception) {
+                    }
+                }
+
+                val categories = dbHelper.getCategories(project.id)
+                val categoryIdToRemoteId = categories.associate { it.id to it.remoteId }.toMutableMap()
+                // Map hardcoded constants to themselves if not in DB
+                categoryIdToRemoteId[DBBill.CATEGORY_REIMBURSEMENT] = DBBill.CATEGORY_REIMBURSEMENT
+                categories.filter { it.remoteId < 0 }.forEach { categoryIdToRemoteId[it.remoteId] = it.remoteId }
+
+                val paymentModes = dbHelper.getPaymentModes(project.id)
+                val paymentModeIdToRemoteId = paymentModes.associate { it.id to it.remoteId }.toMutableMap()
+                paymentModes.filter { it.remoteId < 0 }.forEach { paymentModeIdToRemoteId[it.remoteId] = it.remoteId }
+
                 val toDelete = dbHelper.getBillsOfProjectWithState(project.id, DBBill.STATE_DELETED)
                 for (bToDel in toDelete) {
                     try {
@@ -293,12 +408,16 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 val toEdit = dbHelper.getBillsOfProjectWithState(project.id, DBBill.STATE_EDITED)
                 for (bToEdit in toEdit) {
                     try {
-                        val editRemoteBillResponse = client!!.editRemoteBill(project, bToEdit, memberIdToRemoteId)
-                        if (editRemoteBillResponse.stringContent == bToEdit.remoteId.toString()) {
+                        val editRemoteBillResponse = client!!.editRemoteBill(project, bToEdit, memberIdToRemoteId, categoryIdToRemoteId, paymentModeIdToRemoteId)
+                        val returnedRemoteId = editRemoteBillResponse.remoteBillId
+                        if (returnedRemoteId == bToEdit.remoteId || (returnedRemoteId == 0L && !project.getRequestBaseUrl(true).contains("/ocs/v2.php"))) {
                             dbHelper.setBillState(bToEdit.id, DBBill.STATE_OK)
-                            Log.d(TAG, "SUCCESSFUL remote bill edition (${editRemoteBillResponse.stringContent})")
+                            Log.d(TAG, "SUCCESSFUL remote bill edition ($returnedRemoteId)")
+                        } else if (returnedRemoteId > 0) {
+                            dbHelper.setBillState(bToEdit.id, DBBill.STATE_OK)
+                            Log.d(TAG, "SUCCESSFUL remote bill edition ($returnedRemoteId)")
                         } else {
-                            Log.d(TAG, "FAILED to edit remote bill (${editRemoteBillResponse.stringContent})")
+                            Log.d(TAG, "FAILED to edit remote bill ($returnedRemoteId)")
                         }
                     } catch (_: Exception) {
                         Log.d(TAG, "FAILED to edit remote bill: it probably does not exist remotely")
@@ -307,8 +426,8 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
 
                 val toAdd = dbHelper.getBillsOfProjectWithState(project.id, DBBill.STATE_ADDED)
                 for (bToAdd in toAdd) {
-                    val createRemoteBillResponse = client!!.createRemoteBill(project, bToAdd, memberIdToRemoteId)
-                    val newRemoteId = createRemoteBillResponse.stringContent.toLong()
+                    val createRemoteBillResponse = client!!.createRemoteBill(project, bToAdd, memberIdToRemoteId, categoryIdToRemoteId, paymentModeIdToRemoteId)
+                    val newRemoteId = createRemoteBillResponse.remoteBillId
                     if (newRemoteId > 0) {
                         dbHelper.updateBill(
                             bToAdd.id, newRemoteId, null,
@@ -320,48 +439,69 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                     }
                 }
 
-                val currenciesToDelete = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_DELETED)
-                for (cToDel in currenciesToDelete) {
-                    try {
-                        val deleteRemoteCurrencyResponse = client!!.deleteRemoteCurrency(project, cToDel.remoteId)
-                        if (deleteRemoteCurrencyResponse.stringContent == "OK") {
-                            Log.d(TAG, "successfully deleted currency on remote project : delete it locally")
-                            dbHelper.deleteCurrency(cToDel.id)
+                if (project.type == ProjectType.COSPEND) {
+                    val currenciesToDelete = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_DELETED)
+                    for (cToDel in currenciesToDelete) {
+                        try {
+                            val deleteRemoteCurrencyResponse = client!!.deleteRemoteCurrency(project, cToDel.remoteId)
+                            if (deleteRemoteCurrencyResponse.stringContent == "OK") {
+                                Log.d(TAG, "successfully deleted currency on remote project : delete it locally")
+                                dbHelper.deleteCurrency(cToDel.id)
+                            }
+                        } catch (e: IOException) {
+                            if (e.message == "\"Not Found\"") {
+                                Log.d(TAG, "failed to delete currency on remote project : delete it locally anyway")
+                                dbHelper.deleteCurrency(cToDel.id)
+                            } else {
+                                throw e
+                            }
                         }
-                    } catch (e: IOException) {
-                        if (e.message == "\"Not Found\"") {
-                            Log.d(TAG, "failed to delete currency on remote project : delete it locally anyway")
-                            dbHelper.deleteCurrency(cToDel.id)
-                        } else {
-                            throw e
-                        }
+                    }
+                } else {
+                    val currenciesToDelete = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_DELETED)
+                    for (cToDel in currenciesToDelete) {
+                        dbHelper.deleteCurrency(cToDel.id)
                     }
                 }
 
-                val currenciesToEdit = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_EDITED)
-                for (cToEdit in currenciesToEdit) {
-                    try {
-                        val editRemoteCurrencyResponse = client!!.editRemoteCurrency(project, cToEdit)
-                        if (editRemoteCurrencyResponse.stringContent == cToEdit.remoteId.toString()) {
-                            dbHelper.setCurrencyState(cToEdit.id, DBBill.STATE_OK)
-                            Log.d(TAG, "SUCCESSFUL remote currency edition (${editRemoteCurrencyResponse.stringContent})")
-                        } else {
-                            Log.d(TAG, "FAILED to edit remote currency (${editRemoteCurrencyResponse.stringContent})")
+                if (project.type == ProjectType.COSPEND) {
+                    val currenciesToEdit = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_EDITED)
+                    for (cToEdit in currenciesToEdit) {
+                        try {
+                            val editRemoteCurrencyResponse = client!!.editRemoteCurrency(project, cToEdit)
+                            if (editRemoteCurrencyResponse.stringContent == cToEdit.remoteId.toString()) {
+                                dbHelper.setCurrencyState(cToEdit.id, DBBill.STATE_OK)
+                                Log.d(TAG, "SUCCESSFUL remote currency edition (${editRemoteCurrencyResponse.stringContent})")
+                            } else {
+                                Log.d(TAG, "FAILED to edit remote currency (${editRemoteCurrencyResponse.stringContent})")
+                            }
+                        } catch (e: IOException) {
+                            if (e.message == "{\"message\": \"Internal Server Error\"}") {
+                                Log.d(TAG, "FAILED to edit remote currency : it does not exist remotely")
+                            } else {
+                                throw e
+                            }
                         }
-                    } catch (e: IOException) {
-                        if (e.message == "{\"message\": \"Internal Server Error\"}") {
-                            Log.d(TAG, "FAILED to edit remote currency : it does not exist remotely")
-                        } else {
-                            throw e
-                        }
+                    }
+                } else {
+                    val currenciesToEdit = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_EDITED)
+                    for (cToEdit in currenciesToEdit) {
+                        dbHelper.setCurrencyState(cToEdit.id, DBBill.STATE_OK)
                     }
                 }
 
-                val currencyToAdd = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_ADDED)
-                for (cToAdd in currencyToAdd) {
-                    val createRemoteCurrencyResponse = client!!.createRemoteCurrency(project, cToAdd)
-                    val newRemoteId = createRemoteCurrencyResponse.stringContent.toLong()
-                    if (newRemoteId > 0) {
+                if (project.type == ProjectType.COSPEND) {
+                    val currencyToAdd = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_ADDED)
+                    for (cToAdd in currencyToAdd) {
+                        val createRemoteCurrencyResponse = client!!.createRemoteCurrency(project, cToAdd)
+                        val newRemoteId = createRemoteCurrencyResponse.remoteCurrencyId
+                        if (newRemoteId > 0) {
+                            dbHelper.setCurrencyState(cToAdd.id, DBBill.STATE_OK)
+                        }
+                    }
+                } else {
+                    val currencyToAdd = dbHelper.getCurrenciesOfProjectWithState(project.id, DBBill.STATE_ADDED)
+                    for (cToAdd in currencyToAdd) {
                         dbHelper.setCurrencyState(cToAdd.id, DBBill.STATE_OK)
                     }
                 }
@@ -450,7 +590,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
 
                 val localPaymentModes = dbHelper.getPaymentModes(project.id)
                 for (localPaymentMode in localPaymentModes) {
-                    if (!remotePaymentModesByRemoteId.containsKey(localPaymentMode.remoteId)) {
+                    if (localPaymentMode.state == DBBill.STATE_OK && !remotePaymentModesByRemoteId.containsKey(localPaymentMode.remoteId)) {
                         dbHelper.deletePaymentMode(localPaymentMode.id)
                         Log.d(TAG, "Delete local pm : $localPaymentMode")
                     }
@@ -460,6 +600,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 val remoteCategoriesByRemoteId = remoteCategories.associateBy { it.remoteId }
 
                 for (c in remoteCategories) {
+                    if (c.remoteId == DBBill.CATEGORY_REIMBURSEMENT) continue
                     val localCategory = dbHelper.getCategory(c.remoteId, project.id)
                     if (localCategory == null) {
                         Log.d(TAG, "Add local category : $c")
@@ -479,7 +620,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
 
                 val localCategories = dbHelper.getCategories(project.id)
                 for (localCategory in localCategories) {
-                    if (!remoteCategoriesByRemoteId.containsKey(localCategory.remoteId)) {
+                    if (localCategory.state == DBBill.STATE_OK && !remoteCategoriesByRemoteId.containsKey(localCategory.remoteId)) {
                         dbHelper.deleteCategory(localCategory.id)
                         Log.d(TAG, "Delete local category : $localCategory")
                     }
@@ -507,7 +648,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
 
                 val localCurrencies = dbHelper.getCurrencies(project.id)
                 for (localCurrency in localCurrencies) {
-                    if (!remoteCurrenciesByRemoteId.containsKey(localCurrency.remoteId)) {
+                    if (localCurrency.state == DBBill.STATE_OK && !remoteCurrenciesByRemoteId.containsKey(localCurrency.remoteId)) {
                         dbHelper.deleteCurrency(localCurrency.id)
                         Log.d(TAG, "Delete local currency : $localCurrencies")
                     }
@@ -574,13 +715,23 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 val dbMembers = dbHelper.getMembersOfProject(project.id, null)
                 val memberRemoteIdToId = dbMembers.associate { it.remoteId to it.id }
 
+                val dbCategories = dbHelper.getCategories(project.id)
+                val categoriesRemoteIdToId = dbCategories.associate { it.remoteId to it.id }.toMutableMap()
+                // Map hardcoded constants to their local IDs if they exist in DB, else to themselves
+                categoriesRemoteIdToId[DBBill.CATEGORY_REIMBURSEMENT] = DBBill.CATEGORY_REIMBURSEMENT
+                dbCategories.filter { it.remoteId < 0 }.forEach { categoriesRemoteIdToId[it.remoteId] = it.id }
+
+                val dbPaymentModes = dbHelper.getPaymentModes(project.id)
+                val paymentModesRemoteIdToId = dbPaymentModes.associate { it.remoteId to it.id }.toMutableMap()
+                dbPaymentModes.filter { it.remoteId < 0 }.forEach { paymentModesRemoteIdToId[it.remoteId] = it.id }
+
                 val billsResponse = client!!.getBills(project)
                 val isIHM = project.type == ProjectType.IHATEMONEY
                 val serverSyncTimestamp = if (isIHM) 0L else billsResponse.syncTimestamp
                 val remoteBills: List<DBBill> = if (isIHM) {
-                    billsResponse.getBillsIHM(project.id, memberRemoteIdToId)
+                    billsResponse.getBillsIHM(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId)
                 } else {
-                    billsResponse.getBillsCospend(project.id, memberRemoteIdToId)
+                    billsResponse.getBillsCospend(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId)
                 }
                 val remoteAllBillIds: List<Long> = if (isIHM) {
                     remoteBills.map { it.remoteId }
@@ -597,7 +748,6 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                         dbHelper.addBill(remoteBill)
                         nbPulledNewBills++
                         newBillsDialogText += "+ ${remoteBill.what}\n"
-                        Log.d(TAG, "Add local bill : $remoteBill")
                     } else {
                         val localBill = localBillsByRemoteId[remoteBill.remoteId]!!
                         if (hasChanged(localBill, remoteBill)) {
@@ -605,12 +755,11 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                                 localBill.id, null, remoteBill.payerId,
                                 remoteBill.amount, remoteBill.timestamp,
                                 remoteBill.what, DBBill.STATE_OK, remoteBill.repeat,
-                                remoteBill.paymentMode, remoteBill.paymentModeRemoteId,
-                                remoteBill.categoryRemoteId, remoteBill.comment
+                                remoteBill.paymentMode, remoteBill.paymentModeId,
+                                remoteBill.categoryId, remoteBill.comment
                             )
                             nbPulledUpdatedBills++
                             updatedBillsDialogText += "✏ ${remoteBill.what}\n"
-                            Log.d(TAG, "Update local bill : $remoteBill")
                         } else {
                             Log.d(TAG, "Nothing to do for bill : $localBill")
                         }
@@ -1063,8 +1212,8 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             localBill.what == remoteBill.what &&
             localBill.comment == remoteBill.comment &&
             localBill.paymentMode == remoteBill.paymentMode &&
-            localBill.paymentModeRemoteId == remoteBill.paymentModeRemoteId &&
-            localBill.categoryRemoteId == remoteBill.categoryRemoteId
+            localBill.paymentModeId == remoteBill.paymentModeId &&
+            localBill.categoryId == remoteBill.categoryId
         ) {
             val localRepeat = localBill.repeat ?: DBBill.NON_REPEATED
             val remoteRepeat = remoteBill.repeat ?: DBBill.NON_REPEATED

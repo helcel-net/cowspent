@@ -11,6 +11,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -23,9 +24,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import net.helcel.cowspent.R
-import net.helcel.cowspent.android.helper.UserAvatar
+import net.helcel.cowspent.android.helper.MemberAvatar
 import net.helcel.cowspent.android.helper.formatBalance
 import net.helcel.cowspent.android.helper.lazyVerticalScrollbar
+import net.helcel.cowspent.android.helper.TextIcon
+import net.helcel.cowspent.android.helper.TextIconDisplay
 import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.model.DBProject
 import net.helcel.cowspent.model.ProjectType
@@ -38,6 +41,7 @@ fun Drawer(
     selectedProjectId: Long,
     selectedMemberId: Long?,
     lastSyncText: String,
+    mainCurrency: String? = null,
     showArchived: Boolean = false,
     onProjectClick: (Long) -> Unit,
     onProjectOptionsClick: (Long) -> Unit,
@@ -96,22 +100,40 @@ fun Drawer(
 
                 // Members Section
                 val membersState = rememberLazyListState()
+                val sortedMembers = remember(members, memberBalances, selectedMemberId) {
+                    members.filter {
+                        val balance = memberBalances[it.id] ?: 0.0
+                        it.isActivated || balance > 0.01 || balance < -0.01 || it.id == selectedMemberId
+                    }.sortedWith(compareBy<DBMember> {
+                        val balance = memberBalances[it.id] ?: 0.0
+                        when {
+                            balance > 0.01 -> 0
+                            balance < -0.01 -> 1
+                            else -> 2
+                        }
+                    }.thenBy {
+                        val balance = memberBalances[it.id] ?: 0.0
+                        if (balance > 0.01) -balance else balance
+                    }.thenBy { it.name })
+                }
+
                 LazyColumn(
                     state = membersState,
                     modifier = Modifier
                         .heightIn(max = maxBottomHeight)
                         .lazyVerticalScrollbar(membersState)
                 ) {
-                    if (members.isNotEmpty()) {
+                    if (sortedMembers.isNotEmpty()) {
                         item {
                             DrawerItem(
                                 icon = Icons.Default.Receipt,
                                 text = stringResource(R.string.label_all_bills),
+                                secondaryText = mainCurrency,
                                 selected = selectedMemberId == null,
                                 onClick = { onMemberClick(null) }
                             )
                         }
-                        items(members) { member ->
+                        items(sortedMembers) { member ->
                             val balance = memberBalances[member.id] ?: 0.0
                             MemberDrawerItem(
                                 member = member,
@@ -138,20 +160,27 @@ private fun DrawerHeader(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colors.primary)
-            .padding(16.dp, 4.dp)
+            .padding(4.dp, 4.dp)
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp)
-                )
+                Box(modifier = Modifier.size(48.dp)) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_background),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    stringResource(id = R.string.app_name),
+                    text = stringResource(id = R.string.app_name),
                     color = MaterialTheme.colors.onPrimary,
-                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.subtitle1,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.weight(1f))
@@ -178,6 +207,7 @@ private fun DrawerHeader(
             }
             if (lastSyncText.isNotEmpty()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.width(16.dp))
                     Icon(
                         Icons.Default.Sync,
                         contentDescription = null,
@@ -241,6 +271,7 @@ fun DrawerItem(
     member: DBMember? = null,
     text: String? = null,
     balanceText: String? = null,
+    secondaryText: String? = null,
     balanceColor: Color = Color.Unspecified,
     selected: Boolean = false,
     alpha: Float = 1f,
@@ -259,13 +290,8 @@ fun DrawerItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (member != null) {
-            UserAvatar(
-                name = member.name,
-                r = member.r,
-                g = member.g,
-                b = member.b,
-                avatar = member.avatar,
-                disabled = !member.isActivated,
+            MemberAvatar(
+                member = member,
                 size = 24.dp,
                 alpha = alpha
             )
@@ -273,7 +299,7 @@ fun DrawerItem(
             Icon(icon, contentDescription = null, tint = contentColor.copy(alpha = 0.6f * alpha))
         }
         
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(32.dp))
         
         val itemText = text ?: member?.name ?: ""
         Text(
@@ -293,6 +319,17 @@ fun DrawerItem(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(end = 8.dp)
             )
+        }
+
+        if (secondaryText != null) {
+            Box(modifier = Modifier
+                .padding(end = 8.dp)
+           ) {
+                TextIconDisplay(
+                    textIcon = TextIcon.Symbol(secondaryText),
+                    tint = contentColor.copy(alpha = 0.6f)
+                )
+            }
         }
         
         if (onSecondaryClick != null) {
@@ -340,6 +377,7 @@ fun DrawerPreview() {
             selectedProjectId = 1,
             selectedMemberId = null,
             lastSyncText = "Last sync: 5 mins ago",
+            mainCurrency = "EUR",
             onProjectClick = {},
             onProjectOptionsClick = {},
             onMemberClick = {},
