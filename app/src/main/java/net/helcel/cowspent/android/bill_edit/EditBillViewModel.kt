@@ -241,7 +241,7 @@ class EditBillViewModel : ViewModel() {
     }
 
     fun isFormValid(): Boolean {
-        return what.isNotEmpty() && !what.contains(",") &&
+        return what.isNotEmpty() &&
                 timestamp != 0L &&
                 payerId != 0L &&
                 owersSelection.any { it.value }
@@ -255,7 +255,7 @@ class EditBillViewModel : ViewModel() {
         errorInvalidForm: String
     ): String? {
         return when {
-            what.isEmpty() || what.contains(",") -> errorWhat
+            what.isEmpty() -> errorWhat
             timestamp == 0L -> errorDate
             payerId == 0L -> errorPayer
             owersSelection.none { it.value } -> errorOwers
