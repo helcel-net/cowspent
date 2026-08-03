@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">Kuh ausgegeben</string>
+    <string name="app_name">Cowspent</string>
     <!-- Actions -->
     <string name="action_new_bill">Neue Rechnung</string>
     <string name="action_add_project">Projekt hinzufügen</string>
@@ -14,7 +14,7 @@
     <string name="action_export">Exportieren</string>
     <string name="action_stats">Statistik</string>
     <string name="action_settle">Abrechnen</string>
-    <string name="action_scan_qrcode">Scan QR Code</string>
+    <string name="action_scan_qrcode">QR-Code scannen</string>
     <string name="action_settings">Einstellungen</string>
     <string name="action_label_bills">Fehlende Kategorien</string>
     <string name="action_logout">Abmelden</string>
@@ -43,7 +43,7 @@
     <string name="label_categories">Kategorien</string>
     <string name="label_payment_modes">Zahlungsarten</string>
     <string name="label_name">Name</string>
-    <string name="label_icon">Icon / Emoji</string>
+    <string name="label_icon">Icon/Emoji</string>
     <string name="label_color">Farbe</string>
     <string name="label_weight">Gewicht</string>
     <string name="label_activated">Aktiviert</string>
@@ -165,14 +165,14 @@
     <string name="category_reimbursement">Rückzahlung</string>
     <string name="category_restaurant">Restaurant</string>
     <string name="category_accomodation">Unterkunft</string>
-    <string name="category_transport">Transport</string>
+    <string name="category_transport">Verkehr</string>
     <string name="category_sport">Sport</string>
     <!-- Project specific -->
     <string name="new_project_action">Was</string>
     <string name="new_project_where">Wo</string>
     <string name="where_local">Nur lokal</string>
     <string name="where_cospend">Ko-Ausgaben</string>
-    <string name="where_ihatemoney">IHateMoney</string>
+    <string name="where_ihatemoney">IchHasseGeld</string>
     <string name="todo_join">Bestehendes Projekt beitreten</string>
     <string name="todo_create">Neues Projekt erstellen</string>
     <string name="import_tooltip">Aus Datei importieren</string>
