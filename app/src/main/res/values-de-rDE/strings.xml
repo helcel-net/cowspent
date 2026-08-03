@@ -23,14 +23,14 @@
     <string name="action_connect">Verbinden</string>
     <string name="action_discard">Verwerfen</string>
     <string name="action_members">Mitglieder</string>
-    <string name="action_labels">Kategorien</string>
+    <string name="action_labels">Labels</string>
     <string name="action_currencies">Währungen</string>
 
     <!-- Titles -->
     <string name="title_stats">Statistiken</string>
     <string name="title_edit_project">Projekt bearbeiten</string>
-    <string name="title_label_bills">Rechnungen kategorisieren</string>
-    <string name="title_labels">Kategorien verwalten</string>
+    <string name="title_label_bills">Rechnungen kennzeichnen</string>
+    <string name="title_labels">Labels verwalten</string>
     <string name="title_about">Über</string>
     <string name="title_settle">Projekt abrechnen</string>
     <string name="title_share">Projekt teilen</string>
