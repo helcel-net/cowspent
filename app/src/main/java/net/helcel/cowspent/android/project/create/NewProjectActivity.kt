@@ -165,15 +165,7 @@ class NewProjectActivity : AppCompatActivity() {
             null, false, DBProject.ACCESS_LEVEL_UNKNOWN,
             ""
         )
-
-        if (isValidUrl(url) && todoCreate && ProjectType.COSPEND == type &&
-            db.cowspentServerSyncHelper.canCreateAuthenticatedProject(fakeProj) &&
-            !viewModel.showAuthWarningDialog // Avoid infinite loop
-        ) {
-            viewModel.showAuthWarningDialog = true
-        } else {
-            createProject()
-        }
+        createProject()
     }
 
     private fun getFormattedUrl(): String {
