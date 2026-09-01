@@ -44,18 +44,26 @@ class EditBillViewModel : ViewModel() {
 
     var dialogState by mutableStateOf<DialogState?>(null)
 
-    val amountAsDouble: Double
-        get() {
-            return parseAmount(amount) ?: try {
-                evalMath(amount.replace(',', '.'))
-            } catch (_: Exception) {
-                0.0
-            }
+    fun parseAmountFromUi(input: String): Double {
+        if (input.isBlank()) return 0.0
+        val sanitized = input.replace(',', '.')
+        // If it contains any math operator, try evalMath first
+        if (sanitized.any { it in "+-*/" }) {
+            try {
+                val result = evalMath(sanitized)
+                if (result != 0.0) return SupportUtil.round2(result)
+            } catch (_: Exception) {}
         }
+        val parsed = parseAmount(input) ?: 0.0
+        return SupportUtil.round2(parsed)
+    }
+
+    val amountAsDouble: Double
+        get() = parseAmountFromUi(amount)
 
     fun getEvenSplit(): Double {
         val selectedOwersCount = owersSelection.count { it.value }
-        return if (selectedOwersCount > 0) amountAsDouble / selectedOwersCount else 0.0
+        return if (selectedOwersCount > 0) SupportUtil.round2(amountAsDouble / selectedOwersCount) else 0.0
     }
 
     fun updateSplits() {
@@ -109,13 +117,13 @@ class EditBillViewModel : ViewModel() {
         return if (splitMode == SplitMode.PERCENT) {
             val customTotal = owersPercentSplit.entries
                 .filter { owersSelection[it.key] == true }
-                .sumOf { it.value.replace(',', '.').toDoubleOrNull() ?: 0.0 }
-            100.0 - customTotal
+                .sumOf { parseAmountFromUi(it.value) }
+            SupportUtil.round2(100.0 - customTotal)
         } else {
             val customTotal = owersCustomSplit.entries
                 .filter { owersSelection[it.key] == true }
-                .sumOf { it.value.replace(',', '.').toDoubleOrNull() ?: 0.0 }
-            amountAsDouble - customTotal
+                .sumOf { parseAmountFromUi(it.value) }
+            SupportUtil.round2(amountAsDouble - customTotal)
         }
     }
 

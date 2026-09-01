@@ -193,8 +193,9 @@ fun BillBasicInfoSection(
 
     OutlinedTextField(
         value = viewModel.amount,
-        onValueChange = {
-            viewModel.amount = it
+        onValueChange = { nv->
+            val filteredValue = nv.filter { it in "0123456789.+-*/" }
+            viewModel.amount = filteredValue
             viewModel.updateSplits()
         },
         enabled = canEdit,
@@ -233,7 +234,7 @@ fun BillBasicInfoSection(
                 Icon(Icons.Default.SwapHoriz, contentDescription = "Change Currency")
             }
         },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
     )
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -442,13 +443,14 @@ fun OwerSelectionSection(
                 
                 BasicTextField(
                     value = value,
-                    onValueChange = {
+                    onValueChange = { nv ->
+                        val filteredValue = nv.filter { it in "0123456789.+-*/" }
                         if (viewModel.splitMode == SplitMode.PERCENT) {
-                            viewModel.owersPercentSplit[member.id] = it
+                            viewModel.owersPercentSplit[member.id] = filteredValue
                         } else {
-                            viewModel.owersCustomSplit[member.id] = it
+                            viewModel.owersCustomSplit[member.id] = filteredValue
                         }
-                        viewModel.owersSelection[member.id] = (it != "")
+                        viewModel.owersSelection[member.id] = (filteredValue != "")
                     },
                     modifier = Modifier
                         .width(80.dp)

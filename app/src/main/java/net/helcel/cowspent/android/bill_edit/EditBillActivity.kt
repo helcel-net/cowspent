@@ -329,20 +329,18 @@ class EditBillActivity : AppCompatActivity() {
         if (splitMode != SplitMode.EVEN) {
             val splits: Map<Long, Double> = if (splitMode == SplitMode.CUSTOM) {
                 viewModel.owersCustomSplit.filter { (id, amountStr) ->
-                    viewModel.owersSelection[id] == true && (amountStr.replace(',', '.').toDoubleOrNull()
-                        ?: 0.0) > 0
+                    viewModel.owersSelection[id] == true && viewModel.parseAmountFromUi(amountStr) > 0
                 }.mapValues {
-                    val uiAmount = it.value.replace(',', '.').toDoubleOrNull() ?: 0.0
+                    val uiAmount = viewModel.parseAmountFromUi(it.value)
                     SupportUtil.round2(uiAmount / viewModel.selectedCurrencyRate)
                 }
             } else { // PERCENT
                 val totalAmount = viewModel.amountAsDouble
                 viewModel.owersPercentSplit.filter { (id, percentStr) ->
-                    viewModel.owersSelection[id] == true && (percentStr.replace(',', '.').toDoubleOrNull()
-                        ?: 0.0) > 0
+                    viewModel.owersSelection[id] == true && viewModel.parseAmountFromUi(percentStr) > 0
                 }.mapValues {
-                    val percent = it.value.replace(',', '.').toDoubleOrNull() ?: 0.0
-                    val uiAmount = totalAmount * percent / 100.0
+                    val percent = viewModel.parseAmountFromUi(it.value)
+                    val uiAmount = SupportUtil.round2(totalAmount * percent / 100.0)
                     SupportUtil.round2(uiAmount / viewModel.selectedCurrencyRate)
                 }
             }
