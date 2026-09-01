@@ -1,6 +1,7 @@
 package net.helcel.cowspent.android.bill_edit
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -357,34 +359,54 @@ fun OwerSelectionSection(
         )
         Spacer(Modifier.weight(1f))
 
-        if (viewModel.isCustomSplit) {
+        if (viewModel.splitMode != SplitMode.EVEN) {
             val diff = viewModel.getDiffSplit()
             if (abs(diff) > 0.01) {
+                val unit = if (viewModel.splitMode == SplitMode.PERCENT) "%" else ""
                 val diffText =
-                    if (diff > 0) "Missing: ${SupportUtil.normalNumberFormat.format(diff)}" else "Excess: ${
+                    if (diff > 0) "Missing: ${SupportUtil.normalNumberFormat.format(diff)}$unit" else "Excess: ${
                         SupportUtil.normalNumberFormat.format(-diff)
-                    }"
+                    }$unit"
                 Text(
                     diffText,
                     color = MaterialTheme.colors.error,
                     fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
-        } else {
-            Text("Even Split", fontSize = 12.sp)
         }
-        Switch(
-            checked = !viewModel.isCustomSplit,
-            enabled = canEdit,
-            onCheckedChange = {
-                viewModel.isCustomSplit = !it
-                viewModel.updateSplits()
-            },
-            colors = SwitchDefaults.colors(
-                uncheckedThumbColor = MaterialTheme.colors.onSurface,
-            )
-        )
+
+        val splitOptions = listOf(SplitMode.EVEN, SplitMode.CUSTOM, SplitMode.PERCENT)
+        Row(
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .background(MaterialTheme.colors.onSurface.copy(alpha = 0.05f), MaterialTheme.shapes.small)
+        ) {
+            splitOptions.forEach { mode ->
+                val isSelected = viewModel.splitMode == mode
+                Box(
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.small)
+                        .background(if (isSelected) MaterialTheme.colors.primary else Color.Transparent)
+                        .clickable(enabled = canEdit) {
+                            viewModel.splitMode = mode
+                            viewModel.updateSplits()
+                        }
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = when (mode) {
+                            SplitMode.EVEN -> "="
+                            SplitMode.CUSTOM -> "#"
+                            SplitMode.PERCENT -> "%"
+                        },
+                        color = if (isSelected) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onSurface,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
     }
 
     viewModel.members.forEach { member ->
@@ -410,12 +432,22 @@ fun OwerSelectionSection(
             Spacer(modifier = Modifier.width(8.dp))
             Text(member.name, modifier = Modifier.weight(1f))
 
-            if (isSelected || viewModel.isCustomSplit) {
+            if (isSelected || viewModel.splitMode != SplitMode.EVEN) {
                 val interactionSource = remember { MutableInteractionSource() }
+                val value = if (viewModel.splitMode == SplitMode.PERCENT) {
+                    viewModel.owersPercentSplit[member.id] ?: ""
+                } else {
+                    viewModel.owersCustomSplit[member.id] ?: ""
+                }
+                
                 BasicTextField(
-                    value = viewModel.owersCustomSplit[member.id] ?: "",
+                    value = value,
                     onValueChange = {
-                        viewModel.owersCustomSplit[member.id] = it
+                        if (viewModel.splitMode == SplitMode.PERCENT) {
+                            viewModel.owersPercentSplit[member.id] = it
+                        } else {
+                            viewModel.owersCustomSplit[member.id] = it
+                        }
                         viewModel.owersSelection[member.id] = (it != "")
                     },
                     modifier = Modifier
@@ -423,7 +455,7 @@ fun OwerSelectionSection(
                         .height(46.dp),
                     interactionSource = interactionSource,
                     singleLine = true,
-                    enabled = viewModel.isCustomSplit && canEdit,
+                    enabled = viewModel.splitMode != SplitMode.EVEN && canEdit,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     cursorBrush = SolidColor(MaterialTheme.colors.onSurface),
                     textStyle = LocalTextStyle.current.copy(
@@ -432,13 +464,13 @@ fun OwerSelectionSection(
                     ),
                 ) { innerTextField ->
                     TextFieldDefaults.OutlinedTextFieldDecorationBox(
-                        value = viewModel.owersCustomSplit[member.id] ?: "",
+                        value = value,
                         visualTransformation = VisualTransformation.None,
                         innerTextField = innerTextField,
                         singleLine = true,
-                        enabled = viewModel.isCustomSplit && canEdit,
+                        enabled = viewModel.splitMode != SplitMode.EVEN && canEdit,
                         interactionSource = interactionSource,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                         colors = TextFieldDefaults.textFieldColors(
                             cursorColor = MaterialTheme.colors.onSurface,
                             backgroundColor = Color.Transparent,

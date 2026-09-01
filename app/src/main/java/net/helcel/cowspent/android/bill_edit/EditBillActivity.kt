@@ -324,15 +324,27 @@ class EditBillActivity : AppCompatActivity() {
 
     private suspend fun saveBill(): Long = withContext(Dispatchers.IO) {
         val groupedBillIds = intent.getLongArrayExtra(PARAM_GROUPED_BILL_IDS)
-        val isCustomSplit = viewModel.isCustomSplit
+        val splitMode = viewModel.splitMode
 
-        if (isCustomSplit) {
-            val splits: Map<Long, Double> = viewModel.owersCustomSplit.filter { (id, amountStr) ->
-                viewModel.owersSelection[id] == true && (amountStr.replace(',', '.').toDoubleOrNull()
-                    ?: 0.0) > 0
-            }.mapValues { 
-                val uiAmount = it.value.replace(',', '.').toDoubleOrNull() ?: 0.0
-                SupportUtil.round2(uiAmount / viewModel.selectedCurrencyRate)
+        if (splitMode != SplitMode.EVEN) {
+            val splits: Map<Long, Double> = if (splitMode == SplitMode.CUSTOM) {
+                viewModel.owersCustomSplit.filter { (id, amountStr) ->
+                    viewModel.owersSelection[id] == true && (amountStr.replace(',', '.').toDoubleOrNull()
+                        ?: 0.0) > 0
+                }.mapValues {
+                    val uiAmount = it.value.replace(',', '.').toDoubleOrNull() ?: 0.0
+                    SupportUtil.round2(uiAmount / viewModel.selectedCurrencyRate)
+                }
+            } else { // PERCENT
+                val totalAmount = viewModel.amountAsDouble
+                viewModel.owersPercentSplit.filter { (id, percentStr) ->
+                    viewModel.owersSelection[id] == true && (percentStr.replace(',', '.').toDoubleOrNull()
+                        ?: 0.0) > 0
+                }.mapValues {
+                    val percent = it.value.replace(',', '.').toDoubleOrNull() ?: 0.0
+                    val uiAmount = totalAmount * percent / 100.0
+                    SupportUtil.round2(uiAmount / viewModel.selectedCurrencyRate)
+                }
             }
 
             if (splits.isEmpty()) return@withContext 0L

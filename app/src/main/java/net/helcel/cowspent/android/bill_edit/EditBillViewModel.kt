@@ -16,6 +16,10 @@ import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.util.SupportUtil
 import net.helcel.cowspent.util.evalMath
 
+enum class SplitMode {
+    EVEN, CUSTOM, PERCENT
+}
+
 class EditBillViewModel : ViewModel() {
     var what by mutableStateOf("")
     var amount by mutableStateOf("")
@@ -34,8 +38,9 @@ class EditBillViewModel : ViewModel() {
     var members by mutableStateOf<List<DBMember>>(emptyList())
 
     var owersSelection = mutableStateMapOf<Long, Boolean>()
-    var isCustomSplit by mutableStateOf(false)
+    var splitMode by mutableStateOf(SplitMode.EVEN)
     var owersCustomSplit = mutableStateMapOf<Long, String>()
+    var owersPercentSplit = mutableStateMapOf<Long, String>()
 
     var dialogState by mutableStateOf<DialogState?>(null)
 
@@ -54,7 +59,7 @@ class EditBillViewModel : ViewModel() {
     }
 
     fun updateSplits() {
-        if (!isCustomSplit) {
+        if (splitMode == SplitMode.EVEN) {
             val even = getEvenSplit()
             val evenStr = if (even == 0.0) "" else SupportUtil.round2(even).toString()
             members.forEach { m ->
@@ -64,18 +69,36 @@ class EditBillViewModel : ViewModel() {
                     owersCustomSplit.remove(m.id)
                 }
             }
+        } else if (splitMode == SplitMode.PERCENT) {
+            val selectedCount = owersSelection.count { it.value }
+            if (selectedCount > 0) {
+                val evenPercent = 100.0 / selectedCount
+                val evenPercentStr = SupportUtil.round2(evenPercent).toString()
+                members.forEach { m ->
+                    if (owersSelection[m.id] == true) {
+                        if (owersPercentSplit[m.id].isNullOrEmpty()) {
+                            owersPercentSplit[m.id] = evenPercentStr
+                        }
+                    } else {
+                        owersPercentSplit.remove(m.id)
+                    }
+                }
+            }
         }
     }
 
     fun toggleMember(id: Long, selected: Boolean) {
         owersSelection[id] = selected
-        if (isCustomSplit) {
+        if (splitMode != SplitMode.EVEN) {
             if (selected) {
-                if (owersCustomSplit[id].isNullOrEmpty()) {
+                if (splitMode == SplitMode.CUSTOM && owersCustomSplit[id].isNullOrEmpty()) {
                     owersCustomSplit[id] = "0"
+                } else if (splitMode == SplitMode.PERCENT && owersPercentSplit[id].isNullOrEmpty()) {
+                    owersPercentSplit[id] = "0"
                 }
             } else {
                 owersCustomSplit.remove(id)
+                owersPercentSplit.remove(id)
             }
         } else {
             updateSplits()
@@ -83,10 +106,17 @@ class EditBillViewModel : ViewModel() {
     }
 
     fun getDiffSplit(): Double {
-        val customTotal = owersCustomSplit.entries
-            .filter { owersSelection[it.key] == true }
-            .sumOf { it.value.replace(',', '.').toDoubleOrNull() ?: 0.0 }
-        return amountAsDouble - customTotal
+        return if (splitMode == SplitMode.PERCENT) {
+            val customTotal = owersPercentSplit.entries
+                .filter { owersSelection[it.key] == true }
+                .sumOf { it.value.replace(',', '.').toDoubleOrNull() ?: 0.0 }
+            100.0 - customTotal
+        } else {
+            val customTotal = owersCustomSplit.entries
+                .filter { owersSelection[it.key] == true }
+                .sumOf { it.value.replace(',', '.').toDoubleOrNull() ?: 0.0 }
+            amountAsDouble - customTotal
+        }
     }
 
     fun getOwersIds(): List<Long> {
@@ -204,9 +234,10 @@ class EditBillViewModel : ViewModel() {
 
         owersSelection.clear()
         owersCustomSplit.clear()
+        owersPercentSplit.clear()
 
         if (customSplits != null) {
-            isCustomSplit = true
+            splitMode = SplitMode.CUSTOM
             for (member in members) {
                 val selected = customSplits.containsKey(member.id)
                 owersSelection[member.id] = selected
@@ -222,6 +253,7 @@ class EditBillViewModel : ViewModel() {
             }
         } else {
             // Even split logic
+            splitMode = SplitMode.EVEN
             val billOwerIds = bill.billOwersIds
             val selectedCount = billOwerIds.size
             
