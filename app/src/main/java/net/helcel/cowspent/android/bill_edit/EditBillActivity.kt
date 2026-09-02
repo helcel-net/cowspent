@@ -151,8 +151,9 @@ class EditBillActivity : AppCompatActivity() {
                 val billIdToDuplicate = intent.getLongExtra(PARAM_BILL_ID_TO_DUPLICATE, 0)
                 val timeNowSeconds = System.currentTimeMillis() / 1000
                 if (billIdToDuplicate == 0L) {
+                    val project = db.getProject(projectId)
                     bill = DBBill(
-                        0, 0, projectId, 0, 0.0, timeNowSeconds,
+                        0, 0, projectId, project?.lastPayerId ?: 0, 0.0, timeNowSeconds,
                         "", DBBill.STATE_ADDED, DBBill.NON_REPEATED,
                         DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE, "", DBBill.PAYMODE_ID_NONE
                     )

@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
@@ -55,6 +57,13 @@ fun EditBillScreen(
 ) {
     val canEdit = accessLevel == DBProject.ACCESS_LEVEL_UNKNOWN || accessLevel >= DBProject.ACCESS_LEVEL_PARTICIPANT
     val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        if (viewModel.isNewBill) {
+            focusRequester.requestFocus()
+        }
+    }
 
     StatefulAlertDialog(
         state = viewModel.dialogState,
@@ -130,7 +139,8 @@ fun EditBillScreen(
                 viewModel = viewModel,
                 canEdit = canEdit,
                 onDateClick = onDateClick,
-                onTimeClick = onTimeClick
+                onTimeClick = onTimeClick,
+                amountFocusRequester = focusRequester
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -166,7 +176,8 @@ fun BillBasicInfoSection(
     viewModel: EditBillViewModel,
     canEdit: Boolean,
     onDateClick: () -> Unit,
-    onTimeClick: () -> Unit
+    onTimeClick: () -> Unit,
+    amountFocusRequester: FocusRequester
 ) {
     Text(
         text = "GENERAL",
@@ -181,17 +192,6 @@ fun BillBasicInfoSection(
         stringResource(R.string.currency_dialog_title, viewModel.mainCurrencyName)
 
     OutlinedTextField(
-        value = viewModel.what,
-        onValueChange = { viewModel.what = it },
-        enabled = canEdit,
-        placeholder = { Text(stringResource(R.string.label_what)) },
-        modifier = Modifier.fillMaxWidth(),
-        leadingIcon = { Icon(Icons.Default.Title, contentDescription = null) }
-    )
-
-    Spacer(modifier = Modifier.height(8.dp))
-
-    OutlinedTextField(
         value = viewModel.amount,
         onValueChange = { nv->
             val filteredValue = nv.filter { it in "0123456789.+-*/" }
@@ -200,7 +200,7 @@ fun BillBasicInfoSection(
         },
         enabled = canEdit,
         placeholder = { Text("0") },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().focusRequester(amountFocusRequester),
         leadingIcon = {
             val currencyToShow = viewModel.selectedCurrencyName.ifEmpty { 
                 viewModel.mainCurrencyName.ifEmpty { "$" } 
@@ -235,6 +235,17 @@ fun BillBasicInfoSection(
             }
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    OutlinedTextField(
+        value = viewModel.what,
+        onValueChange = { viewModel.what = it },
+        enabled = canEdit,
+        placeholder = { Text(stringResource(R.string.label_what)) },
+        modifier = Modifier.fillMaxWidth(),
+        leadingIcon = { Icon(Icons.Default.Title, contentDescription = null) }
     )
 
     Spacer(modifier = Modifier.height(8.dp))
