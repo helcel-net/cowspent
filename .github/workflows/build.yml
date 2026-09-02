@@ -49,11 +49,20 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest
+
       - name: Build APK
         run: |
           VERSION_CODE=$(git rev-list --count HEAD)
           VERSION_NAME=$(git describe --tags --always)
           ./gradlew assembleSignedRelease -PVERSION_CODE=$VERSION_CODE -PVERSION_NAME=$VERSION_NAME
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cowspent-APK
+          path: app/build/outputs/apk/signedRelease/app-signedRelease.apk
 
       - name: Release
         uses: softprops/action-gh-release@v3
