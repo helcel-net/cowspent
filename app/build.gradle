@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application' version '9.3.2'
     id 'org.jetbrains.kotlin.plugin.serialization' version '2.4.10'
     id 'org.jetbrains.kotlin.plugin.compose' version '2.4.10'
+    id 'jacoco'
 }
 
 android {
@@ -40,6 +41,7 @@ android {
             debuggable true
             initWith(buildTypes.release)
             signingConfig = signingConfigs.debug
+            enableUnitTestCoverage true
         }
         release {
             minifyEnabled true
@@ -134,4 +136,23 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.16.1'
     testImplementation 'androidx.test:core:1.7.0'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0'
+}
+
+tasks.register('jacocoTestReport', JacocoReport) {
+    dependsOn 'testDebugUnitTest'
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+
+    def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*']
+    def debugTree = fileTree(dir: "${project.layout.buildDirectory.asFile.get()}/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes", excludes: fileFilter)
+    def mainSrc = "${project.projectDir}/src/main/java"
+
+    sourceDirectories.from = files([mainSrc])
+    classDirectories.from = files([debugTree])
+    executionData.from = fileTree(dir: project.layout.buildDirectory.asFile.get(), includes: [
+            'jacoco/testDebugUnitTest.exec', 'outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec'
+    ])
 }

@@ -88,6 +88,7 @@ object BillsListUtils {
             shareIntent,
             context.getString(R.string.title_settle)
         )
+        chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(chooserIntent)
     }
 

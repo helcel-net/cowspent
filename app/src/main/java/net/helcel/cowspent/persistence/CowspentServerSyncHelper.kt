@@ -85,7 +85,8 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
     val isSyncPossible: Boolean
         get() {
             updateNetworkStatus()
-            return networkConnected
+            val offlineMode = preferences.getBoolean(appContext.getString(R.string.pref_key_offline_mode), false)
+            return networkConnected && !offlineMode
         }
 
     fun addCallbackPull(callback: ICallback) {
@@ -1214,7 +1215,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         }
     }
 
-    private fun hasChanged(localBill: DBBill, remoteBill: DBBill): Boolean {
+    internal fun hasChanged(localBill: DBBill, remoteBill: DBBill): Boolean {
         if (localBill.payerId == remoteBill.payerId &&
             localBill.amount == remoteBill.amount &&
             localBill.timestamp == remoteBill.timestamp &&
