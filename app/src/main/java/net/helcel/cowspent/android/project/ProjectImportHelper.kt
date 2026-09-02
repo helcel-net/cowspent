@@ -114,7 +114,7 @@ object ProjectImportHelper {
                                 }
                                 else -> 0
                             }
-                            val payerName = if (columns.containsKey("payer_name")) line[columns["payer_name"]!!] else ""
+                            val payerName = if (columns.containsKey("payer_name")) line[columns["payer_name"]!!].trim() else ""
                             val payerWeight = if (columns.containsKey("payer_weight")) line[columns["payer_weight"]!!].toDouble() else 1.0
                             val owersStr = if (columns.containsKey("owers")) line[columns["owers"]!!] else ""
                             val payerActive = columns.containsKey("payer_active") && line[columns["payer_active"]!!] == "1"
@@ -122,8 +122,10 @@ object ProjectImportHelper {
                             val pmId = if (columns.containsKey("paymentmodeid") && line[columns["paymentmodeid"]!!].isNotEmpty()) line[columns["paymentmodeid"]!!].toLong() else 0L
                             val pm = if (columns.containsKey("paymentmode")) line[columns["paymentmode"]!!] else null
                             
-                            membersActive[payerName] = payerActive
-                            membersWeight[payerName] = payerWeight
+                            if (payerName.isNotEmpty()) {
+                                membersActive[payerName] = payerActive
+                                membersWeight[payerName] = payerWeight
+                            }
                             
                             if (owersStr.trim().isEmpty()) {
                                 onError(context.getString(R.string.import_error_owers, row))
@@ -132,10 +134,10 @@ object ProjectImportHelper {
                             
                             if (what != "deleteMeIfYouWant") {
                                 billRemoteIdToOwerStr[row.toLong()] = owersStr
-                                val owersArray = owersStr.split(", ").filter { it.isNotEmpty() }
+                                val owersArray = owersStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                                 for (ower in owersArray) {
-                                    if (!membersWeight.containsKey(ower.trim())) {
-                                        membersWeight[ower.trim()] = 1.0
+                                    if (!membersWeight.containsKey(ower)) {
+                                        membersWeight[ower] = 1.0
                                     }
                                 }
                                 bills.add(DBBill(0, row.toLong(), 0, 0, amount, timestamp, what, DBBill.STATE_OK, "n", pm, catId, comment, pmId))
@@ -171,8 +173,8 @@ object ProjectImportHelper {
                 val localCatId = catRemoteToLocal[b.categoryId] ?: 0L
                 val localPmId = pmRemoteToLocal[b.paymentModeId] ?: 0L
                 val billId = db.addBill(DBBill(0, 0, pid, payerId, b.amount, b.timestamp, b.what, DBBill.STATE_OK, b.repeat, b.paymentMode, localCatId, b.comment, localPmId))
-                billRemoteIdToOwerStr[b.remoteId]?.split(", ")?.filter { it.isNotEmpty() }?.forEach { ower ->
-                    memberNameToId[ower.trim()]?.let { owerId -> db.addBillower(billId, owerId) }
+                billRemoteIdToOwerStr[b.remoteId]?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }?.forEach { ower ->
+                    memberNameToId[ower]?.let { owerId -> db.addBillower(billId, owerId) }
                 }
             }
             onSuccess(pid)
