@@ -427,16 +427,23 @@ class BillsListViewActivity :
             withContext(Dispatchers.IO) {
                 db.updateProject(
                     projId = projectId,
-                    newName = null,
-                    newEmail = null,
-                    newPassword = null,
-                    newLastPayerId = null,
-                    newLastSyncedTimestamp = null,
-                    newCurrencyName = null,
-                    newDeletionDisabled = null,
-                    newMyAccessLevel = null,
-                    newBearerToken = null,
                     newArchivedTs = newArchivedTs
+                )
+            }
+            
+            if (!proj.isLocal) {
+                db.cowspentServerSyncHelper.editRemoteProject(
+                    projId = projectId,
+                    newArchivedTs = newArchivedTs,
+                    callback = object : ICallback {
+                        override fun onFinish() {}
+                        override fun onFinish(result: String, message: String) {
+                            if (message.isNotEmpty()) {
+                                showToast(this@BillsListViewActivity, getString(R.string.error_sync, message))
+                            }
+                        }
+                        override fun onScheduled() {}
+                    }
                 )
             }
             

@@ -84,9 +84,8 @@ class ManageCurrenciesActivity : AppCompatActivity() {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 db!!.updateProject(
-                    selectedProjectID, null, null, null,
-                    null, null, newMainCurrencyName,
-                    null, null, null
+                    projId = selectedProjectID,
+                    newCurrencyName = newMainCurrencyName
                 )
                 val project = db!!.getProject(selectedProjectID)
                 if (project != null) {
@@ -94,7 +93,12 @@ class ManageCurrenciesActivity : AppCompatActivity() {
                     if (project.type == ProjectType.COSPEND) {
                         withContext(Dispatchers.Main) {
                             if (!db!!.cowspentServerSyncHelper
-                                    .editRemoteProject(selectedProjectID, project.name, null, null, newMainCurrencyName, editMainCurrencyCallBack)
+                                    .editRemoteProject(
+                                        projId = selectedProjectID,
+                                        newName = project.name,
+                                        newMainCurrencyName = newMainCurrencyName,
+                                        callback = editMainCurrencyCallBack
+                                    )
                             ) {
                                 showToast(this@ManageCurrenciesActivity, getString(R.string.remote_project_operation_no_network), Toast.LENGTH_LONG)
                             }

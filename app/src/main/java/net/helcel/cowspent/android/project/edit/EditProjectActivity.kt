@@ -85,10 +85,11 @@ class EditProjectActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
                     db.updateProject(
-                        project.id, newName, newEmail, targetPwd,
-                        null, project.type, null,
-                        null, null,
-                        null, null
+                        projId = project.id,
+                        newName = newName,
+                        newEmail = newEmail,
+                        newPassword = targetPwd,
+                        projectType = project.type
                     )
                 }
                 closeOnEdit(project.id)
@@ -103,18 +104,21 @@ class EditProjectActivity : AppCompatActivity() {
                 project.password = currentPwd
                 lifecycleScope.launch {
                     withContext(Dispatchers.IO) {
-                        db.updateProject(project.id, null, null, currentPwd, null, project.type, null, null, null, null, null)
+                        db.updateProject(
+                            projId = project.id,
+                            newPassword = currentPwd,
+                            projectType = project.type
+                        )
                     }
                 }
             }
 
             if (!db.cowspentServerSyncHelper.editRemoteProject(
-                    project.id,
-                    newName,
-                    newEmail,
-                    if (pwdChanged) newPwd else null,
-                    null,
-                    editCallBack
+                    projId = project.id,
+                    newName = newName,
+                    newEmail = newEmail,
+                    newPassword = if (pwdChanged) newPwd else null,
+                    callback = editCallBack
                 )
             ) {
                 showToast(this, getString(R.string.remote_project_operation_no_network), Toast.LENGTH_LONG)
@@ -124,10 +128,9 @@ class EditProjectActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
                     db.updateProject(
-                        project.id, null, null, currentPwd,
-                        null, project.type, null,
-                        null, null,
-                        null, null
+                        projId = project.id,
+                        newPassword = currentPwd,
+                        projectType = project.type
                     )
                 }
                 closeOnEdit(project.id)

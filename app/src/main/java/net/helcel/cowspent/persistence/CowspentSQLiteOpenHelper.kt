@@ -271,12 +271,18 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     }
 
     fun updateProject(
-        projId: Long, newName: String?, newEmail: String?,
-        newPassword: String?, newLastPayerId: Long?,
-        newLastSyncedTimestamp: Long?,
-        newCurrencyName: String?, newDeletionDisabled: Boolean?,
-        newMyAccessLevel: Int?, newBearerToken: String?,
-        newArchivedTs: Long? = null
+        projId: Long,
+        newName: String? = null,
+        newEmail: String? = null,
+        newPassword: String? = null,
+        newLastPayerId: Long? = null,
+        newLastSyncedTimestamp: Long? = null,
+        newCurrencyName: String? = null,
+        newDeletionDisabled: Boolean? = null,
+        newMyAccessLevel: Int? = null,
+        newBearerToken: String? = null,
+        newArchivedTs: Long? = null,
+        projectType: ProjectType? = null
     ) {
         val db = writableDatabase
         val values = ContentValues()
@@ -290,47 +296,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         if (newDeletionDisabled != null) values.put(key_deletionDisabled, if (newDeletionDisabled) 1 else 0)
         if (newMyAccessLevel != null) values.put(key_myAccessLevel, newMyAccessLevel)
         if (newArchivedTs != null) values.put(key_archived, newArchivedTs)
-        if (values.size() > 0) {
-            db.update(table_projects, values, "$key_id = ?", arrayOf(projId.toString()))
-        }
-    }
-
-    fun updateProject(
-        projId: Long, newName: String?, newEmail: String?,
-        newPassword: String?, newLastPayerId: Long?,
-        projectType: ProjectType, newLastSyncedTimestamp: Long?,
-        newCurrencyName: String?, newDeletionDisabled: Boolean?,
-        newMyAccessLevel: Int?, newBearerToken: String?,
-        newArchivedTs: Long? = null
-    ) {
-        val db = writableDatabase
-        updateProject(
-            projId, newName, newEmail, newPassword, newLastPayerId, projectType,
-            newLastSyncedTimestamp, newCurrencyName, newDeletionDisabled, newMyAccessLevel,
-            newBearerToken, newArchivedTs, db
-        )
-    }
-
-    private fun updateProject(
-        projId: Long, newName: String?, newEmail: String?,
-        newPassword: String?, newLastPayerId: Long?,
-        projectType: ProjectType, newLastSyncedTimestamp: Long?,
-        newCurrencyName: String?, newDeletionDisabled: Boolean?,
-        newMyAccessLevel: Int?, newBearerToken: String?,
-        newArchivedTs: Long?, db: SQLiteDatabase
-    ) {
-        val values = ContentValues()
-        if (newName != null) values.put(key_name, newName)
-        if (newEmail != null) values.put(key_email, newEmail)
-        if (newPassword != null) SecureStorage.savePasswordSync(context, "ProjectPassword_$projId", newPassword)
-        if (newBearerToken != null) values.put(key_bearer_token, newBearerToken)
-        if (newLastPayerId != null) values.put(key_lastPayerId, newLastPayerId)
-        if (newLastSyncedTimestamp != null) values.put(key_lastSyncTimestamp, newLastSyncedTimestamp)
-        if (newCurrencyName != null) values.put(key_currencyName, newCurrencyName)
-        if (newDeletionDisabled != null) values.put(key_deletionDisabled, if (newDeletionDisabled) 1 else 0)
-        if (newMyAccessLevel != null) values.put(key_myAccessLevel, newMyAccessLevel)
-        if (newArchivedTs != null) values.put(key_archived, newArchivedTs)
-        values.put(key_type, projectType.id)
+        if (projectType != null) values.put(key_type, projectType.id)
         if (values.size() > 0) {
             db.update(table_projects, values, "$key_id = ?", arrayOf(projId.toString()))
         }

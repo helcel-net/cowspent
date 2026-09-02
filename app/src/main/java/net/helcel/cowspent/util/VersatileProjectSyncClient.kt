@@ -114,7 +114,7 @@ class VersatileProjectSyncClient(
     @Throws(IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
     fun editRemoteProject(
         project: DBProject, newName: String?, newEmail: String?, newPassword: String?,
-        newMainCurrencyName: String?
+        newMainCurrencyName: String?, newArchivedTs: Long? = null
     ): ServerResponse.EditRemoteProjectResponse {
         val paramKeys: MutableList<String> = ArrayList()
         val paramValues: MutableList<String> = ArrayList()
@@ -129,6 +129,10 @@ class VersatileProjectSyncClient(
         if (newPassword != null) {
             paramKeys.add("password")
             paramValues.add(newPassword)
+        }
+        if (newArchivedTs != null) {
+            paramKeys.add("archived_ts")
+            paramValues.add(newArchivedTs.toString())
         }
 
         var target: String

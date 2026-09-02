@@ -415,16 +415,8 @@ class EditBillActivity : AppCompatActivity() {
             val proj = db.getProject(bill.projectId)
             if (proj != null) db.syncIfRemote(proj)
             db.updateProject(
-                bill.projectId,
-                null,
-                null,
-                null,
-                viewModel.payerId,
-                null,
-                null,
-                null,
-                null,
-                null
+                projId = bill.projectId,
+                newLastPayerId = viewModel.payerId
             )
 
             return@withContext firstSavedId
@@ -468,16 +460,8 @@ class EditBillActivity : AppCompatActivity() {
                 newOwersIds.forEach { newBill.billOwers += DBBillOwer(0, 0, it) }
                 val newBillId = db.addBill(newBill)
                 db.updateProject(
-                    bill.projectId,
-                    null,
-                    null,
-                    null,
-                    viewModel.payerId,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
+                    projId = bill.projectId,
+                    newLastPayerId = viewModel.payerId
                 )
                 val proj = db.getProject(bill.projectId)
                 if (proj != null) db.syncIfRemote(proj)

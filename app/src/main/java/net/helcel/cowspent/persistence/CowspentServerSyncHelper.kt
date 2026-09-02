@@ -817,10 +817,8 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 }
 
                 dbHelper.updateProject(
-                    project.id, null, null,
-                    null, null, serverSyncTimestamp,
-                    null, null, null,
-                    null
+                    projId = project.id,
+                    newLastSyncedTimestamp = serverSyncTimestamp
                 )
                 LoginStatus.OK
             } catch (_: ServerResponse.NotModifiedException) {
@@ -935,11 +933,18 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         return isCospend && projUrl == accountUrl
     }
 
-    fun editRemoteProject(projId: Long, newName: String?, newEmail: String?,
-                          newPassword: String?, newMainCurrencyName: String?, callback: ICallback): Boolean {
+    fun editRemoteProject(
+        projId: Long, 
+        newName: String? = null, 
+        newEmail: String? = null,
+        newPassword: String? = null, 
+        newMainCurrencyName: String? = null, 
+        newArchivedTs: Long? = null, 
+        callback: ICallback
+    ): Boolean {
         updateNetworkStatus()
         if (isSyncPossible) {
-            EditRemoteProjectTask(projId, newName, newEmail, newPassword, newMainCurrencyName, callback).execute()
+            EditRemoteProjectTask(projId, newName, newEmail, newPassword, newMainCurrencyName, newArchivedTs, callback).execute()
             return true
         }
         return false
@@ -951,6 +956,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         private val newEmail: String?,
         private val newPassword: String?,
         private val newMainCurrencyName: String?,
+        private val newArchivedTs: Long?,
         private val callback: ICallback
     ) {
         private val project: DBProject? = dbHelper.getProject(projId)
@@ -985,7 +991,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             var status = LoginStatus.OK
             try {
                 val response = client!!.editRemoteProject(
-                    project!!, newName, newEmail, newPassword, newMainCurrencyName
+                    project!!, newName, newEmail, newPassword, newMainCurrencyName, newArchivedTs
                 )
                 if (BillsListViewActivity.DEBUG) {
                     Log.i(TAG, "RESPONSE edit remote project : ${response.stringContent}")
@@ -1025,8 +1031,11 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 }
             } else {
                 dbHelper.updateProject(
-                    project!!.id, newName, newEmail, newPassword,
-                    null, null, null, null, null, null
+                    projId = project!!.id,
+                    newName = newName,
+                    newEmail = newEmail,
+                    newPassword = newPassword,
+                    newArchivedTs = newArchivedTs
                 )
             }
             callback.onFinish(newName ?: "", errorString)
