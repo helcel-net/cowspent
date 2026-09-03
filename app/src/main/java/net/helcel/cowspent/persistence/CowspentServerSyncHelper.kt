@@ -93,14 +93,14 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         callbacksPull.add(callback)
     }
 
-    fun scheduleSync(onlyLocalChanges: Boolean, projId: Long): SyncTask? {
-        Log.d(TAG, "Sync requested (${if (onlyLocalChanges) "onlyLocalChanges" else "full"}; ${if (syncActive) "sync active" else "sync NOT active"}) ...")
+    fun scheduleSync(onlyLocalChanges: Boolean, projId: Long, forceFullSync: Boolean = false): SyncTask? {
+        Log.d(TAG, "Sync requested (${if (onlyLocalChanges) "onlyLocalChanges" else "full"}; ${if (syncActive) "sync active" else "sync NOT active"}; forceFullSync=$forceFullSync) ...")
         updateNetworkStatus()
         if (isSyncPossible && (!syncActive || onlyLocalChanges)) {
             val project = dbHelper.getProject(projId)
             if (project != null) {
                 Log.d(TAG, "... starting now")
-                val syncTask = SyncTask(onlyLocalChanges, project)
+                val syncTask = SyncTask(onlyLocalChanges, project, forceFullSync)
                 syncTask.addCallbacks(callbacksPush)
                 callbacksPush = ArrayList()
                 if (!onlyLocalChanges) {
@@ -138,7 +138,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         }
     }
 
-    inner class SyncTask(private val onlyLocalChanges: Boolean, private val project: DBProject) {
+    inner class SyncTask(private val onlyLocalChanges: Boolean, private val project: DBProject, private val forceFullSync: Boolean = false) {
         private val callbacks: MutableList<ICallback> = ArrayList()
         private var nextcloudClient: NextcloudClient? = null
         private var client: VersatileProjectSyncClient? = null
@@ -726,23 +726,59 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 val paymentModesRemoteIdToId = dbPaymentModes.associate { it.remoteId to it.id }.toMutableMap()
                 dbPaymentModes.filter { it.remoteId < 0 }.forEach { paymentModesRemoteIdToId[it.remoteId] = it.id }
 
-                val billsResponse = client!!.getBills(project)
                 val isIHM = project.type == ProjectType.IHATEMONEY
-                val serverSyncTimestamp = if (isIHM) 0L else billsResponse.syncTimestamp
-                val remoteBills: List<DBBill> = if (isIHM) {
-                    billsResponse.getBillsIHM(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId)
+                var serverSyncTimestamp = project.lastSyncedTimestamp
+                val remoteBills = mutableListOf<DBBill>()
+                val remoteAllBillIds = mutableListOf<Long>()
+
+                val localBills = dbHelper.getBillsOfProject(project.id)
+                val localBillsByRemoteId = localBills.associateBy { it.remoteId }
+
+                if (project.type == ProjectType.COSPEND && !forceFullSync && localBills.isNotEmpty()) {
+                    Log.d(TAG, "Starting partial sync for project ${project.remoteId}")
+                    var offset = 0
+                    val limit = 50
+                    var allMatched = false
+                    while (!allMatched) {
+                        val partialResponse = client!!.getBills(project, offset, limit, true, 0)
+                        val partialRemoteBills = partialResponse.getBillsCospend(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId)
+                        if (partialRemoteBills.isEmpty()) break
+
+                        remoteBills.addAll(partialRemoteBills)
+
+                        var frameMatched = true
+                        for (rb in partialRemoteBills) {
+                            val lb = localBillsByRemoteId[rb.remoteId]
+                            if (lb == null || hasChanged(lb, rb)) {
+                                frameMatched = false
+                                break
+                            }
+                        }
+
+                        if (offset == 0 && partialResponse.syncTimestamp > 0) {
+                            serverSyncTimestamp = partialResponse.syncTimestamp
+                        }
+
+                        if (frameMatched) {
+                            allMatched = true
+                        } else {
+                            offset += limit
+                        }
+                    }
                 } else {
-                    billsResponse.getBillsCospend(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId)
-                }
-                val remoteAllBillIds: List<Long> = if (isIHM) {
-                    remoteBills.map { it.remoteId }
-                } else {
-                    billsResponse.allBillIds
+                    Log.d(TAG, "Starting full sync for project ${project.remoteId}")
+                    val billsResponse = client!!.getBills(project)
+                    serverSyncTimestamp = if (isIHM) 0L else billsResponse.syncTimestamp
+                    if (isIHM) {
+                        remoteBills.addAll(billsResponse.getBillsIHM(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId))
+                        remoteAllBillIds.addAll(remoteBills.map { it.remoteId })
+                    } else {
+                        remoteBills.addAll(billsResponse.getBillsCospend(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId))
+                        remoteAllBillIds.addAll(billsResponse.allBillIds)
+                    }
                 }
 
                 val remoteBillsByRemoteId = remoteBills.associateBy { it.remoteId }
-                val localBills = dbHelper.getBillsOfProject(project.id)
-                val localBillsByRemoteId = localBills.associateBy { it.remoteId }
 
                 for (remoteBill in remoteBills) {
                     if (!localBillsByRemoteId.containsKey(remoteBill.remoteId)) {
@@ -783,7 +819,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                     }
                 }
 
-                if (project.type == ProjectType.COSPEND || project.type == ProjectType.IHATEMONEY) {
+                if (remoteAllBillIds.isNotEmpty() && (project.type == ProjectType.COSPEND || project.type == ProjectType.IHATEMONEY)) {
                     for (localBill in localBills) {
                         if (!remoteAllBillIds.contains(localBill.remoteId)) {
                             dbHelper.deleteBill(localBill.id)
@@ -792,7 +828,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                             Log.d(TAG, "Delete local bill : $localBill")
                         }
                     }
-                } else {
+                } else if (remoteAllBillIds.isNotEmpty()) {
                     for (localBill in localBills) {
                         if (!remoteBillsByRemoteId.containsKey(localBill.remoteId)) {
                             dbHelper.deleteBill(localBill.id)

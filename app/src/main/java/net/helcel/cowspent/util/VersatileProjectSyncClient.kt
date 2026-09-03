@@ -679,22 +679,66 @@ class VersatileProjectSyncClient(
     }
 
     @Throws(JSONException::class, IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
-    fun getBills(project: DBProject): ServerResponse.BillsResponse {
+    fun getBills(
+        project: DBProject,
+        offset: Int? = null,
+        limit: Int? = null,
+        reverse: Boolean? = null,
+        deleted: Int? = null
+    ): ServerResponse.BillsResponse {
         var target: String
         var username: String?
         var password: String?
         var bearerToken: String?
         var useOcsApiRequest: Boolean
+
+        val paramKeys: MutableList<String> = ArrayList()
+        val paramValues: MutableList<String> = ArrayList()
+
         if (ProjectType.COSPEND == project.type) {
             val tsLastSync = project.lastSyncedTimestamp
+            if (offset == null) {
+                if (cospendVersionGT161) {
+                    paramKeys.add("lastChanged")
+                } else {
+                    paramKeys.add("lastchanged")
+                }
+                paramValues.add(tsLastSync.toString())
+            } else {
+                paramKeys.add("offset")
+                paramValues.add(offset.toString())
+                if (limit != null) {
+                    paramKeys.add("limit")
+                    paramValues.add(limit.toString())
+                }
+                if (reverse != null) {
+                    paramKeys.add("reverse")
+                    paramValues.add(reverse.toString())
+                }
+                if (deleted != null) {
+                    paramKeys.add("deleted")
+                    paramValues.add(deleted.toString())
+                }
+            }
+
             if (canAccessProjectWithNCLogin(project)) {
                 username = this.username
                 password = this.password
-                target = if (cospendVersionGT161)
-                    project.getRequestBaseUrl(true) + "/api/v1/projects/" + project.remoteId + "/bills?lastChanged=" + tsLastSync
-                else
-                    project.getRequestBaseUrl(false) + "/api-priv/projects/" + project.remoteId + "/bills?lastchanged=" + tsLastSync
                 useOcsApiRequest = cospendVersionGT161
+                val baseUrl = project.getRequestBaseUrl(useOcsApiRequest)
+                target = if (useOcsApiRequest)
+                    "$baseUrl/api/v1/projects/${project.remoteId}/bills"
+                else
+                    "$baseUrl/api-priv/projects/${project.remoteId}/bills"
+
+                if (paramKeys.isNotEmpty()) {
+                    target += "?"
+                    for (i in paramKeys.indices) {
+                        if (i > 0) target += "&"
+                        target += "${paramKeys[i]}=${paramValues[i]}"
+                    }
+                }
+
                 return ServerResponse.BillsResponse(
                     requestServer(
                         target, METHOD_GET, null, null,
@@ -703,14 +747,6 @@ class VersatileProjectSyncClient(
                     useOcsApiRequest
                 )
             } else if (canAccessProjectWithSSO(project)) {
-                val paramKeys: MutableList<String> = ArrayList()
-                val paramValues: MutableList<String> = ArrayList()
-                if (cospendVersionGT161) {
-                    paramKeys.add("lastChanged")
-                } else {
-                    paramKeys.add("lastchanged")
-                }
-                paramValues.add(tsLastSync.toString())
                 return if (cospendVersionGT161) {
                     target = "/ocs/v2.php/apps/cospend/api/v1/projects/" + project.remoteId + "/bills"
                     ServerResponse.BillsResponse(requestServerWithSSO(nextcloudAPI!!, target, METHOD_GET, paramKeys, paramValues, true), true)
@@ -720,10 +756,20 @@ class VersatileProjectSyncClient(
                 }
             } else {
                 useOcsApiRequest = cospendVersionGT161
-                target = if (cospendVersionGT161)
-                    project.getRequestBaseUrl(true) + "/api/v1/public/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills?lastChanged=" + tsLastSync
+                val baseUrl = project.getRequestBaseUrl(useOcsApiRequest)
+                target = if (useOcsApiRequest)
+                    "$baseUrl/api/v1/public/projects/${project.remoteId}/${getEncodedPassword(project.password)}/bills"
                 else
-                    project.getRequestBaseUrl(false) + "/apiv2/projects/" + project.remoteId + "/" + getEncodedPassword(project.password) + "/bills?lastchanged=" + tsLastSync
+                    "$baseUrl/apiv2/projects/${project.remoteId}/${getEncodedPassword(project.password)}/bills"
+
+                if (paramKeys.isNotEmpty()) {
+                    target += "?"
+                    for (i in paramKeys.indices) {
+                        if (i > 0) target += "&"
+                        target += "${paramKeys[i]}=${paramValues[i]}"
+                    }
+                }
+
                 return ServerResponse.BillsResponse(
                     requestServer(
                          target, METHOD_GET, null, null,

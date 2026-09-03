@@ -761,7 +761,7 @@ class BillsListViewActivity :
                     val proj = withContext(Dispatchers.IO) { db.getProject(selectedProjectId) }
                     if (proj != null && !proj.isLocal) {
                         db.cowspentServerSyncHelper.addCallbackPull(syncCallBack)
-                        db.cowspentServerSyncHelper.scheduleSync(false, selectedProjectId)
+                        db.cowspentServerSyncHelper.scheduleSync(false, selectedProjectId, manual)
                     } else viewModel.isRefreshing = false
                 }
             } else viewModel.isRefreshing = false
