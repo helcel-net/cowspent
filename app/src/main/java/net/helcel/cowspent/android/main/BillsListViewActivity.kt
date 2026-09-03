@@ -754,19 +754,34 @@ class BillsListViewActivity :
         }
 
         if (db.cowspentServerSyncHelper.isSyncPossible) {
-            viewModel.isRefreshing = true
-            val selectedProjectId = PreferenceManager.getDefaultSharedPreferences(applicationContext).getLong("selected_project", 0)
-            if (selectedProjectId != 0L) {
-                lifecycleScope.launch {
-                    val proj = withContext(Dispatchers.IO) { db.getProject(selectedProjectId) }
-                    if (proj != null && !proj.isLocal) {
+            viewModel.isRefreshing = manual
+            val selectedProjectId = preferences.getLong("selected_project", 0)
+
+            lifecycleScope.launch {
+                val projects = withContext(Dispatchers.IO) { db.projects }
+                val remoteProjects = projects.filter { !it.isLocal }
+
+                if (remoteProjects.isNotEmpty()) {
+                    // Sync selected project first to prioritize it (it starts immediately or becomes top of stack)
+                    val selectedProj = remoteProjects.find { it.id == selectedProjectId }
+                    if (selectedProj != null) {
                         db.cowspentServerSyncHelper.addCallbackPull(syncCallBack)
                         db.cowspentServerSyncHelper.scheduleSync(false, selectedProjectId, manual)
-                    } else viewModel.isRefreshing = false
+                    } else if (manual) {
+                        viewModel.isRefreshing = false
+                    }
+
+                    // Sync other projects (they will be queued)
+                    remoteProjects.filter { it.id != selectedProjectId }.forEach {
+                        db.cowspentServerSyncHelper.scheduleSync(false, it.id, manual)
+                    }
+                } else {
+                    viewModel.isRefreshing = false
                 }
-            } else viewModel.isRefreshing = false
-            if (CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
-                db.cowspentServerSyncHelper.runAccountProjectsSync()
+
+                if (CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
+                    db.cowspentServerSyncHelper.runAccountProjectsSync()
+                }
             }
         }
     }
