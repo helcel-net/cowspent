@@ -59,7 +59,7 @@ jobs:
           ./gradlew assembleSignedRelease -PVERSION_CODE=$VERSION_CODE -PVERSION_NAME=$VERSION_NAME
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Cowspent-APK
           path: app/build/outputs/apk/signedRelease/app-signedRelease.apk
