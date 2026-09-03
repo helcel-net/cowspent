@@ -67,8 +67,9 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: Cowspent-APK
+          name: release-apk
           path: app/build/outputs/apk/signedRelease/app-signedRelease.apk
+          compression-level: 0
 
       - name: Release
         uses: softprops/action-gh-release@v3
