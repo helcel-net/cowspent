@@ -304,7 +304,7 @@ fun CurrencyRow(
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
                 Text(
-                    text = formatAmount(currency.exchangeRate),
+                    text = formatAmount(if (currency.exchangeRate != 0.0) 1.0 / currency.exchangeRate else 0.0),
                     style = MaterialTheme.typography.body1,
                     fontWeight = FontWeight.ExtraBold,
                     color = if (isEditing) MaterialTheme.colors.secondary else MaterialTheme.colors.onSurface

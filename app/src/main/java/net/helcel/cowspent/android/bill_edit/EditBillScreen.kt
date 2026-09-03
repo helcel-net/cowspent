@@ -450,7 +450,10 @@ fun OwerSelectionSection(
                 size = 32.dp
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text(member.name, modifier = Modifier.weight(1f))
+            val weightSuffix = if (viewModel.hasDifferentWeights && member.weight != 1.0) {
+                " (x${member.weight.toString().removeSuffix(".0")})"
+            } else ""
+            Text("${member.name}$weightSuffix", modifier = Modifier.weight(1f))
 
             if (isSelected || viewModel.splitMode != SplitMode.EVEN) {
                 val focusManager = LocalFocusManager.current
@@ -671,19 +674,115 @@ fun BillAdditionalDetailsSection(
 }
 
 @SuppressLint("ViewModelConstructorInComposable")
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Standard Split")
 @Composable
 fun EditBillScreenPreview() {
     MaterialTheme {
         EditBillScreen(
             viewModel = EditBillViewModel().apply {
                 what = "Pizza"
-                amount = "12.50"
+                amount = "12.00"
                 mainCurrencyName = "EUR"
                 members = listOf(
                     DBMember(1, 0, 0, "Alice", true, 1.0, 0, null, null, null, null, null),
                     DBMember(2, 0, 0, "Bob", true, 1.0, 0, null, null, null, null, null)
                 )
+                owersSelection[1] = true
+                owersSelection[2] = true
+                updateSplits()
+            },
+            categories = emptyList(),
+            paymentModes = emptyList(),
+            onSave = {},
+            onBack = {},
+            onDateClick = {},
+            onTimeClick = {},
+            onScan = {}
+        )
+    }
+}
+
+@SuppressLint("ViewModelConstructorInComposable")
+@Preview(showBackground = true, name = "Weighted Split")
+@Composable
+fun EditBillScreenWeightedPreview() {
+    MaterialTheme {
+        EditBillScreen(
+            viewModel = EditBillViewModel().apply {
+                what = "Weighted Pizza"
+                amount = "60.00"
+                mainCurrencyName = "EUR"
+                members = listOf(
+                    DBMember(1, 0, 0, "Alice", true, 2.0, 0, null, null, null, null, null),
+                    DBMember(2, 0, 0, "Bob", true, 1.0, 0, null, null, null, null, null),
+                    DBMember(3, 0, 0, "Charlie", true, 1.0, 0, null, null, null, null, null)
+                )
+                owersSelection[1] = true
+                owersSelection[2] = true
+                owersSelection[3] = true
+                updateSplits()
+            },
+            categories = emptyList(),
+            paymentModes = emptyList(),
+            onSave = {},
+            onBack = {},
+            onDateClick = {},
+            onTimeClick = {},
+            onScan = {}
+        )
+    }
+}
+
+@SuppressLint("ViewModelConstructorInComposable")
+@Preview(showBackground = true, name = "Custom Split (#)")
+@Composable
+fun EditBillScreenCustomPreview() {
+    MaterialTheme {
+        EditBillScreen(
+            viewModel = EditBillViewModel().apply {
+                what = "Custom Split Pizza"
+                amount = "60.00"
+                mainCurrencyName = "EUR"
+                members = listOf(
+                    DBMember(1, 0, 0, "Alice", true, 1.0, 0, null, null, null, null, null),
+                    DBMember(2, 0, 0, "Bob", true, 1.0, 0, null, null, null, null, null)
+                )
+                splitMode = SplitMode.CUSTOM
+                owersSelection[1] = true
+                owersSelection[2] = true
+                owersCustomSplit[1] = "40.00"
+                owersCustomSplit[2] = "20.00"
+            },
+            categories = emptyList(),
+            paymentModes = emptyList(),
+            onSave = {},
+            onBack = {},
+            onDateClick = {},
+            onTimeClick = {},
+            onScan = {}
+        )
+    }
+}
+
+@SuppressLint("ViewModelConstructorInComposable")
+@Preview(showBackground = true, name = "Percent Split (%)")
+@Composable
+fun EditBillScreenPercentPreview() {
+    MaterialTheme {
+        EditBillScreen(
+            viewModel = EditBillViewModel().apply {
+                what = "Percent Split Pizza"
+                amount = "100.00"
+                mainCurrencyName = "EUR"
+                members = listOf(
+                    DBMember(1, 0, 0, "Alice", true, 1.0, 0, null, null, null, null, null),
+                    DBMember(2, 0, 0, "Bob", true, 1.0, 0, null, null, null, null, null)
+                )
+                splitMode = SplitMode.PERCENT
+                owersSelection[1] = true
+                owersSelection[2] = true
+                owersPercentSplit[1] = "70"
+                owersPercentSplit[2] = "30"
             },
             categories = emptyList(),
             paymentModes = emptyList(),

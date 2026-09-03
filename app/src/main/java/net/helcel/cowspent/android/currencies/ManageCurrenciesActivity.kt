@@ -114,7 +114,8 @@ class ManageCurrenciesActivity : AppCompatActivity() {
     }
 
     private fun addOrUpdateCurrency() {
-        val exchangeRate = try { viewModel.newCurrencyRate.toDouble() } catch (_: Exception) { 0.0 }
+        val uiRate = try { viewModel.newCurrencyRate.toDouble() } catch (_: Exception) { 0.0 }
+        val exchangeRate = if (uiRate != 0.0) 1.0 / uiRate else 0.0
         val currencyName = viewModel.newCurrencyName
         val editingId = viewModel.editingCurrencyId
 
@@ -142,7 +143,8 @@ class ManageCurrenciesActivity : AppCompatActivity() {
     private fun startEditing(currency: DBCurrency) {
         viewModel.editingCurrencyId = currency.id
         viewModel.newCurrencyName = currency.name ?: ""
-        viewModel.newCurrencyRate = currency.exchangeRate.toString()
+        val uiRate = if (currency.exchangeRate != 0.0) 1.0 / currency.exchangeRate else 0.0
+        viewModel.newCurrencyRate = uiRate.toString()
     }
 
     private fun cancelEditing() {

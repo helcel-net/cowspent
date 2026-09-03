@@ -333,7 +333,7 @@ class EditBillActivity : AppCompatActivity() {
                     viewModel.owersSelection[id] == true && viewModel.parseAmountFromUi(amountStr) > 0
                 }.mapValues {
                     val uiAmount = viewModel.parseAmountFromUi(it.value)
-                    SupportUtil.round2(uiAmount / viewModel.selectedCurrencyRate)
+                    SupportUtil.round2(uiAmount * viewModel.selectedCurrencyRate)
                 }
             } else { // PERCENT
                 val totalAmount = viewModel.amountAsDouble
@@ -342,7 +342,7 @@ class EditBillActivity : AppCompatActivity() {
                 }.mapValues {
                     val percent = viewModel.parseAmountFromUi(it.value)
                     val uiAmount = SupportUtil.round2(totalAmount * percent / 100.0)
-                    SupportUtil.round2(uiAmount / viewModel.selectedCurrencyRate)
+                    SupportUtil.round2(uiAmount * viewModel.selectedCurrencyRate)
                 }
             }
 

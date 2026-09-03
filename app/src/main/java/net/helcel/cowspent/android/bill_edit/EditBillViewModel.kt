@@ -61,18 +61,18 @@ class EditBillViewModel : ViewModel() {
     val amountAsDouble: Double
         get() = parseAmountFromUi(amount)
 
-    fun getEvenSplit(): Double {
-        val selectedOwersCount = owersSelection.count { it.value }
-        return if (selectedOwersCount > 0) SupportUtil.round2(amountAsDouble / selectedOwersCount) else 0.0
-    }
+    val hasDifferentWeights: Boolean
+        get() = members.isNotEmpty() && members.any { it.weight != members[0].weight }
 
     fun updateSplits() {
         if (splitMode == SplitMode.EVEN) {
-            val even = getEvenSplit()
-            val evenStr = if (even == 0.0) "" else SupportUtil.round2(even).toString()
+            val selectedMembers = members.filter { owersSelection[it.id] == true }
+            val totalWeight = selectedMembers.sumOf { it.weight }
+            val uiAmount = amountAsDouble
             members.forEach { m ->
                 if (owersSelection[m.id] == true) {
-                    owersCustomSplit[m.id] = evenStr
+                    val share = if (totalWeight > 0) (uiAmount * m.weight) / totalWeight else 0.0
+                    owersCustomSplit[m.id] = if (share == 0.0) "" else SupportUtil.round2(share).toString()
                 } else {
                     owersCustomSplit.remove(m.id)
                 }
@@ -180,7 +180,7 @@ class EditBillViewModel : ViewModel() {
     }
 
     fun getFinalAmount(): Double {
-        return SupportUtil.round2(amountAsDouble / selectedCurrencyRate)
+        return SupportUtil.round2(amountAsDouble * selectedCurrencyRate)
     }
 
     fun getFinalComment(): String {
@@ -252,10 +252,9 @@ class EditBillViewModel : ViewModel() {
                 if (selected) {
                     // If we have metadata, the custom splits from DB are also converted. 
                     // We should show them as "Original" if possible? 
-                    // Actually, if we use metadata, we should probably store original splits too, 
-                    // but for now let's just reverse the rate for display.
+                    // Reverse calculation for display: UI Part = DB Part / Rate
                     val dbPart = customSplits[member.id]!!
-                    val uiPart = if (selectedCurrencyRate != 1.0) dbPart * selectedCurrencyRate else dbPart
+                    val uiPart = if (selectedCurrencyRate != 0.0) dbPart / selectedCurrencyRate else dbPart
                     owersCustomSplit[member.id] = SupportUtil.round2(uiPart).toString()
                 }
             }
@@ -263,18 +262,18 @@ class EditBillViewModel : ViewModel() {
             // Even split logic
             splitMode = SplitMode.EVEN
             val billOwerIds = bill.billOwersIds
-            val selectedCount = billOwerIds.size
+            val selectedMembers = members.filter { billOwerIds.contains(it.id) }
+            val totalWeight = selectedMembers.sumOf { it.weight }
             
             // Use UI amount for even split calculation
             val uiAmount = amountAsDouble
-            val evenSplit = if (selectedCount > 0) uiAmount / selectedCount else 0.0
-            val evenSplitStr = if (evenSplit == 0.0) "" else SupportUtil.round2(evenSplit).toString()
 
             for (member in members) {
                 val selected = billOwerIds.contains(member.id)
                 owersSelection[member.id] = selected
                 if (selected) {
-                    owersCustomSplit[member.id] = evenSplitStr
+                    val share = if (totalWeight > 0) (uiAmount * member.weight) / totalWeight else 0.0
+                    owersCustomSplit[member.id] = if (share == 0.0) "" else SupportUtil.round2(share).toString()
                 }
             }
         }
