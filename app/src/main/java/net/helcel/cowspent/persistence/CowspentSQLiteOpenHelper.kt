@@ -557,6 +557,15 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         return if (bills.isEmpty()) null else bills[0]
     }
 
+    fun getLastBillOfProject(projectId: Long): DBBill? {
+        val list = getBillsCustom(
+            "$key_projectid = ? AND $key_state != ?",
+            arrayOf(projectId.toString(), DBBill.STATE_DELETED.toString()),
+            "$key_id DESC LIMIT 1"
+        )
+        return if (list.isEmpty()) null else list[0]
+    }
+
     @WorkerThread
     fun searchBills(query: CharSequence?, projectId: Long): List<DBBill> {
         val andWhere: MutableList<String> = ArrayList()

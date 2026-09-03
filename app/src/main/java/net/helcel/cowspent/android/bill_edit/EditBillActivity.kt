@@ -12,6 +12,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
+import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -151,12 +152,25 @@ class EditBillActivity : AppCompatActivity() {
                 val billIdToDuplicate = intent.getLongExtra(PARAM_BILL_ID_TO_DUPLICATE, 0)
                 val timeNowSeconds = System.currentTimeMillis() / 1000
                 if (billIdToDuplicate == 0L) {
-                    val project = db.getProject(projectId)
-                    bill = DBBill(
-                        0, 0, projectId, project?.lastPayerId ?: 0, 0.0, timeNowSeconds,
-                        "", DBBill.STATE_ADDED, DBBill.NON_REPEATED,
-                        DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE, "", DBBill.PAYMODE_ID_NONE
-                    )
+                    val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+                    val fillFromLast = preferences.getBoolean(getString(R.string.pref_key_fill_new_bill_from_last), false)
+                    val lastBill = if (fillFromLast) db.getLastBillOfProject(projectId) else null
+
+                    if (lastBill != null) {
+                        bill = DBBill(
+                            0, 0, projectId, lastBill.payerId, 0.0, timeNowSeconds,
+                            "", DBBill.STATE_ADDED, lastBill.repeat ?: DBBill.NON_REPEATED,
+                            lastBill.paymentMode, lastBill.categoryId, "", lastBill.paymentModeId
+                        )
+                        bill.billOwers = lastBill.billOwers.map { DBBillOwer(0, 0, it.memberId) }
+                    } else {
+                        val project = db.getProject(projectId)
+                        bill = DBBill(
+                            0, 0, projectId, project?.lastPayerId ?: 0, 0.0, timeNowSeconds,
+                            "", DBBill.STATE_ADDED, DBBill.NON_REPEATED,
+                            DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE, "", DBBill.PAYMODE_ID_NONE
+                        )
+                    }
                 } else {
                     val btd = db.getBill(billIdToDuplicate)!!
                     bill = DBBill(

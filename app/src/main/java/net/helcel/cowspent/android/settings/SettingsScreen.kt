@@ -81,6 +81,7 @@ fun SettingsScreen(
     val keyOfflineMode = stringResource(R.string.pref_key_offline_mode)
     val keyShowArchived = stringResource(R.string.pref_key_show_archived)
     val keyBetaFeatures = stringResource(R.string.pref_key_beta_features)
+    val keyFillNewBillFromLast = stringResource(R.string.pref_key_fill_new_bill_from_last)
 
     val isNextcloudConfigured = CowspentServerSyncHelper.isNextcloudAccountConfigured(context)
 
@@ -122,6 +123,9 @@ fun SettingsScreen(
     }
     var betaFeatures by remember(keyBetaFeatures) {
         mutableStateOf(sharedPreferences.getBoolean(keyBetaFeatures, false))
+    }
+    var fillNewBillFromLast by remember(keyFillNewBillFromLast) {
+        mutableStateOf(sharedPreferences.getBoolean(keyFillNewBillFromLast, false))
     }
 
     Scaffold(
@@ -268,6 +272,21 @@ fun SettingsScreen(
                     }
                 }
             )
+
+            if (betaFeatures) {
+                SettingsSwitchPreference(
+                    title = stringResource(R.string.settings_fill_new_bill_from_last),
+                    summary = stringResource(R.string.settings_fill_new_bill_from_last_summary),
+                    icon = Icons.Default.Info,
+                    checked = fillNewBillFromLast,
+                    onCheckedChange = {
+                        fillNewBillFromLast = it
+                        sharedPreferences.edit {
+                            putBoolean(keyFillNewBillFromLast, it)
+                        }
+                    }
+                )
+            }
 
             SettingsPreference(
                 title = stringResource(R.string.title_about),
