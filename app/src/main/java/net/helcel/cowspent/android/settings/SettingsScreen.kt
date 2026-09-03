@@ -54,6 +54,7 @@ import androidx.preference.PreferenceManager
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.ColorPicker
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
+import net.helcel.cowspent.persistence.CowspentServerSyncHelper
 import net.helcel.cowspent.util.ColorUtils
 import net.helcel.cowspent.util.Cowspent
 
@@ -81,21 +82,26 @@ fun SettingsScreen(
     val keyShowArchived = stringResource(R.string.pref_key_show_archived)
     val keyBetaFeatures = stringResource(R.string.pref_key_beta_features)
 
+    val isNextcloudConfigured = CowspentServerSyncHelper.isNextcloudAccountConfigured(context)
+
     // States for preferences
     var nightMode by remember(keyNightMode) {
         mutableStateOf(sharedPreferences.getString(keyNightMode, "-1") ?: "-1")
     }
 
-    var colorMode by remember(keyColorMode, keyUseServerColor, keyUseSystemColor) {
-        mutableStateOf(sharedPreferences.getString(keyColorMode, null) ?: run {
-            val useServer = sharedPreferences.getBoolean(keyUseServerColor, true)
+    var colorMode by remember(keyColorMode, keyUseServerColor, keyUseSystemColor, isNextcloudConfigured) {
+        val savedMode = sharedPreferences.getString(keyColorMode, null)
+        val mode = savedMode ?: run {
+            val useServer = sharedPreferences.getBoolean(keyUseServerColor, false)
             val useSystem = sharedPreferences.getBoolean(keyUseSystemColor, true)
             when {
-                useServer -> "server"
+                useServer && isNextcloudConfigured -> "server"
                 useSystem -> "system"
                 else -> "manual"
             }
-        })
+        }
+        // Fallback to system if server is selected but not configured
+        mutableStateOf(if (mode == "server" && !isNextcloudConfigured) "system" else mode)
     }
 
     // Apply theme globally only when leaving settings to avoid flickering/restarts during selection
@@ -181,15 +187,19 @@ fun SettingsScreen(
                 }
             )
 
+            val colorModeEntries = buildMap {
+                put("system", stringResource(R.string.pref_value_color_system))
+                if (isNextcloudConfigured) {
+                    put("server", stringResource(R.string.pref_value_color_server))
+                }
+                put("manual", stringResource(R.string.pref_value_color_manual))
+            }
+
             SettingsListPreference(
                 title = stringResource(R.string.settings_color_mode),
                 icon = Icons.Default.Palette,
                 value = colorMode,
-                entries = mapOf(
-                    "system" to stringResource(R.string.pref_value_color_system),
-                    "server" to stringResource(R.string.pref_value_color_server),
-                    "manual" to stringResource(R.string.pref_value_color_manual)
-                ),
+                entries = colorModeEntries,
                 onValueChange = { mode ->
                     colorMode = mode
                     sharedPreferences.edit {

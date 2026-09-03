@@ -24,7 +24,7 @@ object ColorUtils {
         val colorMode = if (prefs.contains(modeKey)) {
             prefs.getString(modeKey, "system")
         } else {
-            val useServer = prefs.getBoolean(context.getString(R.string.pref_key_use_server_color), true)
+            val useServer = prefs.getBoolean(context.getString(R.string.pref_key_use_server_color), false)
             val useSystem = prefs.getBoolean(context.getString(R.string.pref_key_use_system_color), true)
             when {
                 useServer -> "server"
