@@ -55,11 +55,17 @@ jobs:
       - name: Build APK
         run: |
           VERSION_CODE=$(git rev-list --count HEAD)
-          VERSION_NAME=$(git describe --tags --always)
+          VERSION_BASE=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          VERSION_DEV=$(git rev-list --count $(git describe --tags --abbrev=0)..HEAD)
+          if [ $VERSION_DEV -gt 0 ]; then
+            VERSION_NAME="${VERSION_BASE}.${VERSION_DEV}"
+          else
+            VERSION_NAME="${VERSION_BASE}"
+          fi
           ./gradlew assembleSignedRelease -PVERSION_CODE=$VERSION_CODE -PVERSION_NAME=$VERSION_NAME
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Cowspent-APK
           path: app/build/outputs/apk/signedRelease/app-signedRelease.apk
