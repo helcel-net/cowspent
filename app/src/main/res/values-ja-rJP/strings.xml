@@ -129,6 +129,8 @@
     <string name="settings_show_archived">アーカイブされたプロジェクトを表示</string>
     <string name="settings_beta_features">ベータ版の機能</string>
     <string name="settings_beta_features_summary">実験的な機能を有効にします。自己責任で使用してください。</string>
+    <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
+    <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
     <string name="settings_url_warn_http">警告: \"http\"は安全ではありません。\"https\"を使用してください。</string>
     <string name="settings_colorpicker_title">色を選択</string>
     <string name="pref_value_color_system">システム</string>
