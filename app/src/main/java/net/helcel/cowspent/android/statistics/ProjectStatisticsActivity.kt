@@ -47,7 +47,7 @@ class ProjectStatisticsActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val EXTRA_PROJECT_ID = "extra_project_id"
+        internal const val EXTRA_PROJECT_ID = "extra_project_id"
 
         fun createIntent(context: Context, projectId: Long): Intent {
             return Intent(context, ProjectStatisticsActivity::class.java).apply {

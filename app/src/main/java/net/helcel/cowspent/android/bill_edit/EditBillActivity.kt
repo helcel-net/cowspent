@@ -34,7 +34,7 @@ import java.util.Calendar
 
 class EditBillActivity : AppCompatActivity() {
 
-    private val viewModel: EditBillViewModel by viewModels()
+    internal val viewModel: EditBillViewModel by viewModels()
     private lateinit var db: CowspentSQLiteOpenHelper
     private lateinit var bill: DBBill
     private var projectType: ProjectType = ProjectType.LOCAL

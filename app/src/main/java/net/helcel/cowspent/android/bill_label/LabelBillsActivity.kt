@@ -17,7 +17,7 @@ import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.ProjectType
 
 class LabelBillsActivity : AppCompatActivity() {
-    private val viewModel: LabelBillsViewModel by viewModels()
+    internal val viewModel: LabelBillsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

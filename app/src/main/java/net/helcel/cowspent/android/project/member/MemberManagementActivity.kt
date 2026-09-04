@@ -22,7 +22,7 @@ import net.helcel.cowspent.theme.ThemeUtils
 
 class MemberManagementActivity : AppCompatActivity() {
 
-    private val viewModel: MemberManagementViewModel by viewModels()
+    internal val viewModel: MemberManagementViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

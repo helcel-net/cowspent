@@ -8,6 +8,7 @@ import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.os.IBinder
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import androidx.preference.PreferenceManager
@@ -1671,6 +1672,12 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 instance = CowspentServerSyncHelper(dbHelper)
             }
             return instance!!
+        }
+
+        @VisibleForTesting
+        fun resetInstance() {
+            instance = null
+            projectIdsToSync.clear()
         }
 
         fun isNextcloudAccountConfigured(context: Context): Boolean {

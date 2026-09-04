@@ -7,6 +7,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.text.TextUtils
+import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.preference.PreferenceManager
 import net.helcel.cowspent.R
@@ -1243,11 +1244,20 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         @Volatile
         private var instance: CowspentSQLiteOpenHelper? = null
 
+        @VisibleForTesting
+        var overrideInstance: CowspentSQLiteOpenHelper? = null
+
         @JvmStatic
         fun getInstance(context: Context): CowspentSQLiteOpenHelper {
+            overrideInstance?.let { return it }
             return instance ?: synchronized(this) {
                 instance ?: CowspentSQLiteOpenHelper(context.applicationContext).also { instance = it }
             }
+        }
+
+        @VisibleForTesting
+        fun resetInstance() {
+            instance = null
         }
     }
 }

@@ -48,7 +48,7 @@ import java.util.Locale
 
 class AccountActivity : AppCompatActivity() {
 
-    private val viewModel: AccountViewModel by viewModels()
+    internal val viewModel: AccountViewModel by viewModels()
 
     companion object {
         private val TAG = AccountActivity::class.java.simpleName
