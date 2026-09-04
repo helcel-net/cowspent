@@ -129,6 +129,8 @@
     <string name="settings_show_archived">Vis arkiverede projekter</string>
     <string name="settings_beta_features">Beta Funktioner</string>
     <string name="settings_beta_features_summary">Aktiver eksperimentelle funktioner. Brug på egen risiko.</string>
+    <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
+    <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
     <string name="settings_url_warn_http">ADVARSEL: \"http\" er usikkert. Brug \"https\".</string>
     <string name="settings_colorpicker_title">Vælg Farve</string>
     <string name="pref_value_color_system">System</string>
