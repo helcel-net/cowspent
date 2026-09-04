@@ -129,6 +129,8 @@
     <string name="settings_show_archived">Показать архивные проекты</string>
     <string name="settings_beta_features">Функции бета-версии</string>
     <string name="settings_beta_features_summary">Включить экспериментальные функции. Используйте на свой страх и риск.</string>
+    <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
+    <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
     <string name="settings_url_warn_http">ВНИМАНИЕ: «http» небезопасен. Используйте «https».</string>
     <string name="settings_colorpicker_title">Выберите цвет</string>
     <string name="pref_value_color_system">Система</string>
