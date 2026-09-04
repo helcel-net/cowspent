@@ -129,6 +129,8 @@
     <string name="settings_show_archived">Show archived projects</string>
     <string name="settings_beta_features">Beta Features</string>
     <string name="settings_beta_features_summary">Enable experimental features. Use at your own risk.</string>
+    <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
+    <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
     <string name="settings_url_warn_http">WARNING: \"http\" is unsafe. Use \"https\".</string>
     <string name="settings_colorpicker_title">Choose Color</string>
     <string name="pref_value_color_system">System</string>
