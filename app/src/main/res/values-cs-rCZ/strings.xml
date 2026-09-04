@@ -129,6 +129,8 @@
     <string name="settings_show_archived">Zobrazit archivované projekty</string>
     <string name="settings_beta_features">Beta funkce</string>
     <string name="settings_beta_features_summary">Povolit experimentální funkce. Používejte na vlastní riziko.</string>
+    <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
+    <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
     <string name="settings_url_warn_http">VAROVÁNÍ: \"http\" není bezpečné. Použijte \"https://\".</string>
     <string name="settings_colorpicker_title">Vybrat barvu</string>
     <string name="pref_value_color_system">Systém</string>
