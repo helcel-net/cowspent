@@ -121,17 +121,19 @@ fun ProjectSankeyDiagram(
         val catMap = mutableMapOf<Long, Double>()
         
         activeBills.forEach { bill ->
-            val totalWeight = bill.billOwers.sumOf { membersMap[it.memberId]?.weight ?: 1.0 }
+            val totalWeight = bill.billOwers.sumOf { membersMap[it.memberId]?.weight ?: 0.0 }
             if (totalWeight > 0) {
                 if (selectedMemberId == -1L) {
                     catMap[bill.categoryId] = (catMap[bill.categoryId] ?: 0.0) + bill.amount
                     bill.billOwers.forEach { bo ->
-                        val weight = membersMap[bo.memberId]?.weight ?: 1.0
-                        spentMap[bo.memberId] = (spentMap[bo.memberId] ?: 0.0) + (bill.amount / totalWeight) * weight
+                        if (membersMap.containsKey(bo.memberId)) {
+                            val weight = membersMap[bo.memberId]?.weight ?: 0.0
+                            spentMap[bo.memberId] = (spentMap[bo.memberId] ?: 0.0) + (bill.amount / totalWeight) * weight
+                        }
                     }
                 } else {
                     bill.billOwers.find { it.memberId == selectedMemberId }?.let { bo ->
-                        val weight = membersMap[bo.memberId]?.weight ?: 1.0
+                        val weight = membersMap[bo.memberId]?.weight ?: 0.0
                         catMap[bill.categoryId] = (catMap[bill.categoryId] ?: 0.0) + (bill.amount / totalWeight) * weight
                         spentMap[selectedMemberId] = (spentMap[selectedMemberId] ?: 0.0) + (bill.amount / totalWeight) * weight
                     }
@@ -344,7 +346,9 @@ private fun SankeyContent(
                             scope.launch { topFocalIndex.animateTo(index.toFloat(), spring(Spring.DampingRatioLowBouncy, Spring.StiffnessLow)) }
                         } else Modifier), contentAlignment = Alignment.Center) {
                         Column(modifier = Modifier.fillMaxSize().background(color = member?.let { Color(it.r ?: 128, it.g ?: 128, it.b ?: 128) } ?: Color.Gray, shape = RoundedCornerShape(10.dp)), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Text(text = member?.name ?: "???", color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.wrapContentWidth(unbounded = true))
+                            if (wDp >= 32.dp) {
+                                Text(text = member?.name ?: "???", color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.wrapContentWidth(unbounded = true))
+                            }
                             if (wDp >= 40.dp) Text(text = formatShortValue(amount), fontSize = 12.sp, color = Color.White.copy(alpha = 0.9f), textAlign = TextAlign.Center)
                         }
                     }
@@ -382,7 +386,9 @@ private fun SankeyContent(
                             scope.launch { bottomFocalIndex.animateTo(index.toFloat(), spring(Spring.DampingRatioLowBouncy, Spring.StiffnessLow)) }
                         } else Modifier), contentAlignment = Alignment.Center) {
                         Column(modifier = Modifier.fillMaxSize().background(color = category?.color?.let { try { Color(it.toColorInt()) } catch (_: Exception) { Color(0xFF999999) } } ?: Color(0xFF999999), shape = RoundedCornerShape(10.dp)), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Text(text = category?.icon ?: "❔", fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.wrapContentWidth(unbounded = true))
+                            if (wDp >= 24.dp) {
+                                Text(text = category?.icon ?: "❔", fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.wrapContentWidth(unbounded = true))
+                            }
                             if (wDp >= 40.dp) Text(text = formatShortValue(amount), fontSize = 12.sp, color = Color.White.copy(alpha = 0.9f), textAlign = TextAlign.Center)
                         }
                     }

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Brightness2
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Sync
@@ -84,6 +85,7 @@ fun SettingsScreen(
     val keyOfflineMode = stringResource(R.string.pref_key_offline_mode)
     val keyShowArchived = stringResource(R.string.pref_key_show_archived)
     val keyBetaFeatures = stringResource(R.string.pref_key_beta_features)
+    val keyStatsIncludeDeactivated = stringResource(R.string.pref_key_stats_include_deactivated)
     val keyAutoSyncOnOpen = stringResource(R.string.pref_key_auto_sync_on_open)
     val keyFillNewBillFromLast = stringResource(R.string.pref_key_fill_new_bill_from_last)
     val keyLastAccountSync = stringResource(R.string.pref_key_last_account_sync_timestamp)
@@ -131,6 +133,9 @@ fun SettingsScreen(
     }
     var fillNewBillFromLast by remember(keyFillNewBillFromLast) {
         mutableStateOf(sharedPreferences.getBoolean(keyFillNewBillFromLast, false))
+    }
+    var statsIncludeDeactivated by remember(keyStatsIncludeDeactivated) {
+        mutableStateOf(sharedPreferences.getBoolean(keyStatsIncludeDeactivated, false))
     }
     
     val syncIntervals = SyncSettings.INTERVAL_CHOICES_MINUTES
@@ -300,6 +305,18 @@ fun SettingsScreen(
                         fillNewBillFromLast = it
                         sharedPreferences.edit {
                             putBoolean(keyFillNewBillFromLast, it)
+                        }
+                    }
+                )
+
+                SettingsSwitchPreference(
+                    title = stringResource(R.string.settings_stats_include_deactivated),
+                    icon = Icons.Default.Group,
+                    checked = statsIncludeDeactivated,
+                    onCheckedChange = {
+                        statsIncludeDeactivated = it
+                        sharedPreferences.edit {
+                            putBoolean(keyStatsIncludeDeactivated, it)
                         }
                     }
                 )

@@ -40,6 +40,8 @@ fun ProjectStatisticsScreen(
         "Sankey"
     )
 
+    val keyStatsIncludeDeactivated = stringResource(R.string.pref_key_stats_include_deactivated)
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -103,7 +105,11 @@ fun ProjectStatisticsScreen(
                     val bills = db.getBillsOfProject(proj.id)
                     val categories = db.getCategories(proj.id)
                     val paymentModes = db.getPaymentModes(proj.id)
-                    StatisticsData(members, bills, categories, paymentModes)
+
+                    val includeDeactivated = prefs.getBoolean(keyStatsIncludeDeactivated, false)
+                    val filteredMembers = if (includeDeactivated) members else members.filter { it.isActivated }
+
+                    StatisticsData(filteredMembers, bills, categories, paymentModes)
                 }
             }
 

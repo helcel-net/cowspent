@@ -143,6 +143,7 @@
     <string name="settings_beta_features_summary">Enable experimental features. Use at your own risk.</string>
     <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
     <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
+    <string name="settings_stats_include_deactivated">Include deactivated members in stats</string>
     <string name="settings_auto_sync_on_open">Sync interval</string>
     <string name="settings_auto_sync_on_open_summary">How often to refresh the account and all projects when opening the app.</string>
     <string name="pref_value_sync_1m">1 minute</string>
@@ -170,6 +171,7 @@
     <string name="pref_key_offline_mode" translatable="false">offlineMode</string>
     <string name="pref_key_show_archived" translatable="false">showArchived</string>
     <string name="pref_key_beta_features" translatable="false">betaFeatures</string>
+    <string name="pref_key_stats_include_deactivated" translatable="false">statsIncludeDeactivated</string>
     <string name="pref_key_auto_sync_on_open" translatable="false">autoSyncOnOpen</string>
     <string name="pref_key_last_account_sync_timestamp" translatable="false">lastAccountSyncTimestamp</string>
     <string name="pref_key_fill_new_bill_from_last" translatable="false">fillNewBillFromLast</string>
