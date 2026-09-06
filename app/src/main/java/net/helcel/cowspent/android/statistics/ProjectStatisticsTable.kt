@@ -3,8 +3,8 @@ package net.helcel.cowspent.android.statistics
 import android.app.DatePickerDialog
 import android.content.Context
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -285,9 +285,18 @@ fun ProjectStatisticsTable(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(stats.memberStats) { m ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            stats.memberStats.forEach { m ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(m.name, modifier = Modifier.weight(2f), color = MaterialTheme.colors.onSurface, fontWeight = FontWeight.Medium)
 
                     Text(

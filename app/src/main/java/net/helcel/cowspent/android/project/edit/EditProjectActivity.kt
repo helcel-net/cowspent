@@ -3,8 +3,8 @@ package net.helcel.cowspent.android.project.edit
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -13,12 +13,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.showToast
+import net.helcel.cowspent.android.main.MainConstants
 import net.helcel.cowspent.model.DBProject
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.ICallback
-import net.helcel.cowspent.util.SupportUtil
-import net.helcel.cowspent.android.main.MainConstants
 
 
 class EditProjectActivity : AppCompatActivity() {
@@ -56,29 +55,33 @@ class EditProjectActivity : AppCompatActivity() {
     }
 
     private fun onSave() {
+        when (viewModel.validate()) {
+            EditProjectViewModel.ValidationError.EMPTY_NAME -> {
+                showToast(this, getString(R.string.error_invalid_project_name), Toast.LENGTH_LONG)
+                return
+            }
+            EditProjectViewModel.ValidationError.INVALID_EMAIL -> {
+                showToast(this, getString(R.string.error_invalid_email), Toast.LENGTH_LONG)
+                return
+            }
+            null -> Unit
+        }
+
+        val changes = viewModel.changesFrom(project)
+        if (!changes.any) {
+            showToast(this, getString(R.string.project_edition_no_change), Toast.LENGTH_LONG)
+            return
+        }
+
         val currentPwd = viewModel.password
         val newPwd = viewModel.newPassword
         val newName = viewModel.name
         val newEmail = viewModel.email
 
-        if (newName.isEmpty()) {
-            showToast(this, getString(R.string.error_invalid_project_name), Toast.LENGTH_LONG)
-            return
-        }
-        if (newEmail.isNotEmpty() && !SupportUtil.isValidEmail(newEmail)) {
-            showToast(this, getString(R.string.error_invalid_email), Toast.LENGTH_LONG)
-            return
-        }
-
-        val nameChanged = newName != project.name
-        val emailChanged = newEmail != project.email
-        val pwdChanged = newPwd != project.password
-        val currentPwdChanged = currentPwd != project.password
-
-        if (!nameChanged && !emailChanged && !pwdChanged && !currentPwdChanged) {
-            showToast(this, getString(R.string.project_edition_no_change), Toast.LENGTH_LONG)
-            return
-        }
+        val nameChanged = changes.name
+        val emailChanged = changes.email
+        val pwdChanged = changes.newPassword
+        val currentPwdChanged = changes.currentPassword
 
         if (project.isLocal) {
             val targetPwd = if (pwdChanged) newPwd else currentPwd

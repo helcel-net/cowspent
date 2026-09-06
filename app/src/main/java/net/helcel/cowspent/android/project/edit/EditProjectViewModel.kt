@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import net.helcel.cowspent.android.helper.DialogState
 import net.helcel.cowspent.model.DBProject
+import net.helcel.cowspent.util.SupportUtil
 
 class EditProjectViewModel : ViewModel() {
     var name by mutableStateOf("")
@@ -16,6 +17,31 @@ class EditProjectViewModel : ViewModel() {
     var isLocal by mutableStateOf(false)
 
     var dialogState by mutableStateOf<DialogState?>(null)
+
+    enum class ValidationError { EMPTY_NAME, INVALID_EMAIL }
+
+    fun validate(): ValidationError? = when {
+        name.isBlank() -> ValidationError.EMPTY_NAME
+        email.isNotEmpty() && !SupportUtil.isValidEmail(email) -> ValidationError.INVALID_EMAIL
+        else -> null
+    }
+    
+    data class Changes(
+        val name: Boolean,
+        val email: Boolean,
+        val newPassword: Boolean,
+        val currentPassword: Boolean
+    ) {
+        val any: Boolean get() = name || email || newPassword || currentPassword
+    }
+
+    fun changesFrom(project: DBProject) = Changes(
+        name = name != project.name,
+        // initFromProject maps a null or "null" email to "", so treat those as unchanged
+        email = email != project.email && !(email.isEmpty() && project.email == null),
+        newPassword = newPassword != project.password,
+        currentPassword = password != project.password
+    )
 
     fun showDialog(
         title: String? = null,
