@@ -8,6 +8,7 @@ import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.os.IBinder
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import androidx.preference.PreferenceManager
@@ -90,14 +91,38 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         }
 
     fun addCallbackPull(callback: ICallback) {
-        callbacksPull.add(callback)
+        // Callers register on every resume but the list is only drained when a task actually
+        // starts, so refuse duplicates rather than letting the same callback pile up.
+        if (!callbacksPull.contains(callback)) {
+            callbacksPull.add(callback)
+        }
     }
 
-    fun scheduleSync(onlyLocalChanges: Boolean, projId: Long, forceFullSync: Boolean = false): SyncTask? {
+    fun removeCallbackPull(callback: ICallback) {
+        callbacksPull.remove(callback)
+    }
+
+    fun scheduleSync(onlyLocalChanges: Boolean, projId: Long, forceFullSync: Boolean = false): SyncTask? =
+        scheduleSync(onlyLocalChanges, projId, forceFullSync) { dbHelper.getProject(projId) }
+
+    /**
+     * Overload for callers that already hold the project. Resolving one by id costs a query plus
+     * a blocking DataStore read and an AEAD decrypt in getProjectFromCursor, which adds up when
+     * scheduling a sync for every project at app open.
+     */
+    fun scheduleSync(onlyLocalChanges: Boolean, project: DBProject, forceFullSync: Boolean = false): SyncTask? =
+        scheduleSync(onlyLocalChanges, project.id, forceFullSync) { project }
+
+    private fun scheduleSync(
+        onlyLocalChanges: Boolean,
+        projId: Long,
+        forceFullSync: Boolean,
+        resolveProject: () -> DBProject?
+    ): SyncTask? {
         Log.d(TAG, "Sync requested (${if (onlyLocalChanges) "onlyLocalChanges" else "full"}; ${if (syncActive) "sync active" else "sync NOT active"}; forceFullSync=$forceFullSync) ...")
         updateNetworkStatus()
         if (isSyncPossible && (!syncActive || onlyLocalChanges)) {
-            val project = dbHelper.getProject(projId)
+            val project = resolveProject()
             if (project != null) {
                 Log.d(TAG, "... starting now")
                 val syncTask = SyncTask(onlyLocalChanges, project, forceFullSync)
@@ -1027,8 +1052,21 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             }
             var status = LoginStatus.OK
             try {
+                // Pass current project values if the new ones are null to ensure a complete project object is sent to the server
+                val currentProj = project!!
+                val finalName = (newName ?: currentProj.name).let { if (it.isBlank() || it == "null") currentProj.remoteId else it }
+                // Stay null when the project has no main currency, so the PUT omits currencyName
+                // instead of silently setting the server-side currency.
+                val finalCurrency = (newMainCurrencyName ?: currentProj.currencyName)
+                    ?.takeUnless { it.isBlank() || it == "null" }
+                
                 val response = client!!.editRemoteProject(
-                    project!!, newName, newEmail, newPassword, newMainCurrencyName, newArchivedTs
+                    currentProj,
+                    finalName,
+                    newEmail ?: currentProj.email,
+                    newPassword,
+                    finalCurrency,
+                    newArchivedTs
                 )
                 if (BillsListViewActivity.DEBUG) {
                     Log.i(TAG, "RESPONSE edit remote project : ${response.stringContent}")
@@ -1418,6 +1456,11 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         }
 
         private fun onPostExecute(status: LoginStatus) {
+            if (status == LoginStatus.OK) {
+                preferences.edit {
+                    putLong(appContext.getString(R.string.pref_key_last_account_sync_timestamp), System.currentTimeMillis())
+                }
+            }
             if (status != LoginStatus.OK) {
                 var errorString = appContext.getString(R.string.error_sync, appContext.getString(status.str)) + "\n\n"
                 for (errorMessage in errorMessages) {
@@ -1671,6 +1714,12 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 instance = CowspentServerSyncHelper(dbHelper)
             }
             return instance!!
+        }
+
+        @VisibleForTesting
+        fun resetInstance() {
+            instance = null
+            projectIdsToSync.clear()
         }
 
         fun isNextcloudAccountConfigured(context: Context): Boolean {

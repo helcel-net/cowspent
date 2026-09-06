@@ -7,6 +7,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.text.TextUtils
+import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.preference.PreferenceManager
 import net.helcel.cowspent.R
@@ -390,8 +391,8 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     fun getActivatedMembersOfProject(projId: Long): List<DBMember> {
         return getMembersCustom(
-            "$key_projectid = ? AND $key_activated = 1",
-            arrayOf(projId.toString()),
+            "$key_projectid = ? AND $key_activated = 1 AND $key_state != ?",
+            arrayOf(projId.toString(), DBBill.STATE_DELETED.toString()),
             "$key_name ASC"
         )
     }
@@ -570,70 +571,54 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     fun searchBills(query: CharSequence?, projectId: Long): List<DBBill> {
         val andWhere: MutableList<String> = ArrayList()
         val args: MutableList<String> = ArrayList()
-        andWhere.add("($key_projectid = $projectId)")
+        andWhere.add("($key_projectid = ?)")
+        args.add(projectId.toString())
         andWhere.add("($key_state != ${DBBill.STATE_DELETED})")
-        if (query != null) {
-            args.add("%$query%")
-            var whereStr = "($key_what LIKE ?"
-            if (SupportUtil.isDouble(query.toString())) {
-                whereStr += " OR ($key_amount <= (? + 10) AND $key_amount >= (? - 10))"
-                args.add(query.toString())
-                args.add(query.toString())
+
+        val terms = query?.toString()?.split("\\s+".toRegex())?.filter { it.isNotEmpty() }.orEmpty()
+        if (terms.isNotEmpty()) {
+            val memberIdsByName = getMembersOfProject(projectId, null)
+                .associateBy({ it.name.lowercase(Locale.ROOT) }, { it.id })
+            // Every clause appends its arguments as it is built, so args stay in the same order
+            // as the placeholders they bind to.
+            for (term in terms) {
+                andWhere.add(memberClause(term, memberIdsByName, args) ?: textClause(term, args))
             }
-            val members = getMembersOfProject(projectId, null)
-            val memberNames: MutableList<String> = ArrayList()
-            val memberIds: MutableList<Long> = ArrayList()
-            for (m in members) {
-                memberNames.add(m.name.lowercase(Locale.ROOT))
-                memberIds.add(m.id)
-            }
-            val queryStr = query.toString()
-            val words = queryStr.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            var nameSql = ""
-            for (word in words) {
-                if (word.startsWith("+")) {
-                    val nameQuery = word.replace("^\\+".toRegex(), "")
-                    val memberIndex = memberNames.indexOf(nameQuery.lowercase(Locale.ROOT))
-                    if (memberIndex != -1) {
-                        val searchMemberId = memberIds[memberIndex]
-                        nameSql += "($key_payer_id=?) AND "
-                        args.add(searchMemberId.toString())
-                    }
-                }
-                if (word.startsWith("-")) {
-                    val nameQuery = word.replace("^-".toRegex(), "")
-                    val memberIndex = memberNames.indexOf(nameQuery.lowercase(Locale.ROOT))
-                    if (memberIndex != -1) {
-                        val searchMemberId = memberIds[memberIndex]
-                        val joinOwer = "select $table_bills.$key_id from $table_bills inner join $table_billowers " +
-                                "where $key_member_id=? and $table_bills.$key_id=$table_billowers.$key_billId"
-                        nameSql += "($key_id IN ($joinOwer)) AND "
-                        args.add(searchMemberId.toString())
-                    }
-                }
-                if (word.startsWith("@")) {
-                    val nameQuery = word.replace("^@".toRegex(), "")
-                    val memberIndex = memberNames.indexOf(nameQuery.lowercase(Locale.ROOT))
-                    if (memberIndex != -1) {
-                        val searchMemberId = memberIds[memberIndex]
-                        nameSql += "( ($key_payer_id=?) OR "
-                        args.add(searchMemberId.toString())
-                        val joinOwer = "select $table_bills.$key_id from $table_bills inner join $table_billowers " +
-                                "where $key_member_id=? and $table_bills.$key_id=$table_billowers.$key_billId"
-                        nameSql += "($key_id IN ($joinOwer)) ) AND "
-                        args.add(searchMemberId.toString())
-                    }
-                }
-            }
-            if (nameSql != "") {
-                nameSql = nameSql.replace(" AND $".toRegex(), "")
-                whereStr += " OR ($nameSql)"
-            }
-            whereStr += ")"
-            andWhere.add(whereStr)
         }
-        val order = "$key_timestamp DESC"
-        return getBillsCustom(TextUtils.join(" AND ", andWhere), args.toTypedArray(), order)
+        return getBillsCustom(TextUtils.join(" AND ", andWhere), args.toTypedArray(), "$key_timestamp DESC")
+    }
+
+    /** Clause for a `+name`/`-name`/`@name` term, or null when the term names no member. */
+    private fun memberClause(term: String, memberIdsByName: Map<String, Long>, args: MutableList<String>): String? {
+        val prefix = term.first()
+        if (prefix != '+' && prefix != '-' && prefix != '@') return null
+        val memberId = memberIdsByName[term.substring(1).lowercase(Locale.ROOT)] ?: return null
+        val owedByMember = "SELECT $table_bills.$key_id FROM $table_bills INNER JOIN $table_billowers " +
+                "WHERE $key_member_id = ? AND $table_bills.$key_id = $table_billowers.$key_billId"
+        args.add(memberId.toString())
+        return when (prefix) {
+            '+' -> "($key_payer_id = ?)"
+            '-' -> "($key_id IN ($owedByMember))"
+            else -> {
+                args.add(memberId.toString())
+                "(($key_payer_id = ?) OR ($key_id IN ($owedByMember)))"
+            }
+        }
+    }
+
+    /** Clause matching a free text term against the description, the comment and the amount. */
+    private fun textClause(term: String, args: MutableList<String>): String {
+        val needle = "%" + term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        args.add(needle)
+        args.add(needle)
+        var clause = "(($key_what LIKE ? ESCAPE '\\') OR ($key_comment LIKE ? ESCAPE '\\')"
+        if (SupportUtil.isDouble(term)) {
+            clause += " OR ($key_amount <= (? + $AMOUNT_SEARCH_TOLERANCE) AND " +
+                    "$key_amount >= (? - $AMOUNT_SEARCH_TOLERANCE))"
+            args.add(term)
+            args.add(term)
+        }
+        return "$clause)"
     }
 
     @WorkerThread
@@ -1240,6 +1225,9 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         )
         private const val default_order = "$key_id DESC"
 
+        /** Half width of the window a numeric search term matches, in project currency. */
+        private const val AMOUNT_SEARCH_TOLERANCE = 10
+
         @Volatile
         private var instance: CowspentSQLiteOpenHelper? = null
 
@@ -1248,6 +1236,16 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             return instance ?: synchronized(this) {
                 instance ?: CowspentSQLiteOpenHelper(context.applicationContext).also { instance = it }
             }
+        }
+
+        @VisibleForTesting
+        fun setInstance(helper: CowspentSQLiteOpenHelper?) {
+            instance = helper
+        }
+
+        @VisibleForTesting
+        fun resetInstance() {
+            instance = null
         }
     }
 }

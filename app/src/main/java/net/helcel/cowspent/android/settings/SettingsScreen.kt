@@ -20,6 +20,7 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.RadioButton
 import androidx.compose.material.Scaffold
+import androidx.compose.material.Slider
 import androidx.compose.material.Switch
 import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.Text
@@ -49,6 +50,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import net.helcel.cowspent.R
@@ -57,6 +59,7 @@ import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.persistence.CowspentServerSyncHelper
 import net.helcel.cowspent.util.ColorUtils
 import net.helcel.cowspent.util.Cowspent
+import net.helcel.cowspent.util.SyncSettings
 
 @Composable
 fun SettingsScreen(
@@ -81,7 +84,9 @@ fun SettingsScreen(
     val keyOfflineMode = stringResource(R.string.pref_key_offline_mode)
     val keyShowArchived = stringResource(R.string.pref_key_show_archived)
     val keyBetaFeatures = stringResource(R.string.pref_key_beta_features)
+    val keyAutoSyncOnOpen = stringResource(R.string.pref_key_auto_sync_on_open)
     val keyFillNewBillFromLast = stringResource(R.string.pref_key_fill_new_bill_from_last)
+    val keyLastAccountSync = stringResource(R.string.pref_key_last_account_sync_timestamp)
 
     val isNextcloudConfigured = CowspentServerSyncHelper.isNextcloudAccountConfigured(context)
 
@@ -126,6 +131,18 @@ fun SettingsScreen(
     }
     var fillNewBillFromLast by remember(keyFillNewBillFromLast) {
         mutableStateOf(sharedPreferences.getBoolean(keyFillNewBillFromLast, false))
+    }
+    
+    val syncIntervals = SyncSettings.INTERVAL_CHOICES_MINUTES
+    val syncIntervalLabels = listOf(
+        stringResource(R.string.pref_value_sync_1m),
+        stringResource(R.string.pref_value_sync_10m),
+        stringResource(R.string.pref_value_sync_1h),
+        stringResource(R.string.pref_value_sync_1d)
+    )
+    
+    var syncInterval by remember(keyAutoSyncOnOpen) {
+        mutableIntStateOf(SyncSettings.intervalMinutes(context))
     }
 
     Scaffold(
@@ -283,6 +300,24 @@ fun SettingsScreen(
                         fillNewBillFromLast = it
                         sharedPreferences.edit {
                             putBoolean(keyFillNewBillFromLast, it)
+                        }
+                    }
+                )
+
+                SettingsSliderPreference(
+                    title = stringResource(R.string.settings_auto_sync_on_open),
+                    summary = stringResource(R.string.settings_auto_sync_on_open_summary),
+                    icon = Icons.Default.Sync,
+                    value = syncInterval,
+                    values = syncIntervals,
+                    labels = syncIntervalLabels,
+                    onValueChange = { newInterval ->
+                        // Slider reports every drag delta, not just the snapped steps.
+                        if (newInterval != syncInterval) {
+                            syncInterval = newInterval
+                            sharedPreferences.edit {
+                                putInt(keyAutoSyncOnOpen, newInterval)
+                            }
                         }
                     }
                 )
@@ -461,6 +496,47 @@ fun SettingsColorPreference(
                 }
             }
         )
+    }
+}
+
+@Composable
+fun SettingsSliderPreference(
+    title: String,
+    summary: String? = null,
+    icon: Any? = null,
+    value: Int,
+    values: List<Int>,
+    labels: List<String>,
+    onValueChange: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp, 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SettingsIcon(icon)
+            Spacer(modifier = Modifier.width(32.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = title, style = MaterialTheme.typography.subtitle1)
+                if (summary != null) {
+                    Text(text = summary, style = MaterialTheme.typography.caption)
+                }
+            }
+        }
+        
+        val currentIndex = values.indexOf(value).coerceAtLeast(0)
+        val steps = (values.size - 2).coerceAtLeast(0)
+        
+        Column(modifier = Modifier.padding(start = 56.dp, top = 8.dp)) {
+            Slider(
+                value = currentIndex.toFloat(),
+                onValueChange = { onValueChange(values[it.roundToInt()]) },
+                valueRange = 0f..(values.size - 1).toFloat(),
+                steps = steps
+            )
+            Text(text = labels[currentIndex], style = MaterialTheme.typography.caption, fontWeight = FontWeight.Bold, color = MaterialTheme.colors.primary)
+        }
     }
 }
 

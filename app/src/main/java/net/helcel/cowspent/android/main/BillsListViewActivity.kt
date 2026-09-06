@@ -18,6 +18,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.compose.material.icons.Icons
@@ -53,7 +54,9 @@ import net.helcel.cowspent.util.CospendClientUtil
 import net.helcel.cowspent.util.ExportUtil
 import net.helcel.cowspent.util.ICallback
 import net.helcel.cowspent.util.IRefreshBillsListCallback
+import net.helcel.cowspent.util.SyncSettings
 import net.helcel.cowspent.util.SupportUtil
+import net.helcel.cowspent.util.VersatileProjectSyncClient
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -69,6 +72,9 @@ class BillsListViewActivity :
         var DEBUG = false
 
         private val TAG = BillsListViewActivity::class.java.simpleName
+
+        // Opening a project only re-syncs it if it has not synced within this window.
+        private const val SELECTED_PROJECT_SYNC_INTERVAL_MS = 60 * 1000L
 
         private const val SAVED_STATE_NAVIGATION_SELECTION = "navigationSelection"
         private const val SAVED_STATE_NAVIGATION_OPEN = "navigationOpen"
@@ -276,7 +282,7 @@ class BillsListViewActivity :
                             labelBillsLauncher.launch(LabelBillsActivity.createIntent(this, selectedProjectId))
                         }
                     },
-                    onRefresh = { synchronize(true) }
+                    onRefresh = { synchronize(SyncTrigger.MANUAL) }
                 )
             }
         }
@@ -330,10 +336,7 @@ class BillsListViewActivity :
         }
         viewModel.isRefreshing = false
 
-        if (db.cowspentServerSyncHelper.isSyncPossible) {
-            db.cowspentServerSyncHelper.addCallbackPull(syncCallBack)
-            synchronize()
-        }
+        synchronize(SyncTrigger.APP_OPEN)
 
         registerBroadcastReceiver()
         updateAvatarInDrawer(CowspentServerSyncHelper.isNextcloudAccountConfigured(this))
@@ -347,6 +350,9 @@ class BillsListViewActivity :
         } catch (_: RuntimeException) {
             if (DEBUG) Log.d(TAG, "RECEIVER PROBLEM, let's ignore it...")
         }
+        // The helper outlives the activity, and it only drains its pull callbacks when a task
+        // starts; drop ours so a paused activity is not retained by it.
+        db.cowspentServerSyncHelper.removeCallbackPull(syncCallBack)
         isActivityVisible = false
     }
 
@@ -373,7 +379,7 @@ class BillsListViewActivity :
         navigationSelection = Category(null, null)
         refreshLists(true)
 
-        synchronize()
+        synchronize(SyncTrigger.PROJECT_OPEN)
     }
 
     fun onManageProjectClick(projectId: Long) {
@@ -406,7 +412,7 @@ class BillsListViewActivity :
                         }
                         setupDrawerProjects()
                         refreshLists()
-                        synchronize()
+                        synchronize(SyncTrigger.PROJECT_OPEN)
                         val projectNameString = proj.name.ifEmpty { proj.remoteId }
                         showToast(this@BillsListViewActivity, getString(R.string.remove_project_confirmation, projectNameString))
                     }
@@ -421,20 +427,25 @@ class BillsListViewActivity :
         lifecycleScope.launch {
             val proj = withContext(Dispatchers.IO) { db.getProject(projectId) } ?: return@launch
             val isArchiving = !proj.isArchived
-            
-            val newArchivedTs = if (isArchiving) System.currentTimeMillis() / 1000 else 0L
-            
+
+            val localArchivedTs = if (isArchiving) System.currentTimeMillis() / 1000 else 0L
+            val remoteArchivedTs = if (isArchiving) {
+               localArchivedTs
+            } else {
+                VersatileProjectSyncClient.REMOTE_ARCHIVED_TS_UNSET
+            }
+
             withContext(Dispatchers.IO) {
                 db.updateProject(
                     projId = projectId,
-                    newArchivedTs = newArchivedTs
+                    newArchivedTs = localArchivedTs
                 )
             }
             
             if (!proj.isLocal) {
                 db.cowspentServerSyncHelper.editRemoteProject(
                     projId = projectId,
-                    newArchivedTs = newArchivedTs,
+                    newArchivedTs = remoteArchivedTs,
                     callback = object : ICallback {
                         override fun onFinish() {}
                         override fun onFinish(result: String, message: String) {
@@ -746,28 +757,60 @@ class BillsListViewActivity :
         }
     }
 
-    private fun synchronize(manual: Boolean = false) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-        val offlineMode = preferences.getBoolean(getString(R.string.pref_key_offline_mode), false)
-        if (offlineMode && !manual) {
-            return
-        }
+    /**
+     * What prompted a sync. Only [APP_OPEN] may refresh the account and every project, and only
+     * then when the SyncOnOpen interval has elapsed; the other triggers touch the selected
+     * project alone.
+     */
+    @VisibleForTesting
+    internal enum class SyncTrigger { APP_OPEN, PROJECT_OPEN, MANUAL }
 
-        if (db.cowspentServerSyncHelper.isSyncPossible) {
+    @VisibleForTesting
+    internal fun synchronize(trigger: SyncTrigger) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        // isSyncPossible is networkConnected && !offlineMode, so offline mode is already covered
+        // here - including for a manual refresh, which cannot currently override it.
+        if (!db.cowspentServerSyncHelper.isSyncPossible) return
+
+        val selectedProjectId = preferences.getLong("selected_project", 0)
+        val now = System.currentTimeMillis()
+
+        // The account and all-projects refresh belongs to opening the app, throttled by the
+        // SyncOnOpen interval so that resuming within the interval does not repeat it.
+        val intervalMinutes = SyncSettings.intervalMinutes(applicationContext)
+        val lastAccountSync = preferences.getLong(getString(R.string.pref_key_last_account_sync_timestamp), 0L)
+        val accountSyncDue = trigger == SyncTrigger.APP_OPEN &&
+            now - lastAccountSync > intervalMinutes * 60 * 1000L
+
+        lifecycleScope.launch {
+            val remoteProjects = withContext(Dispatchers.IO) { db.projects }
+                .filter { !it.isLocal && !it.isArchived }
+
             viewModel.isRefreshing = true
-            val selectedProjectId = PreferenceManager.getDefaultSharedPreferences(applicationContext).getLong("selected_project", 0)
-            if (selectedProjectId != 0L) {
-                lifecycleScope.launch {
-                    val proj = withContext(Dispatchers.IO) { db.getProject(selectedProjectId) }
-                    if (proj != null && !proj.isLocal) {
-                        db.cowspentServerSyncHelper.addCallbackPull(syncCallBack)
-                        db.cowspentServerSyncHelper.scheduleSync(false, selectedProjectId, manual)
-                    } else viewModel.isRefreshing = false
+            db.cowspentServerSyncHelper.addCallbackPull(syncCallBack)
+
+            val started = if (accountSyncDue) {
+                if (CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
+                    db.cowspentServerSyncHelper.runAccountProjectsSync()
                 }
-            } else viewModel.isRefreshing = false
-            if (CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
-                db.cowspentServerSyncHelper.runAccountProjectsSync()
+                remoteProjects.count {
+                    db.cowspentServerSyncHelper.scheduleSync(false, it, false) != null
+                }
+            } else {
+                val selectedProj = remoteProjects.find { it.id == selectedProjectId }
+                val lastSync = (selectedProj?.lastSyncedTimestamp ?: 0L) * 1000L
+                val due = trigger == SyncTrigger.MANUAL ||
+                    now - lastSync > SELECTED_PROJECT_SYNC_INTERVAL_MS
+                if (selectedProj != null && due &&
+                    db.cowspentServerSyncHelper.scheduleSync(
+                        false, selectedProj, trigger == SyncTrigger.MANUAL
+                    ) != null
+                ) 1 else 0
             }
+
+            // Only a task that actually started reports back through syncCallBack, so clear
+            // the indicator here when none did - nothing else would.
+            if (started == 0) viewModel.isRefreshing = false
         }
     }
 
@@ -810,7 +853,7 @@ class BillsListViewActivity :
                     refreshLists()
                 }
                 MainConstants.BROADCAST_SYNC_PROJECT -> {
-                    synchronize()
+                    synchronize(SyncTrigger.PROJECT_OPEN)
                 }
                 MainConstants.BROADCAST_NETWORK_AVAILABLE -> {
                 }
@@ -838,7 +881,7 @@ class BillsListViewActivity :
                             refreshLists()
                             if (db.cowspentServerSyncHelper.isSyncPossible) {
                                 db.cowspentServerSyncHelper.addCallbackPull(syncCallBack)
-                                synchronize()
+                                synchronize(SyncTrigger.PROJECT_OPEN)
                             }
                         }
                     }

@@ -1528,5 +1528,8 @@ class VersatileProjectSyncClient(
         const val METHOD_POST = "POST"
         const val METHOD_PUT = "PUT"
         const val METHOD_DELETE = "DELETE"
+
+        const val REMOTE_ARCHIVED_TS_NOW = 0L
+        const val REMOTE_ARCHIVED_TS_UNSET = -1L
     }
 }

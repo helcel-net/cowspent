@@ -331,7 +331,7 @@ class EditBillActivity : AppCompatActivity() {
                 bill.amount == viewModel.getFinalAmount() &&
                 bill.payerId == viewModel.payerId &&
                 bill.comment == viewModel.getFinalComment() &&
-                bill.repeat == viewModel.repeat &&
+                (bill.repeat ?: DBBill.NON_REPEATED) == viewModel.repeat &&
                 bill.categoryId == viewModel.categoryId &&
                 bill.paymentModeId == viewModel.paymentModeId &&
                 !owersChanged)
