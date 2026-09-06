@@ -8,6 +8,9 @@
     <string name="action_edit">Rediger</string>
     <string name="action_share">Del</string>
     <string name="action_search">Søg</string>
+    <string name="action_open_menu">Open menu</string>
+    <string name="action_close_search">Close search</string>
+    <string name="action_clear_search">Clear search</string>
     <string name="action_delete">Slet</string>
     <string name="action_archive">Arkiv</string>
     <string name="action_unarchive">Fjern Arkiv</string>
@@ -129,6 +132,14 @@
     <string name="settings_show_archived">Vis arkiverede projekter</string>
     <string name="settings_beta_features">Beta Funktioner</string>
     <string name="settings_beta_features_summary">Aktiver eksperimentelle funktioner. Brug på egen risiko.</string>
+    <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
+    <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
+    <string name="settings_auto_sync_on_open">Sync interval</string>
+    <string name="settings_auto_sync_on_open_summary">How often to refresh the account and all projects when opening the app.</string>
+    <string name="pref_value_sync_1m">1 minute</string>
+    <string name="pref_value_sync_10m">10 minutes</string>
+    <string name="pref_value_sync_1h">1 hour</string>
+    <string name="pref_value_sync_1d">1 day</string>
     <string name="settings_url_warn_http">ADVARSEL: \"http\" er usikkert. Brug \"https\".</string>
     <string name="settings_colorpicker_title">Vælg Farve</string>
     <string name="pref_value_color_system">System</string>
