@@ -47,6 +47,8 @@ class VersatileProjectSyncClient(
         gt
     }
 
+    val supportsPagedBills: Boolean get() = cospendVersionGT161
+
     fun canAccessProjectWithNCLogin(project: DBProject): Boolean {
         return (project.password == ""
                 && url.replace("/+$".toRegex(), "") != ""

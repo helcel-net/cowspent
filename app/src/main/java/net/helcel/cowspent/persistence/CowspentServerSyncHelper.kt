@@ -30,6 +30,7 @@ import net.helcel.cowspent.android.account.AccountActivity
 import net.helcel.cowspent.android.main.BillsListViewActivity
 import net.helcel.cowspent.android.main.MainConstants
 import net.helcel.cowspent.model.DBBill
+import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.model.DBProject
 import net.helcel.cowspent.model.ProjectType
 import net.helcel.cowspent.util.CospendClientUtil.LoginStatus
@@ -162,6 +163,24 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             Log.d(TAG, "No network connection.")
         }
     }
+
+    /** The server's ids for the things a bill points at, mapped to their local row ids. */
+    private class RemoteIdMaps(
+        val members: Map<Long, Long>,
+        val categories: Map<Long, Long>,
+        val paymentModes: Map<Long, Long>
+    )
+
+    /** One pull of the bills endpoint. */
+    private class RemoteBills(
+        val bills: List<DBBill>,
+        /**
+         * Every bill id the server holds. Only the complete fetch reports this; after a paged
+         * walk it is empty, and nothing may be deleted locally on the strength of it.
+         */
+        val allIds: List<Long>,
+        val syncTimestamp: Long?
+    )
 
     inner class SyncTask(private val onlyLocalChanges: Boolean, private val project: DBProject, private val forceFullSync: Boolean = false) {
         private val callbacks: MutableList<ICallback> = ArrayList()
@@ -555,332 +574,37 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             }
         }
 
+        /**
+         * Brings the local copy of the project in line with the server: its own row, then each of
+         * its collections, then its bills. Each step is applied as it goes, so a failure part way
+         * through leaves the earlier steps written - the next sync picks up where this one stopped.
+         */
         private fun pullRemoteChanges(): LoginStatus {
             Log.d(TAG, "pullRemoteChanges($project)")
-            val lastETag: String? = null
-            val lastModified: Long = 0
             return try {
-                val projResponse = client!!.getProject(project, lastModified, lastETag)
-                Log.d(TAG,projResponse.toString())
-                val name = projResponse.name
-                Log.i(TAG, "AAA getProjectInfo, project name: $name")
-                val email = projResponse.email
-                val currencyName = projResponse.currencyName
-                val deletionDisabled = projResponse.deletionDisabled
-                val myAccessLevel = projResponse.myAccessLevel
-                val archivedTs = projResponse.archivedTs
+                val projResponse = client!!.getProject(project, 0, null)
 
-                if (project.name == "" || name != project.name || project.email == null || project.email == "" || project.isDeletionDisabled != deletionDisabled || project.myAccessLevel != myAccessLevel || project.archivedTs != archivedTs || (project.currencyName == null) || (currencyName != project.currencyName) || email != project.email
-                ) {
-                    Log.d(TAG, "update local project : $project")
-                    project.name = name
-                    project.currencyName = currencyName
-                    project.isDeletionDisabled = deletionDisabled
-                    project.myAccessLevel = myAccessLevel
-                    project.archivedTs = archivedTs
-                    dbHelper.updateProject(
-                        projId = project.id,
-                        newName = name,
-                        newEmail = email,
-                        newPassword = null,
-                        newLastPayerId = null,
-                        newLastSyncedTimestamp = null,
-                        newCurrencyName = currencyName,
-                        newDeletionDisabled = deletionDisabled,
-                        newMyAccessLevel = myAccessLevel,
-                        newBearerToken = null,
-                        newArchivedTs = archivedTs ?: 0L
-                    )
-                }
+                updateLocalProject(projResponse)
+                syncPaymentModes(projResponse)
+                syncCategories(projResponse)
+                syncCurrencies(projResponse)
+                val remoteMembersByRemoteId = syncMembers(projResponse)
 
-                val remotePaymentModes = projResponse.getPaymentModes(project.id)
-                val remotePaymentModesByRemoteId = remotePaymentModes.associateBy { it.remoteId }
-
-                for (pm in remotePaymentModes) {
-                    val localPaymentMode = dbHelper.getPaymentMode(pm.remoteId, project.id)
-                    if (localPaymentMode == null) {
-                        Log.d(TAG, "Add local pm : $pm")
-                        dbHelper.addPaymentMode(pm)
-                    } else {
-                        if (pm.name == localPaymentMode.name &&
-                            pm.color == localPaymentMode.color &&
-                            pm.icon == localPaymentMode.icon
-                        ) {
-                            Log.d(TAG, "Nothing to do for pm : $localPaymentMode")
-                        } else {
-                            Log.d(TAG, "Update local pm : $pm")
-                            dbHelper.updatePaymentMode(localPaymentMode.id, pm.name, pm.icon, pm.color)
-                        }
-                    }
-                }
-
-                val localPaymentModes = dbHelper.getPaymentModes(project.id)
-                for (localPaymentMode in localPaymentModes) {
-                    if (localPaymentMode.state == DBBill.STATE_OK && !remotePaymentModesByRemoteId.containsKey(localPaymentMode.remoteId)) {
-                        dbHelper.deletePaymentMode(localPaymentMode.id)
-                        Log.d(TAG, "Delete local pm : $localPaymentMode")
-                    }
-                }
-
-                val remoteCategories = projResponse.getCategories(project.id)
-                val remoteCategoriesByRemoteId = remoteCategories.associateBy { it.remoteId }
-
-                for (c in remoteCategories) {
-                    if (c.remoteId == DBBill.CATEGORY_REIMBURSEMENT) continue
-                    val localCategory = dbHelper.getCategory(c.remoteId, project.id)
-                    if (localCategory == null) {
-                        Log.d(TAG, "Add local category : $c")
-                        dbHelper.addCategory(c)
-                    } else {
-                        if (c.name == localCategory.name &&
-                            c.color == localCategory.color &&
-                            c.icon == localCategory.icon
-                        ) {
-                            Log.d(TAG, "Nothing to do for category : $localCategory")
-                        } else {
-                            Log.d(TAG, "Update local category : $c")
-                            dbHelper.updateCategory(localCategory.id, c.name, c.icon, c.color)
-                        }
-                    }
-                }
-
-                val localCategories = dbHelper.getCategories(project.id)
-                for (localCategory in localCategories) {
-                    if (localCategory.state == DBBill.STATE_OK && !remoteCategoriesByRemoteId.containsKey(localCategory.remoteId)) {
-                        dbHelper.deleteCategory(localCategory.id)
-                        Log.d(TAG, "Delete local category : $localCategory")
-                    }
-                }
-
-                val remoteCurrencies = projResponse.getCurrencies(project.id)
-                val remoteCurrenciesByRemoteId = remoteCurrencies.associateBy { it.remoteId }
-
-                for (c in remoteCurrencies) {
-                    val localCurrency = dbHelper.getCurrency(c.remoteId, project.id)
-                    if (localCurrency == null) {
-                        Log.d(TAG, "Add local currency : $c")
-                        dbHelper.addCurrency(c)
-                    } else {
-                        if (c.name == localCurrency.name &&
-                            c.exchangeRate == localCurrency.exchangeRate
-                        ) {
-                            Log.d(TAG, "Nothing to do for currency : $localCurrency")
-                        } else {
-                            Log.d(TAG, "Update local currency : $c")
-                            dbHelper.updateCurrency(localCurrency.id, c.name, c.exchangeRate)
-                        }
-                    }
-                }
-
-                val localCurrencies = dbHelper.getCurrencies(project.id)
-                for (localCurrency in localCurrencies) {
-                    if (localCurrency.state == DBBill.STATE_OK && !remoteCurrenciesByRemoteId.containsKey(localCurrency.remoteId)) {
-                        dbHelper.deleteCurrency(localCurrency.id)
-                        Log.d(TAG, "Delete local currency : $localCurrencies")
-                    }
-                }
-
-                val remoteMembers = projResponse.getMembers(project.id)
-                val remoteMembersByRemoteId = remoteMembers.associateBy { it.remoteId }
-
-                for (m in remoteMembers) {
-                    val localMember = dbHelper.getMember(m.remoteId, project.id)
-                    if (localMember == null) {
-                        Log.d(TAG, "Add local member : $m")
-                        val mid = dbHelper.addMember(m)
-                        if (!m.ncUserId.isNullOrEmpty()) {
-                            updateMemberAvatar(mid)
-                        }
-                    } else {
-                        val ncUserIdChanged = (
-                                (m.ncUserId == null && localMember.ncUserId != null) ||
-                                (m.ncUserId != null && localMember.ncUserId == null) ||
-                                (m.ncUserId != null && m.ncUserId != localMember.ncUserId)
-                        )
-                        Log.e("PULLREMOTE", "member NC user id : ${localMember.ncUserId} => ${m.ncUserId} ID changed $ncUserIdChanged")
-                        if (ncUserIdChanged && m.ncUserId == null) {
-                            m.ncUserId = ""
-                        }
-                        if (m.name == localMember.name &&
-                            m.weight == localMember.weight &&
-                            m.isActivated == localMember.isActivated &&
-                            ((m.r == null && m.g == null && m.b == null) ||
-                                    (m.r == localMember.r && m.g == localMember.g && m.b == localMember.b)) &&
-                            !ncUserIdChanged
-                        ) {
-                            Log.d(TAG, "Nothing to do for member : $localMember")
-                            if (!localMember.ncUserId.isNullOrEmpty() && localMember.avatar.isNullOrEmpty()) {
-                                Log.d(TAG, "except updating avatar")
-                                updateMemberAvatar(localMember.id)
-                            }
-                        } else {
-                            Log.d(TAG, "Update local member : $m")
-                            var r = m.r
-                            var g = m.g
-                            var b = m.b
-                            if (m.r == null && m.g == null && m.b == null) {
-                                r = localMember.r
-                                g = localMember.g
-                                b = localMember.b
-                            }
-                            val needAvatarUpdate = (ncUserIdChanged && !m.ncUserId.isNullOrEmpty())
-                            val newAvatar = if (ncUserIdChanged) "" else null
-                            dbHelper.updateMember(
-                                localMember.id, m.name, m.weight,
-                                m.isActivated, null, null,
-                                r, g, b, m.ncUserId, newAvatar
-                            )
-                            if (needAvatarUpdate) {
-                                Log.e("PLOP", "pullremote : update member avatar")
-                                updateMemberAvatar(localMember.id)
-                            }
-                        }
-                    }
-                }
-
-                val dbMembers = dbHelper.getMembersOfProject(project.id, null)
-                val memberRemoteIdToId = dbMembers.associate { it.remoteId to it.id }
-
-                val dbCategories = dbHelper.getCategories(project.id)
-                val categoriesRemoteIdToId = dbCategories.associate { it.remoteId to it.id }.toMutableMap()
-                // Map hardcoded constants to their local IDs if they exist in DB, else to themselves
-                categoriesRemoteIdToId[DBBill.CATEGORY_REIMBURSEMENT] = DBBill.CATEGORY_REIMBURSEMENT
-                dbCategories.filter { it.remoteId < 0 }.forEach { categoriesRemoteIdToId[it.remoteId] = it.id }
-
-                val dbPaymentModes = dbHelper.getPaymentModes(project.id)
-                val paymentModesRemoteIdToId = dbPaymentModes.associate { it.remoteId to it.id }.toMutableMap()
-                dbPaymentModes.filter { it.remoteId < 0 }.forEach { paymentModesRemoteIdToId[it.remoteId] = it.id }
-
-                val isIHM = project.type == ProjectType.IHATEMONEY
-                var serverSyncTimestamp = project.lastSyncedTimestamp
-                val remoteBills = mutableListOf<DBBill>()
-                val remoteAllBillIds = mutableListOf<Long>()
+                // Bills arrive with the server's ids for their member, category and payment mode,
+                // so the maps have to be built after those collections are in place.
+                val idMaps = buildRemoteIdMaps()
 
                 val localBills = dbHelper.getBillsOfProject(project.id)
                 val localBillsByRemoteId = localBills.associateBy { it.remoteId }
+                val pulled = fetchRemoteBills(idMaps, localBillsByRemoteId)
 
-                if (project.type == ProjectType.COSPEND && !forceFullSync && localBills.isNotEmpty()) {
-                    Log.d(TAG, "Starting partial sync for project ${project.remoteId}")
-                    var offset = 0
-                    val limit = 50
-                    var allMatched = false
-                    while (!allMatched) {
-                        val partialResponse = client!!.getBills(project, offset, limit, true, 0)
-                        val partialRemoteBills = partialResponse.getBillsCospend(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId)
-                        if (partialRemoteBills.isEmpty()) break
-
-                        remoteBills.addAll(partialRemoteBills)
-
-                        var frameMatched = true
-                        for (rb in partialRemoteBills) {
-                            val lb = localBillsByRemoteId[rb.remoteId]
-                            if (lb == null || hasChanged(lb, rb)) {
-                                frameMatched = false
-                                break
-                            }
-                        }
-
-                        if (offset == 0 && partialResponse.syncTimestamp > 0) {
-                            serverSyncTimestamp = partialResponse.syncTimestamp
-                        }
-
-                        if (frameMatched) {
-                            allMatched = true
-                        } else {
-                            offset += limit
-                        }
-                    }
-                } else {
-                    Log.d(TAG, "Starting full sync for project ${project.remoteId}")
-                    val billsResponse = client!!.getBills(project)
-                    serverSyncTimestamp = if (isIHM) 0L else billsResponse.syncTimestamp
-                    if (isIHM) {
-                        remoteBills.addAll(billsResponse.getBillsIHM(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId))
-                        remoteAllBillIds.addAll(remoteBills.map { it.remoteId })
-                    } else {
-                        remoteBills.addAll(billsResponse.getBillsCospend(project.id, memberRemoteIdToId, categoriesRemoteIdToId, paymentModesRemoteIdToId))
-                        remoteAllBillIds.addAll(billsResponse.allBillIds)
-                    }
-                }
-
-                val remoteBillsByRemoteId = remoteBills.associateBy { it.remoteId }
-
-                for (remoteBill in remoteBills) {
-                    if (!localBillsByRemoteId.containsKey(remoteBill.remoteId)) {
-                        dbHelper.addBill(remoteBill)
-                        nbPulledNewBills++
-                        newBillsDialogText += "+ ${remoteBill.what}\n"
-                    } else {
-                        val localBill = localBillsByRemoteId[remoteBill.remoteId]!!
-                        if (hasChanged(localBill, remoteBill)) {
-                            dbHelper.updateBill(
-                                localBill.id, null, remoteBill.payerId,
-                                remoteBill.amount, remoteBill.timestamp,
-                                remoteBill.what, DBBill.STATE_OK, remoteBill.repeat,
-                                remoteBill.paymentMode, remoteBill.paymentModeId,
-                                remoteBill.categoryId, remoteBill.comment
-                            )
-                            nbPulledUpdatedBills++
-                            updatedBillsDialogText += "✏ ${remoteBill.what}\n"
-                        } else {
-                            Log.d(TAG, "Nothing to do for bill : $localBill")
-                        }
-
-                        val localBillOwersByIds = localBill.billOwers.associateBy { it.memberId }
-                        val remoteBillOwersByIds = remoteBill.billOwers.associateBy { it.memberId }
-
-                        for (rbo in remoteBill.billOwers) {
-                            if (!localBillOwersByIds.containsKey(rbo.memberId)) {
-                                dbHelper.addBillower(localBill.id, rbo.memberId)
-                                Log.d(TAG, "Add local billOwer : $rbo")
-                            }
-                        }
-                        for (lbo in localBill.billOwers) {
-                            if (!remoteBillOwersByIds.containsKey(lbo.memberId)) {
-                                dbHelper.deleteBillOwer(lbo.id)
-                                Log.d(TAG, "Delete local billOwer : $lbo")
-                            }
-                        }
-                    }
-                }
-
-                if (remoteAllBillIds.isNotEmpty() && (project.type == ProjectType.COSPEND || project.type == ProjectType.IHATEMONEY)) {
-                    for (localBill in localBills) {
-                        if (!remoteAllBillIds.contains(localBill.remoteId)) {
-                            dbHelper.deleteBill(localBill.id)
-                            nbPulledDeletedBills++
-                            deletedBillsDialogText += "🗑 ${localBill.what}\n"
-                            Log.d(TAG, "Delete local bill : $localBill")
-                        }
-                    }
-                } else if (remoteAllBillIds.isNotEmpty()) {
-                    for (localBill in localBills) {
-                        if (!remoteBillsByRemoteId.containsKey(localBill.remoteId)) {
-                            dbHelper.deleteBill(localBill.id)
-                            nbPulledDeletedBills++
-                            deletedBillsDialogText += "🗑 ${localBill.what}\n"
-                            Log.d(TAG, "Delete local bill : $localBill")
-                        }
-                    }
-                }
-
-                val localMembers = dbHelper.getMembersOfProject(project.id, null)
-                for (localMember in localMembers) {
-                    if (!remoteMembersByRemoteId.containsKey(localMember.remoteId)) {
-                        if (dbHelper.getBillsOfMember(localMember.id).isEmpty()
-                            && dbHelper.getBillowersOfMember(localMember.id).isEmpty()
-                        ) {
-                            dbHelper.deleteMember(localMember.id)
-                            Log.d(TAG, "Delete local member : $localMember")
-                        } else {
-                            Log.d(TAG, "WARNING local member : ${localMember.name} does not exist remotely but is still involved in some bills")
-                        }
-                    }
-                }
+                applyRemoteBills(pulled.bills, localBillsByRemoteId)
+                deleteVanishedBills(pulled, localBills)
+                deleteVanishedMembers(remoteMembersByRemoteId)
 
                 dbHelper.updateProject(
                     projId = project.id,
-                    newLastSyncedTimestamp = serverSyncTimestamp
+                    newLastSyncedTimestamp = pulled.syncTimestamp
                 )
                 LoginStatus.OK
             } catch (_: ServerResponse.NotModifiedException) {
@@ -902,6 +626,380 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 errorMessages.add(getErrorMessageFromException(e))
                 e.cause?.let { exceptions.add(it) }
                 LoginStatus.REQ_FAILED
+            }
+        }
+        private fun updateLocalProject(projResponse: ServerResponse.ProjectResponse) {
+            val name = projResponse.name
+            val email = projResponse.email
+            val currencyName = projResponse.currencyName
+            val deletionDisabled = projResponse.deletionDisabled
+            val myAccessLevel = projResponse.myAccessLevel
+            val archivedTs = projResponse.archivedTs
+
+            val unchanged = project.name.isNotEmpty() &&
+                name == project.name &&
+                !project.email.isNullOrEmpty() &&
+                email == project.email &&
+                project.isDeletionDisabled == deletionDisabled &&
+                project.myAccessLevel == myAccessLevel &&
+                project.archivedTs == archivedTs &&
+                project.currencyName != null &&
+                currencyName == project.currencyName
+            if (unchanged) return
+
+            Log.d(TAG, "update local project : $project")
+            project.name = name
+            project.currencyName = currencyName
+            project.isDeletionDisabled = deletionDisabled
+            project.myAccessLevel = myAccessLevel
+            project.archivedTs = archivedTs
+            dbHelper.updateProject(
+                projId = project.id,
+                newName = name,
+                newEmail = email,
+                newPassword = null,
+                newLastPayerId = null,
+                newLastSyncedTimestamp = null,
+                newCurrencyName = currencyName,
+                newDeletionDisabled = deletionDisabled,
+                newMyAccessLevel = myAccessLevel,
+                newBearerToken = null,
+                newArchivedTs = archivedTs ?: 0L
+            )
+        }
+
+        private fun syncPaymentModes(projResponse: ServerResponse.ProjectResponse) {
+            val remote = projResponse.getPaymentModes(project.id)
+            for (pm in remote) {
+                val local = dbHelper.getPaymentMode(pm.remoteId, project.id)
+                if (local == null) {
+                    Log.d(TAG, "Add local pm : $pm")
+                    dbHelper.addPaymentMode(pm)
+                } else if (pm.name == local.name && pm.color == local.color && pm.icon == local.icon) {
+                    Log.d(TAG, "Nothing to do for pm : $local")
+                } else {
+                    Log.d(TAG, "Update local pm : $pm")
+                    dbHelper.updatePaymentMode(local.id, pm.name, pm.icon, pm.color)
+                }
+            }
+
+            // Only settled rows may be dropped; one still waiting to be pushed is not "gone".
+            val remoteIds = remote.map { it.remoteId }.toSet()
+            for (local in dbHelper.getPaymentModes(project.id)) {
+                if (local.state == DBBill.STATE_OK && local.remoteId !in remoteIds) {
+                    dbHelper.deletePaymentMode(local.id)
+                    Log.d(TAG, "Delete local pm : $local")
+                }
+            }
+        }
+
+        private fun syncCategories(projResponse: ServerResponse.ProjectResponse) {
+            val remote = projResponse.getCategories(project.id)
+            for (c in remote) {
+                if (c.remoteId == DBBill.CATEGORY_REIMBURSEMENT) continue
+                val local = dbHelper.getCategory(c.remoteId, project.id)
+                if (local == null) {
+                    Log.d(TAG, "Add local category : $c")
+                    dbHelper.addCategory(c)
+                } else if (c.name == local.name && c.color == local.color && c.icon == local.icon) {
+                    Log.d(TAG, "Nothing to do for category : $local")
+                } else {
+                    Log.d(TAG, "Update local category : $c")
+                    dbHelper.updateCategory(local.id, c.name, c.icon, c.color)
+                }
+            }
+
+            val remoteIds = remote.map { it.remoteId }.toSet()
+            for (local in dbHelper.getCategories(project.id)) {
+                if (local.state == DBBill.STATE_OK && local.remoteId !in remoteIds) {
+                    dbHelper.deleteCategory(local.id)
+                    Log.d(TAG, "Delete local category : $local")
+                }
+            }
+        }
+
+        private fun syncCurrencies(projResponse: ServerResponse.ProjectResponse) {
+            val remote = projResponse.getCurrencies(project.id)
+            for (c in remote) {
+                val local = dbHelper.getCurrency(c.remoteId, project.id)
+                if (local == null) {
+                    Log.d(TAG, "Add local currency : $c")
+                    dbHelper.addCurrency(c)
+                } else if (c.name == local.name && c.exchangeRate == local.exchangeRate) {
+                    Log.d(TAG, "Nothing to do for currency : $local")
+                } else {
+                    Log.d(TAG, "Update local currency : $c")
+                    dbHelper.updateCurrency(local.id, c.name, c.exchangeRate)
+                }
+            }
+
+            val remoteIds = remote.map { it.remoteId }.toSet()
+            for (local in dbHelper.getCurrencies(project.id)) {
+                if (local.state == DBBill.STATE_OK && local.remoteId !in remoteIds) {
+                    dbHelper.deleteCurrency(local.id)
+                    Log.d(TAG, "Delete local currency : $local")
+                }
+            }
+        }
+
+        /** Returns the members the server listed, keyed by remote id, for the later cleanup pass. */
+        private fun syncMembers(projResponse: ServerResponse.ProjectResponse): Map<Long, DBMember> {
+            val remote = projResponse.getMembers(project.id)
+            for (m in remote) {
+                val local = dbHelper.getMember(m.remoteId, project.id)
+                if (local == null) {
+                    Log.d(TAG, "Add local member : $m")
+                    val mid = dbHelper.addMember(m)
+                    if (!m.ncUserId.isNullOrEmpty()) {
+                        updateMemberAvatar(mid)
+                    }
+                } else {
+                    updateLocalMember(m, local)
+                }
+            }
+            return remote.associateBy { it.remoteId }
+        }
+
+        private fun updateLocalMember(remote: DBMember, local: DBMember) {
+            val ncUserIdChanged = remote.ncUserId != local.ncUserId
+            Log.d(TAG, "member NC user id : ${local.ncUserId} => ${remote.ncUserId} ID changed $ncUserIdChanged")
+            if (ncUserIdChanged && remote.ncUserId == null) {
+                remote.ncUserId = ""
+            }
+
+            // The server omits colours it has never been told about, which is not the same as
+            // clearing them, so a null triple means "unchanged" rather than "no colour".
+            val remoteHasNoColour = remote.r == null && remote.g == null && remote.b == null
+            val colourUnchanged = remoteHasNoColour ||
+                (remote.r == local.r && remote.g == local.g && remote.b == local.b)
+
+            if (remote.name == local.name && remote.weight == local.weight &&
+                remote.isActivated == local.isActivated && colourUnchanged && !ncUserIdChanged
+            ) {
+                Log.d(TAG, "Nothing to do for member : $local")
+                if (!local.ncUserId.isNullOrEmpty() && local.avatar.isNullOrEmpty()) {
+                    Log.d(TAG, "except updating avatar")
+                    updateMemberAvatar(local.id)
+                }
+                return
+            }
+
+            Log.d(TAG, "Update local member : $remote")
+            val r = if (remoteHasNoColour) local.r else remote.r
+            val g = if (remoteHasNoColour) local.g else remote.g
+            val b = if (remoteHasNoColour) local.b else remote.b
+            val needAvatarUpdate = ncUserIdChanged && !remote.ncUserId.isNullOrEmpty()
+            dbHelper.updateMember(
+                local.id, remote.name, remote.weight,
+                remote.isActivated, null, null,
+                r, g, b, remote.ncUserId, if (ncUserIdChanged) "" else null
+            )
+            if (needAvatarUpdate) {
+                updateMemberAvatar(local.id)
+            }
+        }
+
+        private fun buildRemoteIdMaps(): RemoteIdMaps {
+            val members = dbHelper.getMembersOfProject(project.id, null)
+                .associate { it.remoteId to it.id }
+
+            val categories = dbHelper.getCategories(project.id)
+                .associate { it.remoteId to it.id }
+                .toMutableMap()
+            // The built-in categories keep their negative ids rather than getting local rows.
+            categories[DBBill.CATEGORY_REIMBURSEMENT] = DBBill.CATEGORY_REIMBURSEMENT
+            dbHelper.getCategories(project.id).filter { it.remoteId < 0 }
+                .forEach { categories[it.remoteId] = it.id }
+
+            val paymentModes = dbHelper.getPaymentModes(project.id)
+                .associate { it.remoteId to it.id }
+                .toMutableMap()
+            dbHelper.getPaymentModes(project.id).filter { it.remoteId < 0 }
+                .forEach { paymentModes[it.remoteId] = it.id }
+
+            return RemoteIdMaps(members, categories, paymentModes)
+        }
+
+        /**
+         * Fetches the bills, by paged walk where the server supports one and by complete fetch
+         * otherwise. Falls back to the complete fetch whenever the walk cannot be trusted, so the
+         * caller always gets a usable result.
+         */
+        private fun fetchRemoteBills(
+            idMaps: RemoteIdMaps,
+            localBillsByRemoteId: Map<Long, DBBill>
+        ): RemoteBills {
+            val usePagedWalk = project.type == ProjectType.COSPEND && !forceFullSync &&
+                localBillsByRemoteId.isNotEmpty() && client!!.supportsPagedBills
+            if (usePagedWalk) {
+                walkBillPages(idMaps, localBillsByRemoteId)?.let { return it }
+            }
+            return fetchAllBills(idMaps)
+        }
+
+        /**
+         * Walks back through pages of bills, newest first, stopping at the first page that already
+         * matches locally and taking everything older on trust.
+         *
+         * That only terminates while the server really does reverse the order and honour the
+         * offset. One that does neither returns the same oldest-first page every time, and since
+         * the walk compares against local rows it never writes, a single unknown bill keeps every
+         * page mismatched and the same page is requested forever. Returns null when the responses
+         * show that happening, so the caller can fall back to the complete fetch.
+         */
+        private fun walkBillPages(
+            idMaps: RemoteIdMaps,
+            localBillsByRemoteId: Map<Long, DBBill>
+        ): RemoteBills? {
+            Log.d(TAG, "Starting partial sync for project ${project.remoteId}")
+            val limit = 50
+            val bills = mutableListOf<DBBill>()
+            var syncTimestamp = project.lastSyncedTimestamp
+            var offset = 0
+            var previousPageIds: List<Long>? = null
+
+            while (true) {
+                val response = client!!.getBills(project, offset, limit, true, 0)
+                val page = response.getBillsCospend(
+                    project.id, idMaps.members, idMaps.categories, idMaps.paymentModes
+                )
+                if (page.isEmpty()) break
+
+                if (page.first().timestamp < page.last().timestamp) {
+                    Log.w(TAG, "Server returned bills oldest-first; the paged walk cannot be trusted")
+                    return null
+                }
+                val pageIds = page.map { it.remoteId }
+                if (pageIds == previousPageIds) {
+                    Log.w(TAG, "Server returned the same page for offset $offset; it is ignoring the offset")
+                    return null
+                }
+                previousPageIds = pageIds
+
+                bills.addAll(page)
+                if (offset == 0 && response.syncTimestamp > 0) {
+                    syncTimestamp = response.syncTimestamp
+                }
+
+                val pageAlreadyLocal = page.all { remote ->
+                    val local = localBillsByRemoteId[remote.remoteId]
+                    local != null && !hasChanged(local, remote)
+                }
+                // A short page is the end of the collection: there is nothing older to walk back
+                // to, so asking for the next offset would only refetch it.
+                if (pageAlreadyLocal || page.size < limit) break
+                offset += limit
+            }
+
+            // A walk reports no allIds, so it never causes a local deletion.
+            return RemoteBills(bills, emptyList(), syncTimestamp)
+        }
+
+        private fun fetchAllBills(idMaps: RemoteIdMaps): RemoteBills {
+            Log.d(TAG, "Starting full sync for project ${project.remoteId}")
+            val response = client!!.getBills(project)
+            return if (project.type == ProjectType.IHATEMONEY) {
+                val bills = response.getBillsIHM(
+                    project.id, idMaps.members, idMaps.categories, idMaps.paymentModes
+                )
+                RemoteBills(bills, bills.map { it.remoteId }, 0L)
+            } else {
+                RemoteBills(
+                    response.getBillsCospend(
+                        project.id, idMaps.members, idMaps.categories, idMaps.paymentModes
+                    ),
+                    response.allBillIds,
+                    response.syncTimestamp
+                )
+            }
+        }
+
+        private fun applyRemoteBills(
+            remoteBills: List<DBBill>,
+            localBillsByRemoteId: Map<Long, DBBill>
+        ) {
+            for (remoteBill in remoteBills) {
+                val localBill = localBillsByRemoteId[remoteBill.remoteId]
+                if (localBill == null) {
+                    dbHelper.addBill(remoteBill)
+                    nbPulledNewBills++
+                    newBillsDialogText += "+ ${remoteBill.what}\n"
+                    continue
+                }
+
+                if (hasChanged(localBill, remoteBill)) {
+                    dbHelper.updateBill(
+                        localBill.id, null, remoteBill.payerId,
+                        remoteBill.amount, remoteBill.timestamp,
+                        remoteBill.what, DBBill.STATE_OK, remoteBill.repeat,
+                        remoteBill.paymentMode, remoteBill.paymentModeId,
+                        remoteBill.categoryId, remoteBill.comment
+                    )
+                    nbPulledUpdatedBills++
+                    updatedBillsDialogText += "✏ ${remoteBill.what}\n"
+                } else {
+                    Log.d(TAG, "Nothing to do for bill : $localBill")
+                }
+
+                syncBillOwers(localBill, remoteBill)
+            }
+        }
+
+        private fun syncBillOwers(localBill: DBBill, remoteBill: DBBill) {
+            val localMemberIds = localBill.billOwers.map { it.memberId }.toSet()
+            val remoteMemberIds = remoteBill.billOwers.map { it.memberId }.toSet()
+
+            for (rbo in remoteBill.billOwers) {
+                if (rbo.memberId !in localMemberIds) {
+                    dbHelper.addBillower(localBill.id, rbo.memberId)
+                    Log.d(TAG, "Add local billOwer : $rbo")
+                }
+            }
+            for (lbo in localBill.billOwers) {
+                if (lbo.memberId !in remoteMemberIds) {
+                    dbHelper.deleteBillOwer(lbo.id)
+                    Log.d(TAG, "Delete local billOwer : $lbo")
+                }
+            }
+        }
+
+        /**
+         * Drops local bills the server no longer has. An empty allIds means the server never told
+         * us the full set - after a paged walk, say - and nothing may be deleted on that basis.
+         */
+        private fun deleteVanishedBills(pulled: RemoteBills, localBills: List<DBBill>) {
+            if (pulled.allIds.isEmpty()) return
+
+            val stillRemote: Set<Long> =
+                if (project.type == ProjectType.COSPEND || project.type == ProjectType.IHATEMONEY) {
+                    pulled.allIds.toSet()
+                } else {
+                    pulled.bills.map { it.remoteId }.toSet()
+                }
+
+            for (localBill in localBills) {
+                if (localBill.remoteId !in stillRemote) {
+                    dbHelper.deleteBill(localBill.id)
+                    nbPulledDeletedBills++
+                    deletedBillsDialogText += "🗑 ${localBill.what}\n"
+                    Log.d(TAG, "Delete local bill : $localBill")
+                }
+            }
+        }
+
+        private fun deleteVanishedMembers(remoteMembersByRemoteId: Map<Long, DBMember>) {
+            for (localMember in dbHelper.getMembersOfProject(project.id, null)) {
+                if (remoteMembersByRemoteId.containsKey(localMember.remoteId)) continue
+
+                // A member still named by a bill cannot be removed without orphaning it.
+                if (dbHelper.getBillsOfMember(localMember.id).isEmpty() &&
+                    dbHelper.getBillowersOfMember(localMember.id).isEmpty()
+                ) {
+                    dbHelper.deleteMember(localMember.id)
+                    Log.d(TAG, "Delete local member : $localMember")
+                } else {
+                    Log.d(TAG, "WARNING local member : ${localMember.name} does not exist remotely but is still involved in some bills")
+                }
             }
         }
 

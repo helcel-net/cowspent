@@ -51,7 +51,7 @@ class NextcloudClient(
 
     @Throws(JSONException::class, IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
     fun getCapabilities(project: DBProject?): ServerResponse.CapabilitiesResponse {
-        val target: String = if (project == null || url != "") {
+        val target: String = if (project == null || url != "" || nextcloudAPI != null) {
             "/ocs/v2.php/cloud/capabilities"
         } else {
             val realServerUrl = project.serverUrl!!
