@@ -1,151 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-
-    <!--
-        Untranslated: these are the English strings, kept here so a translation can be
-        contributed by simply replacing the values. Strings marked translatable="false" in
-        values/strings.xml (app and product names, preference keys) are deliberately absent
-        and must not be added.
-    -->
-
     <!-- Actions -->
-    <string name="action_new_bill">New bill</string>
-    <string name="action_add_project">Add project</string>
-    <string name="action_save">Save</string>
-    <string name="action_edit">Edit</string>
-    <string name="action_share">Share</string>
-    <string name="action_search">Search</string>
+    <string name="action_new_bill">Ny regning</string>
+    <string name="action_add_project">Tilføj projekt</string>
+    <string name="action_save">Gem</string>
+    <string name="action_edit">Rediger</string>
+    <string name="action_share">Del</string>
+    <string name="action_search">Søg</string>
     <string name="action_open_menu">Open menu</string>
     <string name="action_close_search">Close search</string>
     <string name="action_clear_search">Clear search</string>
-    <string name="action_delete">Delete</string>
+    <string name="action_delete">Slet</string>
     <string name="simple_back">Back</string>
-    <string name="action_archive">Archive</string>
-    <string name="action_unarchive">Unarchive</string>
-    <string name="action_export">Export</string>
-    <string name="action_stats">Stats</string>
-    <string name="action_settle">Settle</string>
+    <string name="action_archive">Arkiv</string>
+    <string name="action_unarchive">Fjern Arkiv</string>
+    <string name="action_export">Eksporter</string>
+    <string name="action_stats">Statistik</string>
+    <string name="action_settle">Afregn</string>
     <string name="action_scan_qrcode">Scan QR Code</string>
-    <string name="action_settings">Settings</string>
-    <string name="action_label_bills">Label missing categories</string>
-    <string name="action_logout">Logout</string>
-    <string name="action_connect">Connect</string>
-    <string name="action_discard">Discard</string>
-    <string name="action_members">Members</string>
-    <string name="action_labels">Labels</string>
-    <string name="action_currencies">Currencies</string>
-
+    <string name="action_settings">Indstillinger</string>
+    <string name="action_label_bills">Etiket mangler kategorier</string>
+    <string name="action_logout">Log Ud</string>
+    <string name="action_connect">Forbind</string>
+    <string name="action_discard">Kassér</string>
+    <string name="action_members">Medlemmer</string>
+    <string name="action_labels">Etiketter</string>
+    <string name="action_currencies">Valutaer</string>
     <!-- Titles -->
-    <string name="title_stats">Statistics</string>
-    <string name="title_edit_project">Edit project</string>
-    <string name="title_label_bills">Label Bills</string>
-    <string name="title_labels">Manage Labels</string>
-    <string name="title_about">About</string>
-    <string name="title_settle">Settle Project</string>
-    <string name="title_share">Share Project</string>
-    <string name="title_add_project">Add Project</string>
-    <string name="title_add_category">Add Category</string>
-    <string name="title_add_payment_mode">Add Payment Mode</string>
-    <string name="title_account">Nextcloud Account</string>
-    <string name="title_share_web">Web link</string>
+    <string name="title_stats">Statistik</string>
+    <string name="title_edit_project">Rediger projekt</string>
+    <string name="title_label_bills">Etiketregninger</string>
+    <string name="title_labels">Administrer Etiketter</string>
+    <string name="title_about">Om</string>
+    <string name="title_settle">Afregn Projekt</string>
+    <string name="title_share">Del Projekt</string>
+    <string name="title_add_project">Tilføj Projekt</string>
+    <string name="title_add_category">Tilføj Kategori</string>
+    <string name="title_add_payment_mode">Tilføj Betalingstilstand</string>
+    <string name="title_account">Nextcloud Konto</string>
+    <string name="title_share_web">Weblink</string>
     <string name="title_share_qr">Cowspent link</string>
-    <string name="title_confirm">Are you sure?</string>
-
+    <string name="title_confirm">Er du sikker?</string>
     <!-- Labels and Fields -->
-    <string name="label_all_bills">All bills</string>
-    <string name="label_categories">Categories</string>
-    <string name="label_payment_modes">Payment Modes</string>
-    <string name="label_name">Name</string>
+    <string name="label_all_bills">Alle regninger</string>
+    <string name="label_categories">Kategorier</string>
+    <string name="label_payment_modes">Betalingstilstande</string>
+    <string name="label_name">Navn</string>
     <string name="label_icon">Icon / Emoji</string>
-    <string name="label_color">Color</string>
-    <string name="label_weight">Weight</string>
-    <string name="label_activated">Activated</string>
-    <string name="label_password">Password</string>
+    <string name="label_color">Farve</string>
+    <string name="label_weight">Vægt</string>
+    <string name="label_activated">Aktiveret</string>
+    <string name="label_password">Adgangskode</string>
     <string name="label_email">E-mail</string>
-    <string name="label_url">Server address</string>
-    <string name="label_username">Username</string>
-    <string name="label_comment">Comment</string>
-    <string name="label_what">What?</string>
-    <string name="label_payer">Who paid?</string>
-    <string name="label_owers">For whom?</string>
-    <string name="label_repeat">Repeat every</string>
-    <string name="label_mode">Mode</string>
-    <string name="label_category">Category</string>
-    <string name="label_project_id">Project ID/name</string>
-    <string name="label_project_title">Project title</string>
-    <string name="label_use_sso">Use Nextcloud App Account</string>
-
+    <string name="label_url">Server adresse</string>
+    <string name="label_username">Brugernavn</string>
+    <string name="label_comment">Kommentar</string>
+    <string name="label_what">Hvad?</string>
+    <string name="label_payer">Hvem betalte?</string>
+    <string name="label_owers">For hvem?</string>
+    <string name="label_repeat">Gentag hver</string>
+    <string name="label_mode">Tilstand</string>
+    <string name="label_category">Kategori</string>
+    <string name="label_project_id">Projekt ID/navn</string>
+    <string name="label_project_title">Projektets titel</string>
+    <string name="label_use_sso">Brug Nextcloud App-konto</string>
     <!-- Dialogs and Messages -->
-    <string name="dialog_unsaved_changes_title">Unsaved changes</string>
-    <string name="dialog_unsaved_changes_msg">Save changes before leaving?</string>
-    <string name="dialog_confirm_remove_project_msg">The remote project will not be deleted.</string>
-    <string name="dialog_sync_error_title">Sync error</string>
-    <string name="dialog_sync_error_msg">Sync failed for %1$s.\n\n%2$s</string>
-    <string name="dialog_balanced_msg">Expenses are already balanced.</string>
-    <string name="msg_project_added">Project %1$s added</string>
-    <string name="msg_bill_labeled_done">All bills labeled</string>
-    <string name="msg_no_suggestions">No suggestions</string>
-    <string name="msg_auth_warning">Requires Cospend v0.3.4+.</string>
-    <string name="msg_link_copied">Link copied to clipboard</string>
-    <string name="msg_share_qr">Scan QR code or share the link to join.</string>
-    <string name="msg_share_web">Link for web browser access.</string>
-    <string name="msg_share_qr_warn">Share this link with a Cowspent user.</string>
-    <string name="msg_settle_intro">Settlement for %1$s:</string>
-    <string name="msg_settle_sentence">%1$s owes %3$.2f to %2$s</string>
-    <string name="msg_stats_intro">Stats for %1$s:</string>
-    <string name="msg_stats_header">Member (Paid | Spent | Balance)</string>
-    <string name="msg_logged_in_as">Logged in as %1$s</string>
-
+    <string name="dialog_unsaved_changes_title">Ikke-gemte ændringer</string>
+    <string name="dialog_unsaved_changes_msg">Gem ændringer før afrejsen?</string>
+    <string name="dialog_confirm_remove_project_msg">Fjernprojektet vil ikke blive slettet.</string>
+    <string name="dialog_sync_error_title">Synkronisering fejl</string>
+    <string name="dialog_sync_error_msg">Synkronisering mislykkedes for %1$s.\n\n%2$s</string>
+    <string name="dialog_balanced_msg">Udgifterne er allerede afbalancerede.</string>
+    <string name="msg_project_added">Projekt %1$s tilføjet</string>
+    <string name="msg_bill_labeled_done">Alle regninger mærket</string>
+    <string name="msg_no_suggestions">Ingen forslag</string>
+    <string name="msg_auth_warning">Kræver Cospend v0.3.4+.</string>
+    <string name="msg_link_copied">Link kopieret til udklipsholder</string>
+    <string name="msg_share_qr">Scan QR-kode eller del linket for at deltage.</string>
+    <string name="msg_share_web">Link til webbrowser-adgang.</string>
+    <string name="msg_share_qr_warn">Del dette link med en Cowspent bruger.</string>
+    <string name="msg_settle_intro">Udligning for %1$s:</string>
+    <string name="msg_settle_sentence">%1$s skylder %3$.2f til %2$s</string>
+    <string name="msg_stats_intro">Statistik for %1$s:</string>
+    <string name="msg_stats_header">Medlem (Betalt - Spent - Balance)</string>
+    <string name="msg_logged_in_as">Logget ind som %1$s</string>
     <!-- Errors -->
-    <string name="error_generic">Error</string>
-    <string name="error_loading">Loading</string>
-    <string name="error_no_projects">No projects found</string>
-    <string name="error_no_members">No members found</string>
-    <string name="error_no_bills">No bills found</string>
-    <string name="error_no_member">At least one member required</string>
-    <string name="error_maintenance_mode">Server is in maintenance mode</string>
-    <string name="error_400">400 Bad request</string>
-    <string name="error_401">401 Unauthorized</string>
-    <string name="error_403">403 Forbidden</string>
-    <string name="error_404">404 Not Found</string>
-    <string name="error_sync">Sync failed: %1$s</string>
-    <string name="error_invalid_login">Invalid login: %1$s</string>
-    <string name="error_auth">Wrong username or password</string>
-    <string name="error_json">Invalid server response</string>
-    <string name="error_req_failed">Request failed</string>
-    <string name="error_invalid_email">Invalid e-mail</string>
-    <string name="error_invalid_project_id">Invalid project ID</string>
-    <string name="error_invalid_project_name">Invalid project title</string>
-    <string name="error_invalid_bill_name">Invalid bill name</string>
-    <string name="error_invalid_bill_date">Invalid bill date</string>
-    <string name="error_invalid_bill_payer">Payer required</string>
-    <string name="error_invalid_bill_owers">Owers required</string>
-    <string name="error_no_network">No network connection</string>
-    <string name="error_server">Server error</string>
-    <string name="error_io">Server connection broken</string>
-    <string name="error_share_impossible">Cannot share this project</string>
-
+    <string name="error_generic">Fejl</string>
+    <string name="error_loading">Indlæser</string>
+    <string name="error_no_projects">Ingen projekter fundet</string>
+    <string name="error_no_members">Ingen medlemmer fundet</string>
+    <string name="error_no_bills">Ingen regninger fundet</string>
+    <string name="error_no_member">Mindst et medlem kræves</string>
+    <string name="error_maintenance_mode">Serveren er i vedligeholdelsestilstand</string>
+    <string name="error_400">400 Dårlig forespørgsel</string>
+    <string name="error_401">401 Uautoriseret</string>
+    <string name="error_403">403 Forbudt</string>
+    <string name="error_404">404 Ikke Fundet</string>
+    <string name="error_sync">Synkronisering mislykkedes: %1$s</string>
+    <string name="error_invalid_login">Ugyldigt login: %1$s</string>
+    <string name="error_auth">Forkert brugernavn eller adgangskode</string>
+    <string name="error_json">Ugyldigt serversvar</string>
+    <string name="error_req_failed">Anmodning mislykkedes</string>
+    <string name="error_invalid_email">Ugyldig e-mail</string>
+    <string name="error_invalid_project_id">Ugyldigt projekt ID</string>
+    <string name="error_invalid_project_name">Ugyldig projekttitel</string>
+    <string name="error_invalid_bill_name">Ugyldigt regnings navn</string>
+    <string name="error_invalid_bill_date">Ugyldig faktureringsdato</string>
+    <string name="error_invalid_bill_payer">Betaler påkrævet</string>
+    <string name="error_invalid_bill_owers">Ejere påkrævet</string>
+    <string name="error_no_network">Ingen netværksforbindelse</string>
+    <string name="error_server">Server fejl</string>
+    <string name="error_io">Server forbindelse ødelagt</string>
+    <string name="error_share_impossible">Kan ikke dele dette projekt</string>
     <!-- Drawer / Common UI -->
-    <string name="drawer_no_account">Connect to Nextcloud account</string>
-    <string name="drawer_last_sync">Last sync: %1$02d:%2$02d</string>
-    <string name="simple_cancel">Cancel</string>
-    <string name="simple_ok" tools:ignore="ButtonCase,Typos">Ok</string>
-    <string name="simple_yes">Yes</string>
-    <string name="simple_no">No</string>
-    <string name="simple_close">Close</string>
-
+    <string name="drawer_no_account">Opret forbindelse til Nextcloud konto</string>
+    <string name="drawer_last_sync">Seneste synkronisering: %1$02d:%2$02d</string>
+    <string name="simple_cancel">Annuller</string>
+    <string name="simple_ok" tools:ignore="ButtonCase,Typos">OK</string>
+    <string name="simple_yes">Ja</string>
+    <string name="simple_no">Nej</string>
+    <string name="simple_close">Luk</string>
     <!-- Settings -->
-    <string name="settings_appearance">Appearance</string>
-    <string name="settings_network">Network</string>
-    <string name="settings_other">Other</string>
-    <string name="settings_night_mode">Theme</string>
-    <string name="settings_offline_mode">Offline mode</string>
-    <string name="settings_offline_mode_summary">Only sync manually.</string>
-    <string name="settings_color_custom">Custom color</string>
-    <string name="settings_color_mode">Color Selection</string>
-    <string name="settings_show_archived">Show archived projects</string>
-    <string name="settings_beta_features">Beta Features</string>
-    <string name="settings_beta_features_summary">Enable experimental features. Use at your own risk.</string>
+    <string name="settings_appearance">Udseende</string>
+    <string name="settings_network">Netværk</string>
+    <string name="settings_other">Andet</string>
+    <string name="settings_night_mode">Tema</string>
+    <string name="settings_offline_mode">Offline tilstand</string>
+    <string name="settings_offline_mode_summary">Synkroniser kun manuelt.</string>
+    <string name="settings_color_custom">Brugerdefineret farve</string>
+    <string name="settings_color_mode">Valg Af Farver</string>
+    <string name="settings_show_archived">Vis arkiverede projekter</string>
+    <string name="settings_beta_features">Beta Funktioner</string>
+    <string name="settings_beta_features_summary">Aktiver eksperimentelle funktioner. Brug på egen risiko.</string>
     <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
     <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
     <string name="settings_auto_sync_on_open">Sync interval</string>
@@ -154,119 +140,108 @@
     <string name="pref_value_sync_10m">10 minutes</string>
     <string name="pref_value_sync_1h">1 hour</string>
     <string name="pref_value_sync_1d">1 day</string>
-    <string name="settings_url_warn_http">WARNING: "http" is unsafe. Use "https".</string>
-    <string name="settings_colorpicker_title">Choose Color</string>
-
+    <string name="settings_url_warn_http">ADVARSEL: \"http\" er usikkert. Brug \"https\".</string>
+    <string name="settings_colorpicker_title">Vælg Farve</string>
     <string name="pref_value_color_system">System</string>
-    <string name="pref_value_color_manual">Manual</string>
-    <string name="pref_value_theme_light">Light</string>
-    <string name="pref_value_theme_dark">Dark</string>
-    <string name="pref_value_theme_system">Follow system</string>
-
+    <string name="pref_value_color_manual">Manuelt</string>
+    <string name="pref_value_theme_light">Lys</string>
+    <string name="pref_value_theme_dark">Mørk</string>
+    <string name="pref_value_theme_system">Følg system</string>
+    <!-- Constants (Do not translate) -->
     <!-- Enums and Lists -->
-    <string name="repeat_no">No repeat</string>
-    <string name="repeat_day">Daily</string>
-    <string name="repeat_week">Weekly</string>
+    <string name="repeat_no">Ingen gentagelse</string>
+    <string name="repeat_day">Dagligt</string>
+    <string name="repeat_week">Ugentlig</string>
     <string name="repeat_fortnight">Fortnightly</string>
-    <string name="repeat_month">Monthly</string>
-    <string name="repeat_year">Yearly</string>
-
-    <string name="payment_mode_none">None</string>
-    <string name="payment_mode_all">All</string>
-    <string name="payment_mode_credit_card">Credit card</string>
-    <string name="payment_mode_cash">Cash</string>
-    <string name="payment_mode_check">Check</string>
+    <string name="repeat_month">Månedligt</string>
+    <string name="repeat_year">Årligt</string>
+    <string name="payment_mode_none">Ingen</string>
+    <string name="payment_mode_all">Alle</string>
+    <string name="payment_mode_credit_card">Kreditkort</string>
+    <string name="payment_mode_cash">Kontant</string>
+    <string name="payment_mode_check">Tjek</string>
     <string name="payment_mode_online">Online</string>
-    <string name="payment_mode_transfer">Transfer</string>
-
-    <string name="category_none">None</string>
-    <string name="category_all">All</string>
-    <string name="category_all_except_reimbursement">All except reimbursement</string>
-    <string name="category_groceries">Grocery</string>
+    <string name="payment_mode_transfer">Overfør</string>
+    <string name="category_none">Ingen</string>
+    <string name="category_all">Alle</string>
+    <string name="category_all_except_reimbursement">Alle undtagen refusion</string>
+    <string name="category_groceries">Køller</string>
     <string name="category_leisure">Bar/Party</string>
-    <string name="category_rent">Rent</string>
-    <string name="category_bills">Bill</string>
-    <string name="category_excursion">Excursion/Culture</string>
-    <string name="category_health">Health</string>
+    <string name="category_rent">Leje</string>
+    <string name="category_bills">Regning</string>
+    <string name="category_excursion">Udflugter/Kultur</string>
+    <string name="category_health">Sundhed</string>
     <string name="category_shopping">Shopping</string>
-    <string name="category_reimbursement">Reimbursement</string>
+    <string name="category_reimbursement">Tilbagebetaling</string>
     <string name="category_restaurant">Restaurant</string>
-    <string name="category_accomodation">Accommodation</string>
+    <string name="category_accomodation">Overnatning</string>
     <string name="category_transport">Transport</string>
     <string name="category_sport">Sport</string>
-
     <!-- Project specific -->
-    <string name="new_project_action">What</string>
-    <string name="new_project_where">Where</string>
-    <string name="where_local">Local only</string>
-    <string name="todo_join">Join existing project</string>
-    <string name="todo_create">Create new project</string>
-    <string name="import_tooltip">Import from file</string>
-    <string name="choose_project_management_action">Project</string>
-    <string name="project_added_success">Project added successfully.</string>
-    <string name="no_projects_text">You have no projects yet.</string>
-    <string name="configure_account_choice">Configure Nextcloud account</string>
-    <string name="add_project_choice">Add project manually</string>
-    <string name="no_members_text">No members in this project.</string>
-    <string name="no_bills_text">No bills found.</string>
-    <string name="member_already_exists">Member already exists.</string>
-    <string name="activity_dialog_title">Project: %1$s</string>
-    <string name="remove_project_confirmation">Project %1$s removed.</string>
-    <string name="file_saved_success">File saved: %1$s</string>
-    <string name="import_error_header">Import failed at row %d</string>
-    <string name="import_error_date">Invalid date format at row %d</string>
-    <string name="import_error_owers">Invalid owers at row %d</string>
-    <string name="add_member_dialog_title">Add Member</string>
-    <string name="edit_member_dialog_title">Edit Member</string>
-    <string name="member_edit_delete">Delete</string>
-    <string name="project_edition_no_change">No changes to save.</string>
-
+    <string name="new_project_action">Hvad</string>
+    <string name="new_project_where">Hvor</string>
+    <string name="where_local">Kun lokalt</string>
+    <string name="todo_join">Deltag i eksisterende projekt</string>
+    <string name="todo_create">Opret nyt projekt</string>
+    <string name="import_tooltip">Importer fra fil</string>
+    <string name="choose_project_management_action">Projekt</string>
+    <string name="project_added_success">Projekt tilføjet.</string>
+    <string name="no_projects_text">Du har endnu ingen projekter.</string>
+    <string name="configure_account_choice">Konfigurer Nextcloud konto</string>
+    <string name="add_project_choice">Tilføj projekt manuelt</string>
+    <string name="no_members_text">Ingen medlemmer i dette projekt.</string>
+    <string name="no_bills_text">Ingen regninger fundet.</string>
+    <string name="member_already_exists">Medlemmet findes allerede.</string>
+    <string name="activity_dialog_title">Projekt: %1$s</string>
+    <string name="remove_project_confirmation">Projekt %1$s fjernet.</string>
+    <string name="file_saved_success">Fil gemt: %1$s</string>
+    <string name="import_error_header">Import mislykkedes ved række %d</string>
+    <string name="import_error_date">Ugyldigt datoformat ved række %d</string>
+    <string name="import_error_owers">Ugyldige ejere ved række %d</string>
+    <string name="add_member_dialog_title">Tilføj Medlem</string>
+    <string name="edit_member_dialog_title">Rediger Medlem</string>
+    <string name="member_edit_delete">Slet</string>
+    <string name="project_edition_no_change">Ingen ændringer at gemme.</string>
     <!-- Settlement -->
-    <string name="center_none">None (Optimal)</string>
-    <string name="settle_who">Who pays</string>
-    <string name="settle_to_whom">To whom</string>
-    <string name="settle_how_much">Amount</string>
-    <string name="simple_settle_share">Share</string>
-    <string name="simple_create_bills">Create bills</string>
-    <string name="settle_bill_what">Settlement</string>
-
+    <string name="center_none">Ingen (Optimal)</string>
+    <string name="settle_who">Hvem betaler</string>
+    <string name="settle_to_whom">Til hvem</string>
+    <string name="settle_how_much">Beløb</string>
+    <string name="simple_settle_share">Del</string>
+    <string name="simple_create_bills">Opret regninger</string>
+    <string name="settle_bill_what">Afregning</string>
     <!-- Currencies -->
-    <string name="currency_dialog_title">Choose Currency (%s)</string>
-    <string name="setting_none">None</string>
-    <string name="setting_all">All</string>
-    <string name="currency_saved_success">Currency settings saved.</string>
-    <string name="main_currency">Main Currency</string>
-
+    <string name="currency_dialog_title">Vælg Valuta (%s)</string>
+    <string name="setting_none">Ingen</string>
+    <string name="setting_all">Alle</string>
+    <string name="currency_saved_success">Valuta indstillinger gemt.</string>
+    <string name="main_currency">Primær Valuta</string>
     <!-- Statistics -->
-    <string name="label_bills_suggested">Suggested Categories</string>
-    <string name="label_bills_skip">Skip</string>
-    <string name="stats_date_min">From</string>
-    <string name="stats_date_max">To</string>
-    <string name="stats_who">Member</string>
-    <string name="stats_paid">Paid</string>
-    <string name="stats_spent">Spent</string>
-    <string name="stats_balance">Balance</string>
+    <string name="label_bills_suggested">Foreslåede Kategorier</string>
+    <string name="label_bills_skip">Overspring</string>
+    <string name="stats_date_min">Fra</string>
+    <string name="stats_date_max">Til</string>
+    <string name="stats_who">Medlem</string>
+    <string name="stats_paid">Betalt</string>
+    <string name="stats_spent">Brugt</string>
+    <string name="stats_balance">Saldo</string>
     <string name="total">Total: %1$s</string>
-
     <!-- Errors Extra -->
-    <string name="error_project_connect_check">Connection failed: %1$s</string>
-    <string name="error_create_remote_project_helper">Creation failed: %1$s</string>
-    <string name="error_edit_remote_project_helper">Error updating remote project: %1$s</string>
-    <string name="remote_project_operation_no_network">Network unavailable for remote operation.</string>
-    <string name="error_scanning_bill_qr_code">Failed to parse QR code.</string>
-    <string name="error_token_mismatch">Authentication token mismatch. Please log in again.</string>
-    <string name="insufficient_access_level">You don\'t have permission to perform this action.</string>
-    <string name="delete_label_confirmation_title">Delete Label</string>
-    <string name="delete_label_confirmation_message">Are you sure you want to delete this label?</string>
-
+    <string name="error_project_connect_check">Forbindelse fejlede: %1$s</string>
+    <string name="error_create_remote_project_helper">Oprettelse fejlede: %1$s</string>
+    <string name="error_edit_remote_project_helper">Fejl under opdatering af fjernprojekt: %1$s</string>
+    <string name="remote_project_operation_no_network">Netværk utilgængeligt for fjernbetjening.</string>
+    <string name="error_scanning_bill_qr_code">Kunne ikke fortolke QR-kode.</string>
+    <string name="error_token_mismatch">Godkendelse token mismatch. Log venligst ind igen.</string>
+    <string name="insufficient_access_level">Du har ikke tilladelse til at udføre denne handling.</string>
+    <string name="delete_label_confirmation_title">Slet Etiket</string>
+    <string name="delete_label_confirmation_message">Er du sikker på, at du vil slette denne etiket?</string>
     <!-- About -->
     <string name="about_version">Version %1$s</string>
-    <string name="about_maintainer_title">Maintainer</string>
-    <string name="about_license_title">License</string>
-    <string name="about_source_title">Source code</string>
-
+    <string name="about_maintainer_title">Vedligeholder</string>
+    <string name="about_license_title">Licens</string>
+    <string name="about_source_title">Kilde kode</string>
     <!-- New constants for backward compatibility or shared use -->
-    <string name="share_intent_title">Project %1$s</string>
-    <string name="share_chooser_title">Share %1$s</string>
-
+    <string name="share_intent_title">Projekt %1$s</string>
+    <string name="share_chooser_title">Del %1$s</string>
 </resources>
