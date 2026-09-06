@@ -8,6 +8,9 @@
     <string name="action_edit">编辑</string>
     <string name="action_share">分享</string>
     <string name="action_search">搜索</string>
+    <string name="action_open_menu">Open menu</string>
+    <string name="action_close_search">Close search</string>
+    <string name="action_clear_search">Clear search</string>
     <string name="action_delete">删除</string>
     <string name="action_archive">存档</string>
     <string name="action_unarchive">取消存档</string>
@@ -129,6 +132,14 @@
     <string name="settings_show_archived">显示存档项目</string>
     <string name="settings_beta_features">测试版功能</string>
     <string name="settings_beta_features_summary">启用实验功能。请自行承担使用风险。</string>
+    <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
+    <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
+    <string name="settings_auto_sync_on_open">Sync interval</string>
+    <string name="settings_auto_sync_on_open_summary">How often to refresh the account and all projects when opening the app.</string>
+    <string name="pref_value_sync_1m">1 minute</string>
+    <string name="pref_value_sync_10m">10 minutes</string>
+    <string name="pref_value_sync_1h">1 hour</string>
+    <string name="pref_value_sync_1d">1 day</string>
     <string name="settings_url_warn_http">警告：\"http\"不安全。请使用“https://”。</string>
     <string name="settings_colorpicker_title">选择颜色</string>
     <string name="pref_value_color_system">系统</string>
