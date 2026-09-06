@@ -4,6 +4,7 @@ import android.app.SearchManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -407,6 +408,8 @@ class BillsListViewActivity :
                     lifecycleScope.launch {
                         withContext(Dispatchers.IO) {
                             db.deleteProject(projectId)
+                            PreferenceManager.getDefaultSharedPreferences(applicationContext)
+                                .edit { remove(lastProjectSyncKey(projectId)) }
                             val dbProjects = db.projects
                             if (dbProjects.isNotEmpty()) setSelectedProject(dbProjects[0].id) else setSelectedProject(0)
                         }
@@ -794,24 +797,34 @@ class BillsListViewActivity :
                     db.cowspentServerSyncHelper.runAccountProjectsSync()
                 }
                 remoteProjects.count {
-                    db.cowspentServerSyncHelper.scheduleSync(false, it, false) != null
+                    val scheduled = db.cowspentServerSyncHelper.scheduleSync(false, it, false) != null
+                    if (scheduled) markProjectSynced(preferences, it.id, now)
+                    scheduled
                 }
             } else {
                 val selectedProj = remoteProjects.find { it.id == selectedProjectId }
-                val lastSync = (selectedProj?.lastSyncedTimestamp ?: 0L) * 1000L
+                val lastSync = preferences.getLong(lastProjectSyncKey(selectedProjectId), 0L)
                 val due = trigger == SyncTrigger.MANUAL ||
                     now - lastSync > SELECTED_PROJECT_SYNC_INTERVAL_MS
                 if (selectedProj != null && due &&
                     db.cowspentServerSyncHelper.scheduleSync(
                         false, selectedProj, trigger == SyncTrigger.MANUAL
                     ) != null
-                ) 1 else 0
+                ) {
+                    markProjectSynced(preferences, selectedProj.id, now)
+                    1
+                } else 0
             }
 
             // Only a task that actually started reports back through syncCallBack, so clear
             // the indicator here when none did - nothing else would.
             if (started == 0) viewModel.isRefreshing = false
         }
+    }
+
+    private fun lastProjectSyncKey(projectId: Long) = "lastProjectSyncTimestamp_$projectId"
+    private fun markProjectSynced(preferences: SharedPreferences, projectId: Long, at: Long) {
+        preferences.edit { putLong(lastProjectSyncKey(projectId), at) }
     }
 
     private fun registerBroadcastReceiver() {
