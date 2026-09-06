@@ -50,7 +50,6 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
     private var syncActive = false
     private var syncAccountProjectsActive = false
 
-    private var callbacksPush: MutableList<ICallback> = ArrayList()
     private var callbacksPull: MutableList<ICallback> = ArrayList()
 
     init {
@@ -101,8 +100,6 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             if (project != null) {
                 Log.d(TAG, "... starting now")
                 val syncTask = SyncTask(onlyLocalChanges, project, forceFullSync)
-                syncTask.addCallbacks(callbacksPush)
-                callbacksPush = ArrayList()
                 if (!onlyLocalChanges) {
                     syncTask.addCallbacks(callbacksPull)
                     callbacksPull = ArrayList()
@@ -114,14 +111,8 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         } else if (!onlyLocalChanges) {
             Log.d(TAG, "... scheduled")
             projectIdsToSync.add(projId)
-            for (callback in callbacksPush) {
-                callback.onScheduled()
-            }
         } else {
             Log.d(TAG, "... do nothing")
-            for (callback in callbacksPush) {
-                callback.onScheduled()
-            }
         }
         return null
     }
