@@ -1,6 +1,7 @@
 package net.helcel.cowspent.android.currencies
 
 import android.annotation.SuppressLint
+import android.app.Application
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -351,9 +352,10 @@ fun CurrencyRowPreview() {
 @Preview(showBackground = true)
 @Composable
 fun ManageCurrenciesScreenPreview() {
+    val application = LocalContext.current.applicationContext as Application
     MaterialTheme {
         ManageCurrenciesScreen(
-            viewModel = ManageCurrenciesViewModel().apply {
+            viewModel = ManageCurrenciesViewModel(application).apply {
                 mainCurrencyName = "EUR"
                 currencies = listOf(
                     DBCurrency(1, 0, 0, "USD", 1.1, 0),
