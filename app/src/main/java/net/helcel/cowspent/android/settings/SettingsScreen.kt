@@ -134,7 +134,7 @@ fun SettingsScreen(
                 title = { Text(stringResource(R.string.action_settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 backgroundColor = MaterialTheme.colors.primary,
@@ -401,13 +401,7 @@ fun SettingsListPreference(
                                 ),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RadioButton(
-                                selected = (key == value),
-                                onClick = {
-                                    onValueChange(key)
-                                    showDialog = false
-                                }
-                            )
+                            RadioButton(selected = (key == value), onClick = null)
                             Spacer(Modifier.width(8.dp))
                             Text(text = label)
                         }

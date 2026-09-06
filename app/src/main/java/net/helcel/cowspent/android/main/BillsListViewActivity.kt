@@ -63,7 +63,7 @@ class BillsListViewActivity :
     AppCompatActivity(),
     IRefreshBillsListCallback {
 
-    private val viewModel: BillsListViewModel by viewModels()
+    internal val viewModel: BillsListViewModel by viewModels()
 
     companion object {
         var DEBUG = false

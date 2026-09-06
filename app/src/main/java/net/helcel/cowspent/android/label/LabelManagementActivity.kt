@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import net.helcel.cowspent.theme.ThemeUtils
 
 class LabelManagementActivity : AppCompatActivity() {
-    private val viewModel: LabelManagementViewModel by viewModels()
+    internal val viewModel: LabelManagementViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

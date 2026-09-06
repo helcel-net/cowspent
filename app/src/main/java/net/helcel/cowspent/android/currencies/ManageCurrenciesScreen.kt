@@ -41,6 +41,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -216,7 +218,7 @@ fun ManageCurrenciesScreen(
                             ) {
                                 Icon(
                                     imageVector = if (isEditing) Icons.Default.Done else Icons.Default.Add,
-                                    contentDescription = null,
+                                    contentDescription = if (isEditing) "Done" else "Add",
                                     tint = if (viewModel.isAddEnabled()) {
                                         if (isEditing) MaterialTheme.colors.secondary else MaterialTheme.colors.primary
                                     } else MaterialTheme.colors.onSurface.copy(alpha = 0.2f)
@@ -274,7 +276,9 @@ fun CurrencyRow(
         shape = RoundedCornerShape(12.dp),
         elevation = if (isEditing) 4.dp else 1.dp,
         border = if (isEditing) BorderStroke(1.dp, MaterialTheme.colors.secondary.copy(alpha = 0.5f)) else null,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("CurrencyRow_${currency.name}")
     ) {
         Row(
             modifier = Modifier
@@ -320,7 +324,7 @@ fun CurrencyRow(
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = null,
+                    contentDescription = "Delete",
                     tint = MaterialTheme.colors.error.copy(alpha = 0.7f),
                     modifier = Modifier.size(20.dp)
                 )

@@ -23,7 +23,7 @@ import net.helcel.cowspent.android.main.MainConstants
 
 class EditProjectActivity : AppCompatActivity() {
 
-    private val viewModel: EditProjectViewModel by viewModels()
+    internal val viewModel: EditProjectViewModel by viewModels()
     private lateinit var db: CowspentSQLiteOpenHelper
     private lateinit var project: DBProject
 

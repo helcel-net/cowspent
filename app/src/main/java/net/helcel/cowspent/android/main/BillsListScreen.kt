@@ -293,7 +293,7 @@ fun BillsListScreen(
                                     isSearchExpanded = false
                                     viewModel.searchQuery = ""
                                 }) {
-                                    Icon(Icons.Default.Close, contentDescription = null, tint = MaterialTheme.colors.onPrimary)
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_clear_search), tint = MaterialTheme.colors.onPrimary)
                                 }
                             }
                         )
@@ -322,13 +322,13 @@ fun BillsListScreen(
                             isSearchExpanded = false
                             viewModel.searchQuery = ""
                         }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_close_search))
                         }
                     } else {
                         IconButton(onClick = {
                             scope.launch { scaffoldState.drawerState.open() }
                         }) {
-                            Icon(Icons.Default.Menu, contentDescription = null)
+                            Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.action_open_menu))
                         }
                     }
                 },
@@ -343,7 +343,10 @@ fun BillsListScreen(
                             }
                         }
                         IconButton(onClick = { isSearchExpanded = true }) {
-                            Icon(Icons.Default.Search, contentDescription = null)
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = stringResource(R.string.action_search)
+                            )
                         }
                     }
                 },

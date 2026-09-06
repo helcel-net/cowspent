@@ -31,7 +31,7 @@ import net.helcel.cowspent.android.project.ProjectImportHelper
 
 class NewProjectActivity : AppCompatActivity() {
 
-    private val viewModel: NewProjectViewModel by viewModels()
+    internal val viewModel: NewProjectViewModel by viewModels()
     private lateinit var db: CowspentSQLiteOpenHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {

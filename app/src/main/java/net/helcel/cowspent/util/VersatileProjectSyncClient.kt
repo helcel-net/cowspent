@@ -158,9 +158,17 @@ class VersatileProjectSyncClient(
                     paramKeys.add("password")
                     paramValues.add(newPassword)
                 }
+                if (newEmail != null) {
+                    paramKeys.add("contact_email")
+                    paramValues.add(newEmail)
+                }
                 if (newMainCurrencyName != null) {
                     paramKeys.add("currencyName")
                     paramValues.add(newMainCurrencyName)
+                }
+                if (newArchivedTs != null) {
+                    paramKeys.add("archivedTs")
+                    paramValues.add(newArchivedTs.toString())
                 }
             }
             if (canAccessProjectWithNCLogin(project)) {

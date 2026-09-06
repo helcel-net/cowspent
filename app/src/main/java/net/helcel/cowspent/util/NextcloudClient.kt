@@ -86,7 +86,7 @@ class NextcloudClient(
     }
 
     @Throws(TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
-    private fun requestServerWithSSO(
+    internal fun requestServerWithSSO(
         nextcloudAPI: NextcloudAPI,
         target: String,
         method: String,
@@ -141,7 +141,7 @@ class NextcloudClient(
     }
 
     @Throws(TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
-    private fun imageRequestServerWithSSO(
+    internal fun imageRequestServerWithSSO(
         nextcloudAPI: NextcloudAPI,
         target: String,
         method: String,
@@ -182,7 +182,7 @@ class NextcloudClient(
     }
 
     @Throws(IOException::class, NextcloudHttpRequestFailedException::class)
-    private fun requestServer(
+    internal fun requestServer(
         target: String,
         method: String, params: JSONObject?, lastETag: String?, needLogin: Boolean, isOCSRequest: Boolean
     ): VersatileProjectSyncClient.ResponseData {
@@ -248,7 +248,7 @@ class NextcloudClient(
     }
 
     @Throws(IOException::class, NextcloudHttpRequestFailedException::class)
-    private fun imageRequestServer(
+    internal fun imageRequestServer(
         target: String,
         method: String, params: JSONObject?, lastETag: String?, needLogin: Boolean, isOCSRequest: Boolean
     ): VersatileProjectSyncClient.ResponseData {

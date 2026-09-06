@@ -107,7 +107,7 @@ fun LabelManagementScreenContent(
                     showEditDialog = true
                 }
             }) {
-                Icon(Icons.Default.Add, contentDescription = null)
+                Icon(Icons.Default.Add, contentDescription = "Add Label")
             }
         }
     ) { padding ->

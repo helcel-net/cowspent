@@ -23,7 +23,7 @@ import net.helcel.cowspent.util.ICallback
 
 class ManageCurrenciesActivity : AppCompatActivity() {
 
-    private val viewModel: ManageCurrenciesViewModel by viewModels()
+    internal val viewModel: ManageCurrenciesViewModel by viewModels()
     private var db: CowspentSQLiteOpenHelper? = null
     private var selectedProjectID: Long = -1
 

@@ -48,7 +48,7 @@ fun AboutScreen(
                 title = { Text(stringResource(R.string.title_about)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 backgroundColor = MaterialTheme.colors.primary,
