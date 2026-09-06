@@ -1,13 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-
-    <!--
-        Untranslated: these are the English strings, kept here so a translation can be
-        contributed by simply replacing the values. Strings marked translatable="false" in
-        values/strings.xml (app and product names, preference keys) are deliberately absent
-        and must not be added.
-    -->
-
     <!-- Actions -->
     <string name="action_new_bill">New bill</string>
     <string name="action_add_project">Add project</string>
@@ -34,7 +26,6 @@
     <string name="action_members">Members</string>
     <string name="action_labels">Labels</string>
     <string name="action_currencies">Currencies</string>
-
     <!-- Titles -->
     <string name="title_stats">Statistics</string>
     <string name="title_edit_project">Edit project</string>
@@ -50,7 +41,6 @@
     <string name="title_share_web">Web link</string>
     <string name="title_share_qr">Cowspent link</string>
     <string name="title_confirm">Are you sure?</string>
-
     <!-- Labels and Fields -->
     <string name="label_all_bills">All bills</string>
     <string name="label_categories">Categories</string>
@@ -74,7 +64,6 @@
     <string name="label_project_id">Project ID/name</string>
     <string name="label_project_title">Project title</string>
     <string name="label_use_sso">Use Nextcloud App Account</string>
-
     <!-- Dialogs and Messages -->
     <string name="dialog_unsaved_changes_title">Unsaved changes</string>
     <string name="dialog_unsaved_changes_msg">Save changes before leaving?</string>
@@ -95,7 +84,6 @@
     <string name="msg_stats_intro">Stats for %1$s:</string>
     <string name="msg_stats_header">Member (Paid | Spent | Balance)</string>
     <string name="msg_logged_in_as">Logged in as %1$s</string>
-
     <!-- Errors -->
     <string name="error_generic">Error</string>
     <string name="error_loading">Loading</string>
@@ -124,7 +112,6 @@
     <string name="error_server">Server error</string>
     <string name="error_io">Server connection broken</string>
     <string name="error_share_impossible">Cannot share this project</string>
-
     <!-- Drawer / Common UI -->
     <string name="drawer_no_account">Connect to Nextcloud account</string>
     <string name="drawer_last_sync">Last sync: %1$02d:%2$02d</string>
@@ -133,7 +120,6 @@
     <string name="simple_yes">Yes</string>
     <string name="simple_no">No</string>
     <string name="simple_close">Close</string>
-
     <!-- Settings -->
     <string name="settings_appearance">Appearance</string>
     <string name="settings_network">Network</string>
@@ -154,15 +140,14 @@
     <string name="pref_value_sync_10m">10 minutes</string>
     <string name="pref_value_sync_1h">1 hour</string>
     <string name="pref_value_sync_1d">1 day</string>
-    <string name="settings_url_warn_http">WARNING: "http" is unsafe. Use "https".</string>
+    <string name="settings_url_warn_http">WARNING: \"http\" is unsafe. Use \"https\".</string>
     <string name="settings_colorpicker_title">Choose Color</string>
-
     <string name="pref_value_color_system">System</string>
     <string name="pref_value_color_manual">Manual</string>
     <string name="pref_value_theme_light">Light</string>
     <string name="pref_value_theme_dark">Dark</string>
     <string name="pref_value_theme_system">Follow system</string>
-
+    <!-- Constants (Do not translate) -->
     <!-- Enums and Lists -->
     <string name="repeat_no">No repeat</string>
     <string name="repeat_day">Daily</string>
@@ -170,7 +155,6 @@
     <string name="repeat_fortnight">Fortnightly</string>
     <string name="repeat_month">Monthly</string>
     <string name="repeat_year">Yearly</string>
-
     <string name="payment_mode_none">None</string>
     <string name="payment_mode_all">All</string>
     <string name="payment_mode_credit_card">Credit card</string>
@@ -178,7 +162,6 @@
     <string name="payment_mode_check">Check</string>
     <string name="payment_mode_online">Online</string>
     <string name="payment_mode_transfer">Transfer</string>
-
     <string name="category_none">None</string>
     <string name="category_all">All</string>
     <string name="category_all_except_reimbursement">All except reimbursement</string>
@@ -194,7 +177,6 @@
     <string name="category_accomodation">Accommodation</string>
     <string name="category_transport">Transport</string>
     <string name="category_sport">Sport</string>
-
     <!-- Project specific -->
     <string name="new_project_action">What</string>
     <string name="new_project_where">Where</string>
@@ -220,7 +202,6 @@
     <string name="edit_member_dialog_title">Edit Member</string>
     <string name="member_edit_delete">Delete</string>
     <string name="project_edition_no_change">No changes to save.</string>
-
     <!-- Settlement -->
     <string name="center_none">None (Optimal)</string>
     <string name="settle_who">Who pays</string>
@@ -229,14 +210,12 @@
     <string name="simple_settle_share">Share</string>
     <string name="simple_create_bills">Create bills</string>
     <string name="settle_bill_what">Settlement</string>
-
     <!-- Currencies -->
     <string name="currency_dialog_title">Choose Currency (%s)</string>
     <string name="setting_none">None</string>
     <string name="setting_all">All</string>
     <string name="currency_saved_success">Currency settings saved.</string>
     <string name="main_currency">Main Currency</string>
-
     <!-- Statistics -->
     <string name="label_bills_suggested">Suggested Categories</string>
     <string name="label_bills_skip">Skip</string>
@@ -247,7 +226,6 @@
     <string name="stats_spent">Spent</string>
     <string name="stats_balance">Balance</string>
     <string name="total">Total: %1$s</string>
-
     <!-- Errors Extra -->
     <string name="error_project_connect_check">Connection failed: %1$s</string>
     <string name="error_create_remote_project_helper">Creation failed: %1$s</string>
@@ -258,15 +236,12 @@
     <string name="insufficient_access_level">You don\'t have permission to perform this action.</string>
     <string name="delete_label_confirmation_title">Delete Label</string>
     <string name="delete_label_confirmation_message">Are you sure you want to delete this label?</string>
-
     <!-- About -->
     <string name="about_version">Version %1$s</string>
     <string name="about_maintainer_title">Maintainer</string>
     <string name="about_license_title">License</string>
     <string name="about_source_title">Source code</string>
-
     <!-- New constants for backward compatibility or shared use -->
     <string name="share_intent_title">Project %1$s</string>
     <string name="share_chooser_title">Share %1$s</string>
-
 </resources>
