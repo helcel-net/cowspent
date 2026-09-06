@@ -151,6 +151,9 @@ object ProjectImportHelper {
             
             val memberNameToId = mutableMapOf<String, Long>()
             val pid = db.addProject(DBProject(0, projectRemoteId, "", projectRemoteId, null, null, null, ProjectType.LOCAL, 0L, mainCurrencyName, false, DBProject.ACCESS_LEVEL_UNKNOWN, null))
+            // addProject only inserts a subset of the row, currency not among it, so the main
+            // currency the file declared has to be written separately or it is lost.
+            if (mainCurrencyName != null) db.updateProject(pid, newCurrencyName = mainCurrencyName)
 
             val pmRemoteToLocal = mutableMapOf<Long, Long>()
             paymentModes.forEach {

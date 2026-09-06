@@ -90,7 +90,7 @@ fun LabelManagementScreenContent(
                 title = { Text(stringResource(R.string.title_labels)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.simple_back))
                     }
                 },
                 backgroundColor = MaterialTheme.colors.primary,
@@ -267,10 +267,10 @@ fun LabelItem(
         Spacer(modifier = Modifier.width(32.dp))
         Text(text = name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.subtitle1)
         IconButton(onClick = onEdit) {
-            Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f))
+            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit), tint = MaterialTheme.colors.onSurface.copy(alpha = 0.6f))
         }
         IconButton(onClick = onDelete) {
-            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colors.error.copy(alpha = 0.6f))
+            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.action_delete), tint = MaterialTheme.colors.error.copy(alpha = 0.6f))
         }
     }
 }

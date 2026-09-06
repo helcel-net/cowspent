@@ -897,7 +897,9 @@ open class ServerResponse(
         memberRemoteIdToId: Map<Long, Long>
     ): List<DBBillOwer> {
         val billOwers: MutableList<DBBillOwer> = ArrayList()
-        if (json.has("owers")) {
+        // As everywhere else here, an explicitly null value is not a value: getJSONArray would
+        // throw on it, and that exception fails the whole project sync over one bill.
+        if (json.has("owers") && !json.isNull("owers")) {
             val jsonOs = json.getJSONArray("owers")
             for (i in 0 until jsonOs.length()) {
                 val obj = jsonOs.get(i)

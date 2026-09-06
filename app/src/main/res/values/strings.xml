@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="app_name">Cowspent</string>
+    <string name="app_name" translatable="false">Cowspent</string>
 
     <!-- Actions -->
     <string name="action_new_bill">New bill</string>
@@ -14,6 +14,7 @@
     <string name="action_close_search">Close search</string>
     <string name="action_clear_search">Clear search</string>
     <string name="action_delete">Delete</string>
+    <string name="simple_back">Back</string>
     <string name="action_archive">Archive</string>
     <string name="action_unarchive">Unarchive</string>
     <string name="action_export">Export</string>
@@ -152,7 +153,7 @@
     <string name="settings_colorpicker_title">Choose Color</string>
 
     <string name="pref_value_color_system">System</string>
-    <string name="pref_value_color_server">Nextcloud</string>
+    <string name="pref_value_color_server" translatable="false">Nextcloud</string>
     <string name="pref_value_color_manual">Manual</string>
     <string name="pref_value_theme_light">Light</string>
     <string name="pref_value_theme_dark">Dark</string>
@@ -212,8 +213,8 @@
     <string name="new_project_action">What</string>
     <string name="new_project_where">Where</string>
     <string name="where_local">Local only</string>
-    <string name="where_cospend">Cospend</string>
-    <string name="where_ihatemoney">IHateMoney</string>
+    <string name="where_cospend" translatable="false">Cospend</string>
+    <string name="where_ihatemoney" translatable="false">IHateMoney</string>
     <string name="todo_join">Join existing project</string>
     <string name="todo_create">Create new project</string>
     <string name="import_tooltip">Import from file</string>

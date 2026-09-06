@@ -838,13 +838,14 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         }
 
         /**
-         * Walks back through pages of bills, newest first, stopping at the first page that already
-         * matches locally and taking everything older on trust.
+         * Walks back through pages of bills, newest first, until it has seen a run of
+         * [UNCHANGED_RUN_TO_SETTLE] consecutive bills that already match locally - at which point
+         * everything older is taken on trust.
          *
          * That only terminates while the server really does reverse the order and honour the
          * offset. One that does neither returns the same oldest-first page every time, and since
-         * the walk compares against local rows it never writes, a single unknown bill keeps every
-         * page mismatched and the same page is requested forever. Returns null when the responses
+         * the walk compares against local rows it never writes, a single unknown bill keeps the
+         * run at zero and the same page is requested forever. Returns null when the responses
          * show that happening, so the caller can fall back to the complete fetch.
          */
         private fun walkBillPages(
@@ -857,6 +858,9 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             var syncTimestamp = project.lastSyncedTimestamp
             var offset = 0
             var previousPageIds: List<Long>? = null
+            // Counted across pages, not restarted at each one: a run that begins near the end of
+            // a page still finishes on the next.
+            var unchangedRun = 0
 
             while (true) {
                 val response = client!!.getBills(project, offset, limit, true, 0)
@@ -881,13 +885,23 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                     syncTimestamp = response.syncTimestamp
                 }
 
-                val pageAlreadyLocal = page.all { remote ->
+                var settled = false
+                for (remote in page) {
                     val local = localBillsByRemoteId[remote.remoteId]
-                    local != null && !hasChanged(local, remote)
+                    if (local != null && !hasChanged(local, remote)) {
+                        unchangedRun++
+                        if (unchangedRun >= UNCHANGED_RUN_TO_SETTLE) {
+                            settled = true
+                            break
+                        }
+                    } else {
+                        unchangedRun = 0
+                    }
                 }
+
                 // A short page is the end of the collection: there is nothing older to walk back
                 // to, so asking for the next offset would only refetch it.
-                if (pageAlreadyLocal || page.size < limit) break
+                if (settled || page.size < limit) break
                 offset += limit
             }
 
@@ -1802,6 +1816,16 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
 
     companion object {
         private val TAG = CowspentServerSyncHelper::class.java.simpleName
+
+        /**
+         * How many consecutive bills, walking newest to oldest, must already match locally before
+         * the paged walk concludes that every older bill matches too.
+         *
+         * A whole page of 50 had to match before, so one edit anywhere in a page forced another
+         * page to be fetched. A trailing run is the same bet on a smaller sample: it can settle
+         * part way into a page, and it carries across page boundaries rather than restarting.
+         */
+        private const val UNCHANGED_RUN_TO_SETTLE = 25
 
         private var instance: CowspentServerSyncHelper? = null
         private val projectIdsToSync: MutableList<Long> = ArrayList()

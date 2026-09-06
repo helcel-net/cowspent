@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="app_name">Cowspent</string>
 
     <!-- Actions -->
     <string name="action_new_bill">Neue Rechnung</string>
@@ -10,7 +9,11 @@
     <string name="action_edit">Bearbeiten</string>
     <string name="action_share">Teilen</string>
     <string name="action_search">Suchen</string>
+    <string name="action_open_menu">Menü öffnen</string>
+    <string name="action_close_search">Suche schließen</string>
+    <string name="action_clear_search">Suche leeren</string>
     <string name="action_delete">Löschen</string>
+    <string name="simple_back">Zurück</string>
     <string name="action_archive">Archivieren</string>
     <string name="action_unarchive">Reaktivieren</string>
     <string name="action_export">Exportieren</string>
@@ -37,7 +40,7 @@
     <string name="title_add_project">Projekt hinzufügen</string>
     <string name="title_add_category">Neue Kategorie</string>
     <string name="title_add_payment_mode">Zahlungsmethode hinzufügen</string>
-    <string name="title_account">Nextloud-Konto</string>
+    <string name="title_account">Nextcloud-Konto</string>
     <string name="title_share_web">Weblink</string>
     <string name="title_share_qr">Cowspent link</string>
     <string name="title_confirm">Bist du sicher?</string>
@@ -137,10 +140,17 @@
     <string name="settings_show_archived">Archivierte Projekte anzeigen</string>
     <string name="settings_beta_features">Beta-Funktionen</string>
     <string name="settings_beta_features_summary">Experimentelle Funktionen aktivieren. Benutzung auf eigene Gefahr.</string>
+    <string name="settings_fill_new_bill_from_last">Aus letzter Rechnung vorausfüllen</string>
+    <string name="settings_fill_new_bill_from_last_summary">Zahler, Kategorie, Zahlungsart und Beteiligte aus der zuletzt erstellten Rechnung des Projekts übernehmen.</string>
+    <string name="settings_auto_sync_on_open">Synchronisierungsintervall</string>
+    <string name="settings_auto_sync_on_open_summary">Wie oft Konto und alle Projekte beim Öffnen der App aktualisiert werden.</string>
+    <string name="pref_value_sync_1m">1 Minute</string>
+    <string name="pref_value_sync_10m">10 Minuten</string>
+    <string name="pref_value_sync_1h">1 Stunde</string>
+    <string name="pref_value_sync_1d">1 Tag</string>
     <string name="settings_url_warn_http">WARNUNG: \"http\" ist unsicher. Verwende \"https\".</string>
     <string name="settings_colorpicker_title">Farbe wählen</string>
     <string name="pref_value_color_system">System</string>
-    <string name="pref_value_color_server">Nextcloud</string>
     <string name="pref_value_color_manual">Manuell</string>
     <string name="pref_value_theme_light">Hell</string>
     <string name="pref_value_theme_dark">Dunkel</string>
@@ -158,7 +168,7 @@
     <string name="payment_mode_all">Alle</string>
     <string name="payment_mode_credit_card">Kreditkarte</string>
     <string name="payment_mode_cash">Bargeld</string>
-    <string name="payment_mode_check">Prüfen</string>
+    <string name="payment_mode_check">Scheck</string>
     <string name="payment_mode_online">Online</string>
     <string name="payment_mode_transfer">Überweisung</string>
     <string name="category_none">Keine</string>
@@ -181,8 +191,6 @@
     <string name="new_project_action">Was</string>
     <string name="new_project_where">Wo</string>
     <string name="where_local">Nur lokal</string>
-    <string name="where_cospend">Cospend</string>
-    <string name="where_ihatemoney">IHateMoney</string>
     <string name="todo_join">Bestehendem Projekt beitreten</string>
     <string name="todo_create">Neues Projekt erstellen</string>
     <string name="import_tooltip">Aus Datei importieren</string>

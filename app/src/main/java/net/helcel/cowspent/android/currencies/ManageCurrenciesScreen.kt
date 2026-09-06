@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import net.helcel.cowspent.R
-import net.helcel.cowspent.android.helper.AlertDialog
+import net.helcel.cowspent.android.helper.StatefulAlertDialog
 import net.helcel.cowspent.android.helper.formatAmount
 import net.helcel.cowspent.model.DBCurrency
 import kotlin.time.Duration.Companion.milliseconds
@@ -66,35 +66,10 @@ fun ManageCurrenciesScreen(
     onEdit: (DBCurrency) -> Unit,
     onCancelEdit: () -> Unit
 ) {
-    val dialogState = viewModel.dialogState
-    if (dialogState != null) {
-        AlertDialog(
-            showDialog = true,
-            onDismissRequest = { viewModel.dismissDialog() },
-            title = dialogState.title,
-            message = dialogState.message,
-            icon = dialogState.icon,
-            items = dialogState.items,
-            positiveText = dialogState.positiveText,
-            negativeText = dialogState.negativeText,
-            neutralText = dialogState.neutralText,
-            onConfirm = {
-                dialogState.onConfirm?.invoke()
-                viewModel.dismissDialog()
-            },
-            onCancel = {
-                dialogState.onCancel?.invoke()
-                viewModel.dismissDialog()
-            },
-            onNeutral = {
-                dialogState.onNeutral?.invoke()
-                viewModel.dismissDialog()
-            }
-        ) {
-            dialogState.onItemSelected?.invoke(it)
-            viewModel.dismissDialog()
-        }
-    }
+    StatefulAlertDialog(
+        state = viewModel.dialogState,
+        onDismissRequest = { viewModel.dismissDialog() }
+    )
 
     Scaffold(
         topBar = {
