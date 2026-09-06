@@ -17,8 +17,6 @@ object MainConstants {
     const val BROADCAST_AVATAR_UPDATED = "net.helcel.cowspent.broadcast.avatar_updated"
     const val BROADCAST_AVATAR_UPDATED_MEMBER = "net.helcel.cowspent.broadcast.avatar_updated_for_member"
 
-    const val MAIN_CHANNEL_ID = 1234567890
-
     const val PARAM_DIALOG_CONTENT = "net.helcel.cowspent.PARAM_DIALOG_CONTENT"
     const val PARAM_PROJECT_TO_SELECT = "net.helcel.cowspent.PARAM_PROJECT_TO_SELECT"
 

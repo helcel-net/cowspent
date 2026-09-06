@@ -194,8 +194,6 @@
     <string name="todo_join">Bestehendem Projekt beitreten</string>
     <string name="todo_create">Neues Projekt erstellen</string>
     <string name="import_tooltip">Aus Datei importieren</string>
-    <string name="choose_account_project_dialog_title">Projekt auswählen</string>
-    <string name="choose_account_project_dialog_impossible">Keine Projekte auf diesem Konto gefunden.</string>
     <string name="choose_project_management_action">Projekt</string>
     <string name="project_added_success">Projekt erfolgreich hinzugefügt.</string>
     <string name="no_projects_text">Du hast noch keine Projekte.</string>

@@ -3,6 +3,7 @@ package net.helcel.cowspent.android.label
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -275,8 +276,30 @@ fun LabelItem(
     }
 }
 
+/**
+ * Split into a window and its content, the same way MemberEditDialogContent is.
+ *
+ * A Compose text field inside a Material AlertDialog never reaches idle under Robolectric: the
+ * composition spins in measure/layout until Espresso gives up 60s later, having exhausted the
+ * test heap and taken every later test class in that worker with it. A plain Dialog holding a
+ * Surface behaves, so the dialog body lives there instead - which is also what makes it testable.
+ */
 @Composable
 fun EditLabelDialog(
+    title: String,
+    initialName: String,
+    initialIcon: String,
+    initialColor: String,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String) -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        EditLabelDialogContent(title, initialName, initialIcon, initialColor, onDismiss, onSave)
+    }
+}
+
+@Composable
+fun EditLabelDialogContent(
     title: String,
     initialName: String,
     initialIcon: String,
@@ -288,10 +311,14 @@ fun EditLabelDialog(
     var icon by remember { mutableStateOf(initialIcon) }
     var color by remember { mutableStateOf(initialColor) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colors.surface,
+        contentColor = contentColorFor(MaterialTheme.colors.surface)
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Text(title, style = MaterialTheme.typography.h6)
+            Spacer(modifier = Modifier.height(16.dp))
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
                     value = name,
@@ -315,21 +342,25 @@ fun EditLabelDialog(
                     onColorChanged = { color = String.format("#%06X", 0xFFFFFF and it) }
                 )
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onSave(name, icon, color) },
-                enabled = name.isNotBlank()
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.simple_cancel))
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.simple_cancel))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = { onSave(name, icon, color) },
+                    enabled = name.isNotBlank()
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
             }
         }
-    )
+    }
 }
 
 fun parseColor(colorString: String): Color {

@@ -12,7 +12,6 @@ enum class ProjectType(val id: String) {
             }
         }
 
-        @JvmStatic
         fun getTypeById(id: String?): ProjectType? {
             return reverseMap[id]
         }

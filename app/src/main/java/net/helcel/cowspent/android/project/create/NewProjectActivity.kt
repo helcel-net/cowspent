@@ -10,10 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import net.helcel.cowspent.R
@@ -56,9 +54,6 @@ class NewProjectActivity : AppCompatActivity() {
                             .setType("*/*")
                             .setAction(Intent.ACTION_GET_CONTENT)
                         importFileLauncher.launch(Intent.createChooser(intent, "Select a file"))
-                    },
-                    onChooseFromNextcloud = {
-                        chooseFromNextcloud()
                     },
                     onOkPressed = { onPressOk() },
                     onBack = { finish() },
@@ -130,19 +125,6 @@ class NewProjectActivity : AppCompatActivity() {
             }
         }
 
-    private fun chooseFromNextcloud() {
-        lifecycleScope.launch {
-            val accountProjects = withContext(Dispatchers.IO) { db.accountProjects }
-            if (accountProjects.isEmpty()) {
-                showToast(getString(R.string.choose_account_project_dialog_impossible), Toast.LENGTH_LONG)
-                return@launch
-            }
-
-            viewModel.nextcloudProjects = accountProjects
-            viewModel.showNextcloudProjectDialog = true
-        }
-    }
-
     private fun updateAuthStatus() {
         val url = getFormattedUrl()
         val fakeProj = DBProject(
@@ -154,19 +136,7 @@ class NewProjectActivity : AppCompatActivity() {
         viewModel.isAuthenticatedAccount = db.cowspentServerSyncHelper.canCreateAuthenticatedProject(fakeProj)
     }
 
-    private fun onPressOk() {
-        val type = viewModel.projectType
-        val todoCreate = viewModel.whatTodoIsCreate
-        val url = getFormattedUrl()
-
-        val fakeProj = DBProject(
-            0, "", "", "", url,
-            "", 0L, type, 0L,
-            null, false, DBProject.ACCESS_LEVEL_UNKNOWN,
-            ""
-        )
-        createProject()
-    }
+    private fun onPressOk() = createProject()
 
     private fun getFormattedUrl(): String {
         var url = viewModel.projectUrl.trim()

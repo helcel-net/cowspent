@@ -202,8 +202,6 @@
     <string name="todo_join">Join existing project</string>
     <string name="todo_create">Create new project</string>
     <string name="import_tooltip">Import from file</string>
-    <string name="choose_account_project_dialog_title">Choose project</string>
-    <string name="choose_account_project_dialog_impossible">No projects found on this account.</string>
     <string name="choose_project_management_action">Project</string>
     <string name="project_added_success">Project added successfully.</string>
     <string name="no_projects_text">You have no projects yet.</string>

@@ -3,7 +3,6 @@ package net.helcel.cowspent.android.project.create
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -31,7 +30,6 @@ fun NewProjectScreen(
     viewModel: NewProjectViewModel,
     onScanQrCode: () -> Unit,
     onImportFile: () -> Unit,
-    onChooseFromNextcloud: () -> Unit,
     onOkPressed: () -> Unit,
     onBack: () -> Unit,
     onFieldsChanged: () -> Unit
@@ -224,40 +222,6 @@ fun NewProjectScreen(
         )
     }
 
-    if (viewModel.showNextcloudProjectDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.showNextcloudProjectDialog = false },
-            title = { Text(stringResource(R.string.choose_account_project_dialog_title)) },
-            text = {
-                Column {
-                    viewModel.nextcloudProjects.forEach { project ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .selectable(
-                                    selected = false,
-                                    onClick = {
-                                        viewModel.projectId = project.remoteId
-                                        viewModel.projectUrl = project.ncUrl
-                                        viewModel.showNextcloudProjectDialog = false
-                                    }
-                                )
-                                .padding(16.dp)
-                        ) {
-                            Text(text = project.name)
-                        }
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { viewModel.showNextcloudProjectDialog = false }) {
-                    Text(stringResource(R.string.simple_cancel))
-                }
-            }
-        )
-    }
-
     if (viewModel.isCreatingRemoteProject) {
         AlertDialog(
             onDismissRequest = { },
@@ -337,7 +301,6 @@ fun NewProjectScreenPreview() {
         },
         onScanQrCode = {},
         onImportFile = {},
-        onChooseFromNextcloud = {},
         onOkPressed = {},
         onBack = {},
         onFieldsChanged = {}

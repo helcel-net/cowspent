@@ -12,15 +12,10 @@ import net.helcel.cowspent.model.DBProject
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import org.xml.sax.SAXException
-import java.io.ByteArrayInputStream
 import java.io.IOException
-import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.parsers.ParserConfigurationException
 
 
 /**
@@ -40,6 +35,10 @@ open class ServerResponse(
 
     val lastModified: Long
         get() = response.lastModified
+
+    @get:Throws(JSONException::class)
+    val stringContent: String
+        get() = getResponseStringData()
 
     @Throws(JSONException::class)
     fun getResponseObjectData(): JSONObject {
@@ -126,10 +125,6 @@ open class ServerResponse(
     ) : ServerResponse(response, isOcsResponse) {
 
         @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-
-        @get:Throws(JSONException::class)
         val remoteMemberId: Long
             get() = if (isJsonMember)
                 getRemoteMemberIdFromJSON(getResponseObjectData())
@@ -142,10 +137,6 @@ open class ServerResponse(
         isOcsResponse: Boolean
     ) : ServerResponse(response, isOcsResponse) {
 
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-            
         @get:Throws(JSONException::class)
         val remoteCategoryId: Long
             get() {
@@ -162,32 +153,18 @@ open class ServerResponse(
     class EditRemoteCategoryResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class DeleteRemoteCategoryResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class CreateRemotePaymentModeResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
     ) : ServerResponse(response, isOcsResponse) {
 
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-            
         @get:Throws(JSONException::class)
         val remotePaymentModeId: Long
             get() {
@@ -204,31 +181,17 @@ open class ServerResponse(
     class EditRemotePaymentModeResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class DeleteRemotePaymentModeResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class CreateRemoteCurrencyResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
     ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
 
         @get:Throws(JSONException::class)
         val remoteCurrencyId: Long
@@ -246,32 +209,17 @@ open class ServerResponse(
     class EditRemoteCurrencyResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class DeleteRemoteCurrencyResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class EditRemoteProjectResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class EditRemoteMemberResponse(
         response: VersatileProjectSyncClient.ResponseData,
@@ -288,10 +236,6 @@ open class ServerResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
     ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
 
         @get:Throws(JSONException::class)
         val remoteBillId: Long
@@ -312,10 +256,6 @@ open class ServerResponse(
     ) : ServerResponse(response, isOcsResponse) {
 
         @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-
-        @get:Throws(JSONException::class)
         val remoteBillId: Long
             get() {
                 val dataStr = getResponseStringData()
@@ -331,32 +271,17 @@ open class ServerResponse(
     class DeleteRemoteBillResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class DeleteRemoteProjectResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class CreateRemoteProjectResponse(
         response: VersatileProjectSyncClient.ResponseData,
         isOcsResponse: Boolean
-    ) : ServerResponse(response, isOcsResponse) {
-
-        @get:Throws(JSONException::class)
-        val stringContent: String
-            get() = getResponseStringData()
-    }
+    ) : ServerResponse(response, isOcsResponse)
 
     class BillsResponse(response: VersatileProjectSyncClient.ResponseData, isOcsResponse: Boolean) :
         ServerResponse(response, isOcsResponse) {
@@ -457,17 +382,6 @@ open class ServerResponse(
             get() = content
     }
 
-    @Throws(JSONException::class)
-    protected fun getPublicTokenFromJSON(json: JSONObject): String? {
-        if (json.has("code") && json.has("sharetoken")) {
-            val done = json.getInt("code")
-            val publicToken = json.getString("sharetoken")
-            if (done == 1) {
-                return publicToken
-            }
-        }
-        return null
-    }
 
     @Throws(JSONException::class)
     protected fun getNameFromJSON(json: JSONObject): String {
@@ -937,6 +851,8 @@ open class ServerResponse(
             remoteId = json.getString("id")
         }
         if (!json.isNull("ncurl")) {
+            ncUrl = json.getString("ncurl")
+        } else if (!json.isNull("ncUrl")) {
             ncUrl = json.getString("ncUrl")
         }
         val archivedTs: Long? = getArchivedTsFromJSON(json)
@@ -946,26 +862,6 @@ open class ServerResponse(
         return DBAccountProject(0, remoteId, null, name, ncUrl, archivedTs)
     }
 
-    @Throws(IOException::class)
-    protected fun getColorFromContent(content: String): String? {
-        var result: String? = null
-        try {
-            val dbf = DocumentBuilderFactory.newInstance()
-            val db = dbf.newDocumentBuilder()
-            val stream: InputStream = ByteArrayInputStream(content.toByteArray())
-            val doc = db.parse(stream)
-            doc.documentElement.normalize()
-            // Locate the Tag Name
-            val nodeList = doc.getElementsByTagName("color")
-            if (nodeList.length > 0) {
-                result = nodeList.item(0).textContent
-                Log.i(TAG, "I GOT THE COLOR from server: $result")
-            }
-        } catch (_: ParserConfigurationException) {
-        } catch (_: SAXException) {
-        }
-        return result
-    }
 
     protected fun getColorFromJsonContent(json: JSONObject): String? {
         return try {

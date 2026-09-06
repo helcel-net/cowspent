@@ -61,11 +61,7 @@ fun ColorPicker(
     var chroma by remember { mutableFloatStateOf(initialLch[1]) }
     var hue by remember { mutableFloatStateOf(initialLch[2]) }
 
-    val currentColorInt = remember(lightness, chroma, hue) {
-        val color = mLCHtoRBG(lightness,chroma,hue)
-        onColorChanged(color)
-        color
-    }
+    val currentColorInt = remember(lightness, chroma, hue) { mLCHtoRBG(lightness, chroma, hue) }
     
     val currentColor = Color(currentColorInt)
 
@@ -74,8 +70,9 @@ fun ColorPicker(
     var isHexValid by remember { mutableStateOf(true) }
     val interactionSource = remember { MutableInteractionSource() }
 
-    // Sync HEX with LCH
+    // Report the colour, and keep the HEX field in step with the LCH sliders.
     LaunchedEffect(currentColorInt) {
+        onColorChanged(currentColorInt)
         val newHex = "%06X".format(0xFFFFFF and currentColorInt)
         if (hexText.uppercase() != newHex) {
             hexText = newHex

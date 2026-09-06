@@ -46,7 +46,10 @@ fun LabelBillsScreen(
                 title = { Text(stringResource(R.string.title_label_bills)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.simple_back)
+                        )
                     }
                 },
                 backgroundColor = MaterialTheme.colors.primary,

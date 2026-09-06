@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import net.helcel.cowspent.model.DBAccountProject
 import net.helcel.cowspent.model.ProjectType
 
 class NewProjectViewModel : ViewModel() {
@@ -33,8 +32,6 @@ class NewProjectViewModel : ViewModel() {
     var isAuthenticatedAccount by mutableStateOf(false)
 
     var showAuthWarningDialog by mutableStateOf(false)
-    var showNextcloudProjectDialog by mutableStateOf(false)
-    var nextcloudProjects by mutableStateOf<List<DBAccountProject>>(emptyList())
 
     var isCreatingRemoteProject by mutableStateOf(false)
     var errorDialogMessage by mutableStateOf<String?>(null)

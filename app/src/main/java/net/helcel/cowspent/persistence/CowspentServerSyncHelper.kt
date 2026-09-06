@@ -1,12 +1,9 @@
 package net.helcel.cowspent.persistence
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
-import android.os.IBinder
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
@@ -50,24 +47,6 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
     private val preferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(dbHelper.context)
     private var networkConnected = false
 
-    private val certService = object : ServiceConnection {
-        override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
-            if (isSyncPossible) {
-                val lastId = PreferenceManager.getDefaultSharedPreferences(dbHelper.context).getLong("selected_project", 0)
-                if (lastId != 0L) {
-                    val proj = dbHelper.getProject(lastId)
-                    if (proj != null) {
-                        appContext.sendBroadcast(Intent(MainConstants.BROADCAST_SYNC_PROJECT))
-                        appContext.sendBroadcast(Intent(MainConstants.BROADCAST_NETWORK_AVAILABLE))
-                    }
-                }
-            }
-        }
-
-        override fun onServiceDisconnected(p0: ComponentName?) {
-        }
-    }
-
     private var syncActive = false
     private var syncAccountProjectsActive = false
 
@@ -77,11 +56,6 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
     init {
 
         updateNetworkStatus()
-    }
-
-    @Throws(Throwable::class)
-    protected fun finalize() {
-        appContext.unbindService(certService)
     }
 
     val isSyncPossible: Boolean
