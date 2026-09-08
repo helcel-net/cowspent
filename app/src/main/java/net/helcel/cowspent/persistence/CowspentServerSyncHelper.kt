@@ -976,6 +976,10 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 }
 
             for (localBill in localBills) {
+                // A bill still waiting to be pushed has no remote id yet, so it is absent from the
+                // server list for the ordinary reason that the server has never seen it. Deleting
+                // it here would throw away a bill the user added while the sync was running.
+                if (localBill.state != DBBill.STATE_OK) continue
                 if (localBill.remoteId !in stillRemote) {
                     dbHelper.deleteBill(localBill.id)
                     nbPulledDeletedBills++
