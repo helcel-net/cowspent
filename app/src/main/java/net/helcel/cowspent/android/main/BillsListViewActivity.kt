@@ -790,11 +790,23 @@ class BillsListViewActivity :
         lifecycleScope.launch {
             val remoteProjects = withContext(Dispatchers.IO) { db.projects }
                 .filter { !it.isLocal && !it.isArchived }
+                // Only the first one scheduled actually starts - the rest queue behind it - and it
+                // takes the screen's callback with it. So the selected project goes first: otherwise
+                // the spinner follows a project the user is not looking at, stops when that one
+                // finishes, and theirs is reported as empty while it is still waiting its turn.
+                .sortedByDescending { it.id == selectedProjectId }
 
             viewModel.isRefreshing = true
             db.cowspentServerSyncHelper.addCallbackPull(syncCallBack)
 
             val started = if (accountSyncDue) {
+                // The pass is throttled by this stamp, so it has to be written here rather than
+                // left to the account sync: that only runs when an account is configured and only
+                // records itself on success, so without one the stamp stayed at zero and the pass
+                // repeated on every single resume, re-scheduling every project each time.
+                preferences.edit {
+                    putLong(getString(R.string.pref_key_last_account_sync_timestamp), now)
+                }
                 if (CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
                     db.cowspentServerSyncHelper.runAccountProjectsSync()
                 }
@@ -806,14 +818,24 @@ class BillsListViewActivity :
             } else {
                 val selectedProj = remoteProjects.find { it.id == selectedProjectId }
                 val lastSync = preferences.getLong(lastProjectSyncKey(selectedProjectId), 0L)
-                val due = trigger == SyncTrigger.MANUAL ||
+                // The pull writes the project cursor only after it has applied everything, so a cursor
+                // still at zero means no sync ever finished and nothing is stored locally.
+                // Throttling that strands the user on an empty list with no spinner - which is what
+                // the back gesture does to a large project, since it destroys the activity while
+                // the sync is still running. IHateMoney never advances the cursor, so the interval
+                // stays in charge there.
+                val neverCompleted = selectedProj != null &&
+                    selectedProj.type != ProjectType.IHATEMONEY &&
+                    (selectedProj.lastSyncedTimestamp ?: 0L) == 0L
+                val due = trigger == SyncTrigger.MANUAL || neverCompleted ||
                     now - lastSync > SELECTED_PROJECT_SYNC_INTERVAL_MS
+                val fullSync = trigger == SyncTrigger.MANUAL &&
+                    !partialRefreshPreferred(preferences, selectedProjectId, now)
                 if (selectedProj != null && due &&
-                    db.cowspentServerSyncHelper.scheduleSync(
-                        false, selectedProj, trigger == SyncTrigger.MANUAL
-                    ) != null
+                    db.cowspentServerSyncHelper.scheduleSync(false, selectedProj, fullSync) != null
                 ) {
                     markProjectSynced(preferences, selectedProj.id, now)
+                    if (fullSync) markFullySynced(preferences, selectedProj.id, now)
                     1
                 } else 0
             }
@@ -825,6 +847,30 @@ class BillsListViewActivity :
     }
 
     private fun lastProjectSyncKey(projectId: Long) = "lastProjectSyncTimestamp_$projectId"
+    private fun lastFullSyncKey(projectId: Long) = "lastFullSyncTimestamp_$projectId"
+
+    private fun markFullySynced(preferences: SharedPreferences, projectId: Long, at: Long) {
+        preferences.edit { putLong(lastFullSyncKey(projectId), at) }
+    }
+
+    /**
+     * Whether a pull to refresh should settle for the cheaper paged walk.
+     *
+     * A refresh by hand normally re-downloads the whole project, which is what makes it a usable
+     * repair when the local copy looks wrong. On a large project that is expensive to repeat, so
+     * with beta features on a refresh that follows a recent full one walks the recent pages
+     * instead - the common case of pulling twice in a row costs a page rather than the project.
+     */
+    private fun partialRefreshPreferred(
+        preferences: SharedPreferences,
+        projectId: Long,
+        now: Long
+    ): Boolean {
+        if (!preferences.getBoolean(getString(R.string.pref_key_beta_features), false)) return false
+        val lastFull = preferences.getLong(lastFullSyncKey(projectId), 0L)
+        if (lastFull == 0L) return false
+        return now - lastFull < SyncSettings.intervalMinutes(applicationContext) * 60 * 1000L
+    }
     private fun markProjectSynced(preferences: SharedPreferences, projectId: Long, at: Long) {
         preferences.edit { putLong(lastProjectSyncKey(projectId), at) }
     }

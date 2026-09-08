@@ -799,7 +799,9 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             if (usePagedWalk) {
                 walkBillPages(idMaps, localBillsByRemoteId)?.let { return it }
             }
-            return fetchAllBills(idMaps)
+            // A project with nothing stored has no cursor worth sending, so it asks for everything.
+            val since = if (forceFullSync || localBillsByRemoteId.isEmpty()) 0L else null
+            return fetchAllBills(idMaps, since)
         }
 
         /**
@@ -874,9 +876,14 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             return RemoteBills(bills, emptyList(), syncTimestamp)
         }
 
-        private fun fetchAllBills(idMaps: RemoteIdMaps): RemoteBills {
-            Log.d(TAG, "Starting full sync for project ${project.remoteId}")
-            val response = client!!.getBills(project)
+        /**
+         * One request for the whole collection. [since] 0 asks for everything; the project cursor
+         * asks only for what changed. Either way the response carries the full id list, which is
+         * what lets vanished bills be removed locally.
+         */
+        private fun fetchAllBills(idMaps: RemoteIdMaps, since: Long?): RemoteBills {
+            Log.d(TAG, "Fetching bills for ${project.remoteId} (since=${since ?: project.lastSyncedTimestamp})")
+            val response = client!!.getBills(project, since = since)
             return if (project.type == ProjectType.IHATEMONEY) {
                 val bills = response.getBillsIHM(
                     project.id, idMaps.members, idMaps.categories, idMaps.paymentModes

@@ -689,12 +689,18 @@ class VersatileProjectSyncClient(
     }
 
     @Throws(JSONException::class, IOException::class, TokenMismatchException::class, NextcloudHttpRequestFailedException::class)
+    /**
+     * [since] overrides the project cursor sent as lastChanged. Passing 0 asks the server for the
+     * whole project rather than the changes since the last sync; omitting it keeps the cursor, so
+     * the server returns only what has moved.
+     */
     fun getBills(
         project: DBProject,
         offset: Int? = null,
         limit: Int? = null,
         reverse: Boolean? = null,
-        deleted: Int? = null
+        deleted: Int? = null,
+        since: Long? = null
     ): ServerResponse.BillsResponse {
         var target: String
         var username: String?
@@ -706,7 +712,7 @@ class VersatileProjectSyncClient(
         val paramValues: MutableList<String> = ArrayList()
 
         if (ProjectType.COSPEND == project.type) {
-            val tsLastSync = project.lastSyncedTimestamp
+            val tsLastSync = since ?: project.lastSyncedTimestamp
             if (offset == null) {
                 if (cospendVersionGT161) {
                     paramKeys.add("lastChanged")
