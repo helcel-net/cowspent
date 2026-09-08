@@ -897,6 +897,18 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             remoteBills: List<DBBill>,
             localBillsByRemoteId: Map<Long, DBBill>
         ) {
+            // Committed in chunks: one transaction per chunk turns a per-row commit into one write
+            // for the whole batch, while still leaving finished chunks on disk if the sync is cut
+            // short - a project part-way through is far better than one that rolled back.
+            remoteBills.chunked(BILL_APPLY_CHUNK).forEach { chunk ->
+                dbHelper.inTransaction { applyBillChunk(chunk, localBillsByRemoteId) }
+            }
+        }
+
+        private fun applyBillChunk(
+            remoteBills: List<DBBill>,
+            localBillsByRemoteId: Map<Long, DBBill>
+        ) {
             for (remoteBill in remoteBills) {
                 val localBill = localBillsByRemoteId[remoteBill.remoteId]
                 if (localBill == null) {
@@ -1791,6 +1803,9 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
          * part way into a page, and it carries across page boundaries rather than restarting.
          */
         private const val UNCHANGED_RUN_TO_SETTLE = 25
+
+        /** Bills written per transaction while applying a pull. */
+        private const val BILL_APPLY_CHUNK = 500
 
         private var instance: CowspentServerSyncHelper? = null
         private val projectIdsToSync: MutableList<Long> = ArrayList()

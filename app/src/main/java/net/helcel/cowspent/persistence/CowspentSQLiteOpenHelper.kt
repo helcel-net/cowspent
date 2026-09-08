@@ -448,6 +448,26 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     // --- Bills logic ---
 
+    /**
+     * Runs [block] as one database transaction.
+     *
+     * Every write here commits on its own otherwise, which for a sync means a committed
+     * transaction per bill and another per ower - the dominant cost of a large project's first
+     * sync. Callers batch in chunks rather than wrapping everything: a sync interrupted halfway
+     * then keeps the chunks it already committed instead of rolling the lot back.
+     */
+    fun <T> inTransaction(block: () -> T): T {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val result = block()
+            db.setTransactionSuccessful()
+            return result
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     fun addBill(b: DBBill): Long {
         val db = writableDatabase
         val values = ContentValues()
@@ -627,11 +647,25 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
         val cursor = db.query(table_bills, columnsBills, selection, selectionArgs, null, null, orderBy)
         val bills: MutableList<DBBill> = ArrayList()
         while (cursor.moveToNext()) {
-            val bill = getBillFromCursor(cursor)
-            bill.billOwers = getBillowersOfBill(bill.id)
-            bills.add(bill)
+            bills.add(getBillFromCursor(cursor))
         }
         cursor.close()
+        if (bills.isEmpty()) return bills
+
+        // Every ower of the matched bills in one query, keyed back to its bill.
+        //
+        // Fetching them per bill meant a project with thousands of bills issued thousands of
+        // queries on every list refresh - and that refresh runs on resume, on switching project,
+        // and after each sync. The bill ids are re-selected as a subquery rather than bound as
+        // arguments, which would blow past SQLite's limit on bound variables for a large project.
+        val owersByBill = getBillOwersCustom(
+            "$key_billId IN (SELECT $key_id FROM $table_bills WHERE $selection)",
+            selectionArgs,
+            null
+        ).groupBy { it.billId }
+        for (bill in bills) {
+            bill.billOwers = owersByBill[bill.id].orEmpty()
+        }
         return bills
     }
 
