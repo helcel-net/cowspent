@@ -94,14 +94,16 @@ class BillsListViewActivity :
     private val syncCallBack = object : ICallback {
         override fun onFinish() {
             mActionMode?.finish()
-            refreshLists()
             viewModel.isRefreshing = false
+            refreshLists()
         }
 
         override fun onFinish(result: String, message: String) {}
 
         override fun onScheduled() {
-            viewModel.isRefreshing = false
+            // Being queued is not being done. Clearing the indicator here stops the spinner while a
+            // large project is still downloading; synchronize() already releases it when nothing
+            // actually started.
         }
     }
 

@@ -3,6 +3,9 @@ package net.helcel.cowspent.android.main
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -69,13 +72,43 @@ fun EmptyProjectsState(onConfigureNextcloud: () -> Unit, onAddManually: () -> Un
     }
 }
 
+/**
+ * A full-height, centred state that a pull to refresh can still act on.
+ *
+ * PullRefresh reads the gesture from a nested scroll source, and a plain Column offers none - so
+ * on an empty list, which is exactly when a refresh is wanted most, the pull never fires. A
+ * single-item LazyColumn has nowhere to scroll but does provide that source.
+ */
+@Composable
+private fun RefreshableFullScreenState(content: @Composable ColumnScope.() -> Unit) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item {
+            Column(
+                modifier = Modifier.fillParentMaxSize().padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                content = content
+            )
+        }
+    }
+}
+
+@Composable
+fun LoadingBillsState() {
+    RefreshableFullScreenState {
+        CircularProgressIndicator()
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.error_loading),
+            style = MaterialTheme.typography.subtitle1,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+        )
+    }
+}
+
 @Composable
 fun EmptyMembersState() {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    RefreshableFullScreenState {
         Text(
             text = stringResource(R.string.error_no_members).uppercase(), 
             style = MaterialTheme.typography.subtitle1, 
@@ -94,11 +127,7 @@ fun EmptyMembersState() {
 
 @Composable
 fun EmptyBillsState() {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    RefreshableFullScreenState {
         Text(
             text = stringResource(R.string.error_no_bills).uppercase(), 
             style = MaterialTheme.typography.subtitle1, 
@@ -203,11 +232,7 @@ fun SectionHeader(title: String) {
 
 @Composable
 fun EmptyState() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    RefreshableFullScreenState {
         Text(
             text = stringResource(R.string.error_no_bills).uppercase(), 
             style = MaterialTheme.typography.subtitle1, 
