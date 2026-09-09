@@ -17,6 +17,7 @@
     <string name="simple_back">Back</string>
     <string name="action_archive">Archive</string>
     <string name="action_unarchive">Unarchive</string>
+    <string name="action_forget">Delete locally</string>
     <string name="action_export">Export</string>
     <string name="action_stats">Stats</string>
     <string name="action_settle">Settle</string>

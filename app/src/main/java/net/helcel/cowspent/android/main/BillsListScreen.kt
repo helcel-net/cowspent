@@ -132,6 +132,10 @@ fun BillsListScreen(
                     onProjectAction(projectOptionsProjectId, 1)
                     viewModel.showProjectOptionsDialogByProjectId = null
                 },
+                onForgetProject = {
+                    onProjectAction(projectOptionsProjectId, 9)
+                    viewModel.showProjectOptionsDialogByProjectId = null
+                },
                 onManageMembers = {
                     onProjectAction(projectOptionsProjectId, 2)
                     viewModel.showProjectOptionsDialogByProjectId = null
@@ -408,11 +412,9 @@ fun BillsListScreen(
             .pullRefresh(pullRefreshState)) {
             when {
                 viewModel.showNoProjects -> EmptyProjectsState(onAccountSwitcherClick, onAddProjectClick)
+               (viewModel.isRefreshing || viewModel.isLoadingBills) && viewModel.bills.isEmpty() ->
+                    LoadingBillsState()
                 viewModel.showNoMembers -> EmptyMembersState()
-                // A large project takes a long time on its first sync. Until that finishes there
-                // is nothing stored for it yet, and reporting that as "no bills" tells the user
-                // the project is empty when it is still downloading.
-                viewModel.isRefreshing && viewModel.bills.isEmpty() -> LoadingBillsState()
                 viewModel.showNoBills -> EmptyBillsState()
                 viewModel.bills.isEmpty() -> EmptyState()
                 else -> {

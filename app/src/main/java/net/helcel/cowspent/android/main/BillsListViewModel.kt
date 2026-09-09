@@ -20,6 +20,7 @@ class BillsListViewModel : ViewModel() {
     var selectedMemberId by mutableStateOf<Long?>(null)
     var bills by mutableStateOf<List<Item>>(emptyList())
     var isRefreshing by mutableStateOf(false)
+    var isLoadingBills by mutableStateOf(false)
     var searchQuery by mutableStateOf("")
     var title by mutableStateOf("")
     var accountName by mutableStateOf("")

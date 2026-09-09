@@ -24,6 +24,7 @@ import net.helcel.cowspent.model.ProjectType
 fun ProjectOptionsDialogContent(
     onEditProject: () -> Unit,
     onRemoveProject: () -> Unit,
+    onForgetProject: () -> Unit = {},
     onManageMembers: () -> Unit,
     onManageCurrencies: () -> Unit,
     onManageLabels: () -> Unit,
@@ -73,6 +74,15 @@ fun ProjectOptionsDialogContent(
                 val archiveLabel = if (isArchived) stringResource(R.string.action_unarchive) else stringResource(R.string.action_archive)
                 val archiveIcon = if (isArchived) Icons.Default.Unarchive else Icons.Default.Archive
                 row1.add(ProjectOption(archiveLabel, archiveIcon, onRemoveProject))
+                if (isArchived) {
+                    row1.add(
+                        ProjectOption(
+                            stringResource(R.string.action_forget),
+                            Icons.Default.Delete,
+                            onForgetProject
+                        )
+                    )
+                }
             } else {
                 row1.add(ProjectOption(stringResource(R.string.action_delete), Icons.Default.Delete, onRemoveProject))
             }

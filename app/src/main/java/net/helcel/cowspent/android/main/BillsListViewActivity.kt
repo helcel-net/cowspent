@@ -270,6 +270,7 @@ class BillsListViewActivity :
                             8 -> {
                                 startActivity(net.helcel.cowspent.android.label.LabelManagementActivity.createIntent(this@BillsListViewActivity, pid))
                             }
+                            9 -> onRemoveProjectClick(pid)
                         }
                     },
                     onAccountSwitcherClick = {
@@ -377,6 +378,8 @@ class BillsListViewActivity :
     fun onProjectClick(projectId: Long) {
         if (viewModel.selectedProjectId != projectId) {
             viewModel.selectedMemberId = null
+            viewModel.bills = emptyList()
+            viewModel.isLoadingBills = true
         }
         setSelectedProject(projectId)
         navigationSelection = Category(null, null)
@@ -410,6 +413,9 @@ class BillsListViewActivity :
                     lifecycleScope.launch {
                         withContext(Dispatchers.IO) {
                             db.deleteProject(projectId)
+                            // Otherwise the next account sync sees a project the account offers
+                            // with no local row, and creates it again.
+                            CowspentServerSyncHelper.forgetAccountProject(applicationContext, proj)
                             PreferenceManager.getDefaultSharedPreferences(applicationContext)
                                 .edit { remove(lastProjectSyncKey(projectId)) }
                             val dbProjects = db.projects
@@ -621,76 +627,80 @@ class BillsListViewActivity :
         val selectedProjectId = PreferenceManager.getDefaultSharedPreferences(applicationContext).getLong("selected_project", 0)
         
         lifecycleScope.launch {
-            val (projId, projName) = withContext(Dispatchers.IO) {
-                if (selectedProjectId != 0L) {
-                    db.getProject(selectedProjectId)?.let {
-                        it.id to (if (it.name == "null" || it.name.isEmpty()) it.remoteId else it.name)
-                    } ?: (0L to "")
-                } else {
-                    0L to ""
+            try {
+                val (projId, projName) = withContext(Dispatchers.IO) {
+                    if (selectedProjectId != 0L) {
+                        db.getProject(selectedProjectId)?.let {
+                            it.id to (if (it.name == "null" || it.name.isEmpty()) it.remoteId else it.name)
+                        } ?: (0L to "")
+                    } else {
+                        0L to ""
+                    }
                 }
-            }
             
-            val title = if (selectedProjectId != 0L) projName else getString(R.string.app_name)
+                val title = if (selectedProjectId != 0L) projName else getString(R.string.app_name)
             
-            setSelectedProject(selectedProjectId)
-            viewModel.title = title
-            val query = viewModel.searchQuery.ifEmpty { null }
+                setSelectedProject(selectedProjectId)
+                viewModel.title = title
+                val query = viewModel.searchQuery.ifEmpty { null }
 
-            val (ljItems, memberCount) = withContext(Dispatchers.IO) {
-                val db = CowspentSQLiteOpenHelper.getInstance(applicationContext)
-                val billList: List<DBBill> = if (projId != 0L) {
-                    db.searchBills(query, projId)
-                } else {
-                    ArrayList()
+                val (ljItems, memberCount) = withContext(Dispatchers.IO) {
+                    val db = CowspentSQLiteOpenHelper.getInstance(applicationContext)
+                    val billList: List<DBBill> = if (projId != 0L) {
+                        db.searchBills(query, projId)
+                    } else {
+                        ArrayList()
+                    }
+
+                    val bills = billList.filter {
+                        val mid = viewModel.selectedMemberId
+                        mid == null || mid == it.payerId || it.billOwersIds.contains(mid)
+                    }
+
+                    viewModel.hasUnlabeledBills = bills.any { it.categoryId == 0L && it.state != DBBill.STATE_DELETED }
+
+                    val projectMembers = db.getMembersOfProject(projId, null)
+                    val memberMap = projectMembers.associateBy { it.id }
+
+                    val projectPaymentModes = db.getPaymentModes(projId).associateBy { it.id }
+                    val projectCategories = db.getCategories(projId).associateBy { it.id }
+
+                    BillFormatter.formatBills(
+                        bills,
+                        memberMap,
+                        projectCategories,
+                        projectPaymentModes
+                    )
+
+                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
+                    val itemList = BillsListUtils.groupAndSectionBills(
+                        bills,
+                        memberMap,
+                        sdf,
+                        applicationContext
+                    )
+
+                    itemList to projectMembers.size
                 }
 
-                val bills = billList.filter {
-                    val mid = viewModel.selectedMemberId
-                    mid == null || mid == it.payerId || it.billOwersIds.contains(mid)
+                viewModel.showNoProjects = false
+                viewModel.showNoMembers = false
+                viewModel.showNoBills = false
+
+                when {
+                    memberCount == 0 -> {
+                        viewModel.showNoMembers = true
+                    }
+                    ljItems.isEmpty() -> {
+                        viewModel.showNoBills = true
+                        viewModel.bills = emptyList()
+                    }
+                    else -> {
+                        viewModel.bills = ljItems
+                    }
                 }
-
-                viewModel.hasUnlabeledBills = bills.any { it.categoryId == 0L && it.state != DBBill.STATE_DELETED }
-
-                val projectMembers = db.getMembersOfProject(projId, null)
-                val memberMap = projectMembers.associateBy { it.id }
-
-                val projectPaymentModes = db.getPaymentModes(projId).associateBy { it.id }
-                val projectCategories = db.getCategories(projId).associateBy { it.id }
-
-                BillFormatter.formatBills(
-                    bills,
-                    memberMap,
-                    projectCategories,
-                    projectPaymentModes
-                )
-
-                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
-                val itemList = BillsListUtils.groupAndSectionBills(
-                    bills,
-                    memberMap,
-                    sdf,
-                    applicationContext
-                )
-
-                itemList to projectMembers.size
-            }
-
-            viewModel.showNoProjects = false
-            viewModel.showNoMembers = false
-            viewModel.showNoBills = false
-            
-            when {
-                memberCount == 0 -> {
-                    viewModel.showNoMembers = true
-                }
-                ljItems.isEmpty() -> {
-                    viewModel.showNoBills = true
-                    viewModel.bills = emptyList()
-                }
-                else -> {
-                    viewModel.bills = ljItems
-                }
+            } finally {
+                viewModel.isLoadingBills = false
             }
         }
     }
