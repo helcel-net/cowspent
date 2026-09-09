@@ -782,7 +782,7 @@ class BillsListViewActivity :
 
         // The account and all-projects refresh belongs to opening the app, throttled by the
         // SyncOnOpen interval so that resuming within the interval does not repeat it.
-        val intervalMinutes = SyncSettings.intervalMinutes(applicationContext)
+        val intervalMinutes = SyncSettings.OPEN_SYNC_INTERVAL_MINUTES
         val lastAccountSync = preferences.getLong(getString(R.string.pref_key_last_account_sync_timestamp), 0L)
         val accountSyncDue = trigger == SyncTrigger.APP_OPEN &&
             now - lastAccountSync > intervalMinutes * 60 * 1000L
@@ -866,10 +866,13 @@ class BillsListViewActivity :
         projectId: Long,
         now: Long
     ): Boolean {
-        if (!preferences.getBoolean(getString(R.string.pref_key_beta_features), false)) return false
+        if (!preferences.getBoolean(getString(R.string.pref_key_extra_features), false)) return false
+        // "Always" means what it says: every manual refresh is a full sync.
+        val delayMinutes = SyncSettings.fullSyncDelayMinutes(applicationContext)
+        if (delayMinutes == 0) return false
         val lastFull = preferences.getLong(lastFullSyncKey(projectId), 0L)
         if (lastFull == 0L) return false
-        return now - lastFull < SyncSettings.intervalMinutes(applicationContext) * 60 * 1000L
+        return now - lastFull < delayMinutes * 60 * 1000L
     }
     private fun markProjectSynced(preferences: SharedPreferences, projectId: Long, at: Long) {
         preferences.edit { putLong(lastProjectSyncKey(projectId), at) }

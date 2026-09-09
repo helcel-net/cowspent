@@ -84,9 +84,9 @@ fun SettingsScreen(
     val keyColor = stringResource(R.string.pref_key_color)
     val keyOfflineMode = stringResource(R.string.pref_key_offline_mode)
     val keyShowArchived = stringResource(R.string.pref_key_show_archived)
-    val keyBetaFeatures = stringResource(R.string.pref_key_beta_features)
+    val keyExtraFeatures = stringResource(R.string.pref_key_extra_features)
     val keyStatsIncludeDeactivated = stringResource(R.string.pref_key_stats_include_deactivated)
-    val keyAutoSyncOnOpen = stringResource(R.string.pref_key_auto_sync_on_open)
+    val keyFullSyncDelay = stringResource(R.string.pref_key_full_sync_delay)
     val keyFillNewBillFromLast = stringResource(R.string.pref_key_fill_new_bill_from_last)
     val keyLastAccountSync = stringResource(R.string.pref_key_last_account_sync_timestamp)
 
@@ -128,8 +128,8 @@ fun SettingsScreen(
     var showArchived by remember(keyShowArchived) {
         mutableStateOf(sharedPreferences.getBoolean(keyShowArchived, false))
     }
-    var betaFeatures by remember(keyBetaFeatures) {
-        mutableStateOf(sharedPreferences.getBoolean(keyBetaFeatures, false))
+    var extraFeatures by remember(keyExtraFeatures) {
+        mutableStateOf(sharedPreferences.getBoolean(keyExtraFeatures, false))
     }
     var fillNewBillFromLast by remember(keyFillNewBillFromLast) {
         mutableStateOf(sharedPreferences.getBoolean(keyFillNewBillFromLast, false))
@@ -138,16 +138,16 @@ fun SettingsScreen(
         mutableStateOf(sharedPreferences.getBoolean(keyStatsIncludeDeactivated, false))
     }
     
-    val syncIntervals = SyncSettings.INTERVAL_CHOICES_MINUTES
-    val syncIntervalLabels = listOf(
-        stringResource(R.string.pref_value_sync_1m),
-        stringResource(R.string.pref_value_sync_10m),
+    val fullSyncDelays = SyncSettings.FULL_SYNC_DELAY_CHOICES_MINUTES
+    val fullSyncDelayLabels = listOf(
+        stringResource(R.string.pref_value_sync_always),
         stringResource(R.string.pref_value_sync_1h),
-        stringResource(R.string.pref_value_sync_1d)
+        stringResource(R.string.pref_value_sync_1d),
+        stringResource(R.string.pref_value_sync_1w)
     )
-    
-    var syncInterval by remember(keyAutoSyncOnOpen) {
-        mutableIntStateOf(SyncSettings.intervalMinutes(context))
+
+    var fullSyncDelay by remember(keyFullSyncDelay) {
+        mutableIntStateOf(SyncSettings.fullSyncDelayMinutes(context))
     }
 
     Scaffold(
@@ -172,28 +172,6 @@ fun SettingsScreen(
         ) {
             // Appearance
             SettingsCategory(stringResource(R.string.settings_appearance))
-
-            SettingsSwitchPreference(
-                title = stringResource(R.string.settings_show_archived),
-                icon = Icons.Default.Archive,
-                checked = showArchived,
-                onCheckedChange = {
-                    showArchived = it
-                    sharedPreferences.edit {
-                        putBoolean(keyShowArchived, it)
-                        if (!it) {
-                            val selectedProjectId = sharedPreferences.getLong("selected_project", 0)
-                            if (selectedProjectId != 0L) {
-                                val db = CowspentSQLiteOpenHelper.getInstance(context)
-                                val project = db.getProject(selectedProjectId)
-                                if (project?.isArchived == true) {
-                                    putLong("selected_project", 0)
-                                }
-                            }
-                        }
-                    }
-                }
-            )
 
             SettingsListPreference(
                 title = stringResource(R.string.settings_night_mode),
@@ -283,19 +261,41 @@ fun SettingsScreen(
             SettingsCategory(stringResource(R.string.settings_other))
 
             SettingsSwitchPreference(
-                title = stringResource(R.string.settings_beta_features),
-                summary = stringResource(R.string.settings_beta_features_summary),
+                title = stringResource(R.string.settings_extra_features),
+                summary = stringResource(R.string.settings_extra_features_summary),
                 icon = Icons.Default.Info,
-                checked = betaFeatures,
+                checked = extraFeatures,
                 onCheckedChange = {
-                    betaFeatures = it
+                    extraFeatures = it
                     sharedPreferences.edit {
-                        putBoolean(keyBetaFeatures, it)
+                        putBoolean(keyExtraFeatures, it)
                     }
                 }
             )
 
-            if (betaFeatures) {
+            if (extraFeatures) {
+                SettingsSwitchPreference(
+                    title = stringResource(R.string.settings_show_archived),
+                    icon = Icons.Default.Archive,
+                    checked = showArchived,
+                    onCheckedChange = {
+                        showArchived = it
+                        sharedPreferences.edit {
+                            putBoolean(keyShowArchived, it)
+                            if (!it) {
+                                val selectedProjectId = sharedPreferences.getLong("selected_project", 0)
+                                if (selectedProjectId != 0L) {
+                                    val db = CowspentSQLiteOpenHelper.getInstance(context)
+                                    val project = db.getProject(selectedProjectId)
+                                    if (project?.isArchived == true) {
+                                        putLong("selected_project", 0)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+
                 SettingsSwitchPreference(
                     title = stringResource(R.string.settings_fill_new_bill_from_last),
                     summary = stringResource(R.string.settings_fill_new_bill_from_last_summary),
@@ -322,18 +322,18 @@ fun SettingsScreen(
                 )
 
                 SettingsSliderPreference(
-                    title = stringResource(R.string.settings_auto_sync_on_open),
-                    summary = stringResource(R.string.settings_auto_sync_on_open_summary),
+                    title = stringResource(R.string.settings_full_sync_delay),
+                    summary = stringResource(R.string.settings_full_sync_delay_summary),
                     icon = Icons.Default.Sync,
-                    value = syncInterval,
-                    values = syncIntervals,
-                    labels = syncIntervalLabels,
-                    onValueChange = { newInterval ->
+                    value = fullSyncDelay,
+                    values = fullSyncDelays,
+                    labels = fullSyncDelayLabels,
+                    onValueChange = { newDelay ->
                         // Slider reports every drag delta, not just the snapped steps.
-                        if (newInterval != syncInterval) {
-                            syncInterval = newInterval
+                        if (newDelay != fullSyncDelay) {
+                            fullSyncDelay = newDelay
                             sharedPreferences.edit {
-                                putInt(keyAutoSyncOnOpen, newInterval)
+                                putInt(keyFullSyncDelay, newDelay)
                             }
                         }
                     }

@@ -137,14 +137,8 @@
     <string name="settings_color_custom">Color personalizado</string>
     <string name="settings_color_mode">Selección de color</string>
     <string name="settings_show_archived">Mostrar los proyectos archivados</string>
-    <string name="settings_beta_features">Funciones beta</string>
-    <string name="settings_beta_features_summary">Activar las funciones experimentales. Úsalas bajo tu propia responsabilidad.</string>
     <string name="settings_fill_new_bill_from_last">Rellenar desde la última factura</string>
     <string name="settings_fill_new_bill_from_last_summary">Reutilizar el pagador, la categoría, el modo y los participantes de la última factura creada en el proyecto.</string>
-    <string name="settings_auto_sync_on_open">Intervalo de sincronización</string>
-    <string name="settings_auto_sync_on_open_summary">Con qué frecuencia se actualizan la cuenta y todos los proyectos al abrir la aplicación.</string>
-    <string name="pref_value_sync_1m">1 minuto</string>
-    <string name="pref_value_sync_10m">10 minutos</string>
     <string name="pref_value_sync_1h">1 hora</string>
     <string name="pref_value_sync_1d">1 día</string>
     <string name="settings_url_warn_http">ADVERTENCIA: \"http\" no es seguro. Usa \"https\".</string>

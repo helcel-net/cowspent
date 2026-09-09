@@ -144,14 +144,8 @@
     <string name="settings_color_custom">Custom color</string>
     <string name="settings_color_mode">Color Selection</string>
     <string name="settings_show_archived">Show archived projects</string>
-    <string name="settings_beta_features">Beta Features</string>
-    <string name="settings_beta_features_summary">Enable experimental features. Use at your own risk.</string>
     <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
     <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
-    <string name="settings_auto_sync_on_open">Sync interval</string>
-    <string name="settings_auto_sync_on_open_summary">How often to refresh the account and all projects when opening the app.</string>
-    <string name="pref_value_sync_1m">1 minute</string>
-    <string name="pref_value_sync_10m">10 minutes</string>
     <string name="pref_value_sync_1h">1 hour</string>
     <string name="pref_value_sync_1d">1 day</string>
     <string name="settings_url_warn_http">WARNING: "http" is unsafe. Use "https".</string>

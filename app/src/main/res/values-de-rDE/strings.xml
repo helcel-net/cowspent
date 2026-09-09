@@ -138,14 +138,8 @@
     <string name="settings_color_custom">Eigene Farbe</string>
     <string name="settings_color_mode">Farbauswahl</string>
     <string name="settings_show_archived">Archivierte Projekte anzeigen</string>
-    <string name="settings_beta_features">Beta-Funktionen</string>
-    <string name="settings_beta_features_summary">Experimentelle Funktionen aktivieren. Benutzung auf eigene Gefahr.</string>
     <string name="settings_fill_new_bill_from_last">Aus letzter Rechnung vorausfüllen</string>
     <string name="settings_fill_new_bill_from_last_summary">Zahler, Kategorie, Zahlungsart und Beteiligte aus der zuletzt erstellten Rechnung des Projekts übernehmen.</string>
-    <string name="settings_auto_sync_on_open">Synchronisierungsintervall</string>
-    <string name="settings_auto_sync_on_open_summary">Wie oft Konto und alle Projekte beim Öffnen der App aktualisiert werden.</string>
-    <string name="pref_value_sync_1m">1 Minute</string>
-    <string name="pref_value_sync_10m">10 Minuten</string>
     <string name="pref_value_sync_1h">1 Stunde</string>
     <string name="pref_value_sync_1d">1 Tag</string>
     <string name="settings_url_warn_http">WARNUNG: \"http\" ist unsicher. Verwende \"https\".</string>

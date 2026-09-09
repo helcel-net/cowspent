@@ -36,7 +36,7 @@ fun ProjectOptionsDialogContent(
     projectType: ProjectType = ProjectType.LOCAL,
     accessLevel: Int = DBProject.ACCESS_LEVEL_ADMIN,
     isShareable: Boolean = true,
-    showBetaFeatures: Boolean = false
+    showExtraFeatures: Boolean = false
 ) {
     Surface(
         shape = MaterialTheme.shapes.large,
@@ -80,7 +80,7 @@ fun ProjectOptionsDialogContent(
             // Row 2: Manage Member, Manage Labels, Manage Currencies
             if (!isArchived && isMaintainer) {
                 row2.add(ProjectOption(stringResource(R.string.action_members), Icons.Default.Group, onManageMembers))
-                if (showBetaFeatures && (projectType == ProjectType.LOCAL || projectType == ProjectType.COSPEND)) {
+                if (showExtraFeatures && (projectType == ProjectType.LOCAL || projectType == ProjectType.COSPEND)) {
                     row2.add(ProjectOption(stringResource(R.string.action_labels), Icons.AutoMirrored.Filled.Label, onManageLabels))
                 }
                 row2.add(ProjectOption(stringResource(R.string.action_currencies), Icons.Default.MonetizationOn, onManageCurrencies))
@@ -183,7 +183,7 @@ fun ProjectOptionsDialogPreview() {
             projectType = ProjectType.COSPEND,
             accessLevel = DBProject.ACCESS_LEVEL_ADMIN,
             isShareable = true,
-            showBetaFeatures = true
+            showExtraFeatures = true
         )
     }
 }
@@ -208,7 +208,7 @@ fun ProjectOptionsDialogPreview2() {
             projectType = ProjectType.COSPEND,
             accessLevel = DBProject.ACCESS_LEVEL_ADMIN,
             isShareable = true,
-            showBetaFeatures = true
+            showExtraFeatures = true
         )
     }
 }
@@ -232,7 +232,7 @@ fun ProjectOptionsDialogPreview3() {
             projectType = ProjectType.LOCAL,
             accessLevel = DBProject.ACCESS_LEVEL_ADMIN,
             isShareable = true,
-            showBetaFeatures = true
+            showExtraFeatures = true
         )
     }
 }
