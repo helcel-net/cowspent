@@ -38,6 +38,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.main.MainConstants
+import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
+import net.helcel.cowspent.persistence.CowspentServerSyncHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.CospendClientUtil
 import net.helcel.cowspent.util.CospendClientUtil.LoginStatus
@@ -188,6 +190,12 @@ class AccountActivity : AppCompatActivity() {
         }
     }
 
+    private fun startInitialAccountSync() {
+        if (!CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) return
+        CowspentSQLiteOpenHelper.getInstance(applicationContext)
+            .cowspentServerSyncHelper.runAccountProjectsSync()
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -206,6 +214,8 @@ class AccountActivity : AppCompatActivity() {
                     viewModel.useSso = true
                     viewModel.serverUrl = ssoAccount.url
                     viewModel.username = ssoAccount.userId
+
+                    startInitialAccountSync()
 
                     val resultData = Intent()
                     resultData.putExtra(MainConstants.CREDENTIALS_CHANGED, CREDENTIALS_CHANGED)
@@ -311,6 +321,8 @@ class AccountActivity : AppCompatActivity() {
                     remove(SETTINGS_KEY_ETAG)
                     remove(SETTINGS_KEY_LAST_MODIFIED)
                 }
+
+                startInitialAccountSync()
 
                 val data = Intent()
                 data.putExtra(MainConstants.CREDENTIALS_CHANGED, CREDENTIALS_CHANGED)

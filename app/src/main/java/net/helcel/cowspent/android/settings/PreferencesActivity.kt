@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -24,6 +25,14 @@ import net.helcel.cowspent.util.ColorUtils
  * Allows to change application settings.
  */
 class PreferencesActivity : AppCompatActivity() {
+
+    private val accountLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            setResult(RESULT_OK, result.data)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -59,7 +68,7 @@ class PreferencesActivity : AppCompatActivity() {
                 SettingsScreen(
                     onBack = { NavUtils.navigateUpFromSameTask(this) },
                     onAccountSettingsClick = {
-                        startActivity(Intent(this, AccountActivity::class.java))
+                        accountLauncher.launch(Intent(this, AccountActivity::class.java))
                     },
                     onAboutClick = {
                         startActivity(Intent(this, AboutActivity::class.java))

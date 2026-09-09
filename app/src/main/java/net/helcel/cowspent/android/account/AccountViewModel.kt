@@ -2,6 +2,7 @@ package net.helcel.cowspent.android.account
 
 import android.app.Application
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,6 +13,7 @@ import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.util.CospendClientUtil
 import net.helcel.cowspent.util.SecureStorage
 
@@ -88,8 +90,28 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private fun forgetProjectsTheAccountProvided() {
+        try {
+            val db = CowspentSQLiteOpenHelper.getInstance(getApplication())
+            val offered = db.accountProjects
+            val cospendPath = "/index.php/apps/cospend"
+            for (project in db.projects) {
+                val matches = offered.any {
+                    it.remoteId == project.remoteId &&
+                            project.serverUrl?.replace("/+$".toRegex(), "") ==
+                            it.ncUrl.replace("/+$".toRegex(), "") + cospendPath
+                }
+                if (matches) db.deleteProject(project.id)
+            }
+            db.clearAccountProjects()
+        } catch (e: Exception) {
+            Log.e("AccountViewModel", "Could not remove the account's projects on logout", e)
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
+            withContext(Dispatchers.IO) { forgetProjectsTheAccountProvided() }
             SecureStorage.removePassword(getApplication(), AccountActivity.SETTINGS_PASSWORD)
         }
         preferences.edit {
