@@ -5,6 +5,9 @@ import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 
 object ExportUtil {
 
+    /** Quotes a field the way RFC4180 (and opencsv, and Cospend) expect. */
+    private fun q(value: String?): String = "\"" + (value ?: "").replace("\"", "\"\"") + "\""
+
     @JvmStatic
     fun createExportContent(db: CowspentSQLiteOpenHelper, projectId: Long): String {
         var fileContent = ""
@@ -18,8 +21,8 @@ object ExportUtil {
         }
         val bills = db.getBillsOfProject(projectId).toMutableList()
 
-        // write header
-        fileContent += "what,amount,date,timestamp,payer_name,payer_weight,payer_active,owers,repeat,categoryid,paymentmode\n"
+        // write header.
+        fileContent += "what,amount,date,timestamp,payer_name,payer_weight,payer_active,owers,repeat,categoryid,paymentmode,paymentmodeid,comment\n"
 
         // write members
         for (m in members) {
@@ -41,15 +44,11 @@ object ExportUtil {
             val payerName = payer.name
             val payerWeight = payer.weight
             val payerActive = if (payer.isActivated) 1 else 0
-            val billOwers = b.billOwers
-            var owersTxt = ""
-            for (bo in billOwers) {
-                owersTxt += membersById[bo.memberId]?.name + ","
-            }
-            owersTxt = owersTxt.replace(",$".toRegex(), "")
-            fileContent += "\"${b.what}\",${b.amount},${b.date},${b.timestamp},\"$payerName\"," +
-                    "$payerWeight,$payerActive,\"$owersTxt\",${b.repeat},${b.categoryId}," +
-                    "${b.paymentMode}\n"
+            val owersTxt = b.billOwers.mapNotNull { membersById[it.memberId]?.name }.joinToString(",")
+            fileContent += "${q(b.what)},${b.amount},${b.date},${b.timestamp},${q(payerName)}," +
+                    "$payerWeight,$payerActive,${q(owersTxt)},${b.repeat ?: DBBill.NON_REPEATED}," +
+                    "${b.categoryId},${b.paymentMode ?: DBBill.PAYMODE_NONE},${b.paymentModeId}," +
+                    "${q(b.comment)}\n"
         }
 
         // write categories
@@ -57,7 +56,16 @@ object ExportUtil {
         if (cats.isNotEmpty()) {
             fileContent += "\ncategoryname,categoryid,icon,color\n"
             for (cat in cats) {
-                fileContent += "\"${cat.name}\",${cat.id},\"${cat.icon}\",\"${cat.color}\"\n"
+                fileContent += "${q(cat.name)},${cat.id},${q(cat.icon)},${q(cat.color)}\n"
+            }
+        }
+
+        // write payment modes
+        val pms = db.getPaymentModes(projectId)
+        if (pms.isNotEmpty()) {
+            fileContent += "\npaymentmodename,paymentmodeid,icon,color\n"
+            for (pm in pms) {
+                fileContent += "${q(pm.name)},${pm.id},${q(pm.icon)},${q(pm.color)}\n"
             }
         }
 
@@ -67,9 +75,9 @@ object ExportUtil {
             project.currencyName!!.isNotEmpty() && project.currencyName != "null"
         ) {
             fileContent += "\ncurrencyname,exchange_rate\n"
-            fileContent += "\"${project.currencyName}\",1\n"
+            fileContent += "${q(project.currencyName)},1\n"
             for (cur in curs) {
-                fileContent += "\"${cur.name}\",${cur.exchangeRate}\n"
+                fileContent += "${q(cur.name)},${cur.exchangeRate}\n"
             }
         }
 

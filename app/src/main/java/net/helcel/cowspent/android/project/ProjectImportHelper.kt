@@ -11,10 +11,29 @@ import net.helcel.cowspent.R
 import net.helcel.cowspent.model.*
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import java.io.InputStreamReader
+import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.*
 
 object ProjectImportHelper {
+
+    private fun optional(line: Array<String>, columns: Map<String, Int>, name: String): String =
+        columns[name]?.takeIf { it < line.size }?.let { line[it] } ?: ""
+
+    /** Parses the `#rrggbb` member colour Cospend writes in its members section. */
+    private fun parseHexColor(value: String): Triple<Int, Int, Int>? {
+        val hex = value.trim().removePrefix("#")
+        if (hex.length != 6) return null
+        return try {
+            Triple(
+                hex.substring(0, 2).toInt(16),
+                hex.substring(2, 4).toInt(16),
+                hex.substring(4, 6).toInt(16)
+            )
+        } catch (_: NumberFormatException) {
+            null
+        }
+    }
 
     @SuppressLint("Range")
     fun getFileName(contentResolver: ContentResolver, uri: Uri): String {
@@ -59,6 +78,7 @@ object ProjectImportHelper {
             val bills = mutableListOf<DBBill>()
             val membersActive = mutableMapOf<String, Boolean>()
             val membersWeight = mutableMapOf<String, Double>()
+            val membersColor = mutableMapOf<String, Triple<Int, Int, Int>>()
             val billRemoteIdToPayerName = mutableMapOf<Long, String>()
             val billRemoteIdToOwerStr = mutableMapOf<Long, String>()
             
@@ -76,7 +96,10 @@ object ProjectImportHelper {
                     
                     currentSection = when {
                         columns.containsKey("what") && columns.containsKey("amount") -> "bills"
+                        columns.containsKey("name") && columns.containsKey("weight") &&
+                                columns.containsKey("active") -> "members"
                         columns.containsKey("categoryid") && columns.containsKey("categoryname") -> "categories"
+                        columns.containsKey("paymentmodeid") && columns.containsKey("paymentmodename") -> "paymentmodes"
                         columns.containsKey("exchange_rate") && columns.containsKey("currencyname") -> "currencies"
                         else -> {
                             onError(context.getString(R.string.import_error_header, row))
@@ -86,11 +109,19 @@ object ProjectImportHelper {
                 } else {
                     previousLineEmpty = false
                     when (currentSection) {
+                        "members" -> {
+                            val name = line[columns["name"]!!].trim()
+                            if (name.isNotEmpty()) {
+                                membersWeight[name] = optional(line, columns, "weight").toDoubleOrNull() ?: 1.0
+                                membersActive[name] = optional(line, columns, "active") != "0"
+                                parseHexColor(optional(line, columns, "color"))?.let { membersColor[name] = it }
+                            }
+                        }
                         "categories" -> {
-                            categories.add(DBCategory(0, line[columns["categoryid"]!!].toLong(), 0, line[columns["categoryname"]!!], line[columns["icon"]!!], line[columns["color"]!!]))
+                            categories.add(DBCategory(0, line[columns["categoryid"]!!].toLong(), 0, line[columns["categoryname"]!!], optional(line, columns, "icon"), optional(line, columns, "color")))
                         }
                         "paymentmodes" -> {
-                            paymentModes.add(DBPaymentMode(0, line[columns["categoryid"]!!].toLong(), 0, line[columns["categoryname"]!!], line[columns["icon"]!!], line[columns["color"]!!]))
+                            paymentModes.add(DBPaymentMode(0, line[columns["paymentmodeid"]!!].toLong(), 0, line[columns["paymentmodename"]!!], optional(line, columns, "icon"), optional(line, columns, "color")))
                         }
                         "currencies" -> {
                             val name = line[columns["currencyname"]!!]
@@ -100,7 +131,22 @@ object ProjectImportHelper {
                         }
                         "bills" -> {
                             val what = if (columns.containsKey("what")) line[columns["what"]!!] else ""
-                            val comment = if (columns.containsKey("comment")) line[columns["comment"]!!] else ""
+                            // Cospend url-encodes bill comments on export and marks trashed
+                            // bills with a "deleted" column no other dialect has, so that column
+                            // doubles as the marker for which comment encoding to expect.
+                            val cospendDialect = columns.containsKey("deleted")
+                            val comment = if (columns.containsKey("comment")) {
+                                val raw = line[columns["comment"]!!]
+                                if (cospendDialect) {
+                                    try {
+                                        URLDecoder.decode(raw, "UTF-8")
+                                    } catch (_: Exception) {
+                                        raw
+                                    }
+                                } else raw
+                            } else ""
+                            val deleted = cospendDialect &&
+                                    line[columns["deleted"]!!].trim().let { it.isNotEmpty() && it != "0" }
                             val amount = if (columns.containsKey("amount")) line[columns["amount"]!!].toDouble() else 0.0
                             val timestamp: Long = when {
                                 columns.containsKey("timestamp") -> line[columns["timestamp"]!!].toLong()
@@ -121,7 +167,12 @@ object ProjectImportHelper {
                             val catId = if (columns.containsKey("categoryid") && line[columns["categoryid"]!!].isNotEmpty()) line[columns["categoryid"]!!].toLong() else 0L
                             val pmId = if (columns.containsKey("paymentmodeid") && line[columns["paymentmodeid"]!!].isNotEmpty()) line[columns["paymentmodeid"]!!].toLong() else 0L
                             val pm = if (columns.containsKey("paymentmode")) line[columns["paymentmode"]!!] else null
-                            
+                            // MoneyBuster's export only carries the legacy one-letter payment
+                            // mode. Everything downstream keys off paymentModeId, so translate
+                            // it back the same way the sync parser does.
+                            val effectivePmId =
+                                if (pmId != 0L) pmId else DBBill.oldPmIdToNew[pm] ?: DBBill.PAYMODE_ID_NONE
+
                             if (payerName.isNotEmpty()) {
                                 membersActive[payerName] = payerActive
                                 membersWeight[payerName] = payerWeight
@@ -132,7 +183,7 @@ object ProjectImportHelper {
                                 return
                             }
                             
-                            if (what != "deleteMeIfYouWant") {
+                            if (what != "deleteMeIfYouWant" && !deleted) {
                                 billRemoteIdToOwerStr[row.toLong()] = owersStr
                                 val owersArray = owersStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                                 for (ower in owersArray) {
@@ -140,7 +191,7 @@ object ProjectImportHelper {
                                         membersWeight[ower] = 1.0
                                     }
                                 }
-                                bills.add(DBBill(0, row.toLong(), 0, 0, amount, timestamp, what, DBBill.STATE_OK, "n", pm, catId, comment, pmId))
+                                bills.add(DBBill(0, row.toLong(), 0, 0, amount, timestamp, what, DBBill.STATE_OK, "n", pm, catId, comment, effectivePmId))
                                 billRemoteIdToPayerName[row.toLong()] = payerName
                             }
                         }
@@ -168,13 +219,20 @@ object ProjectImportHelper {
             currencies.forEach { db.addCurrency(DBCurrency(0, 0, pid, it.name, it.exchangeRate, DBBill.STATE_OK)) }
             
             membersWeight.keys.forEach { mName ->
-                memberNameToId[mName] = db.addMember(DBMember(0, 0, pid, mName, membersActive[mName] ?: true, membersWeight[mName] ?: 1.0, DBBill.STATE_OK, null, null, null, null, null))
+                val c = membersColor[mName]
+                memberNameToId[mName] = db.addMember(DBMember(0, 0, pid, mName, membersActive[mName] ?: true, membersWeight[mName] ?: 1.0, DBBill.STATE_OK, c?.first, c?.second, c?.third, null, null))
             }
             
             bills.forEach { b ->
                 val payerId = memberNameToId[billRemoteIdToPayerName[b.remoteId]] ?: 0L
-                val localCatId = catRemoteToLocal[b.categoryId] ?: 0L
-                val localPmId = pmRemoteToLocal[b.paymentModeId] ?: 0L
+                // Only custom labels are listed in the categories/paymentmodes sections. Built-in
+                // ones are referenced by their (negative) constant, which the UI resolves on its
+                // own, so those have to be kept rather than reset to "none". Unmapped positive
+                // ids are dropped instead, as they would collide with local ids.
+                val localCatId = catRemoteToLocal[b.categoryId]
+                    ?: b.categoryId.takeIf { it < 0 } ?: 0L
+                val localPmId = pmRemoteToLocal[b.paymentModeId]
+                    ?: b.paymentModeId.takeIf { it < 0 } ?: 0L
                 val billId = db.addBill(DBBill(0, 0, pid, payerId, b.amount, b.timestamp, b.what, DBBill.STATE_OK, b.repeat, b.paymentMode, localCatId, b.comment, localPmId))
                 billRemoteIdToOwerStr[b.remoteId]?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }?.forEach { ower ->
                     memberNameToId[ower]?.let { owerId -> db.addBillower(billId, owerId) }
