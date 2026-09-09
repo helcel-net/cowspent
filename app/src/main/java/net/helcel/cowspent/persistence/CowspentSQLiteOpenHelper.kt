@@ -238,13 +238,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @WorkerThread
     private fun getProjectsCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBProject> {
-        val cursor = db.query(table_projects, columnsProjects, selection, selectionArgs, null, null, orderBy)
-        val projects: MutableList<DBProject> = ArrayList()
-        while (cursor.moveToNext()) {
-            projects.add(getProjectFromCursor(cursor))
-        }
-        cursor.close()
-        return projects
+        return queryAll(db, table_projects, columnsProjects, selection, selectionArgs, orderBy, ::getProjectFromCursor)
     }
 
     @SuppressLint("Range")
@@ -305,11 +299,17 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     fun deleteProject(id: Long) {
         val db = writableDatabase
-        for (b in getBillsOfProject(id)) {
-            deleteBill(b.id)
+        val projectId = arrayOf(id.toString())
+        inTransaction {
+            db.delete(
+                table_billowers,
+                "$key_billId IN (SELECT $key_id FROM $table_bills WHERE $key_projectid = ?)",
+                projectId
+            )
+            db.delete(table_bills, "$key_projectid = ?", projectId)
+            db.delete(table_members, "$key_projectid = ?", projectId)
+            db.delete(table_projects, "$key_id = ?", projectId)
         }
-        db.delete(table_members, "$key_projectid = ?", arrayOf(id.toString()))
-        db.delete(table_projects, "$key_id = ?", arrayOf(id.toString()))
         SecureStorage.removePasswordSync(context, "ProjectPassword_$id")
     }
 
@@ -413,14 +413,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @WorkerThread
     private fun getMembersCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBMember> {
-        val db = readableDatabase
-        val cursor = db.query(table_members, columnsMembers, selection, selectionArgs, null, null, orderBy)
-        val members: MutableList<DBMember> = ArrayList()
-        while (cursor.moveToNext()) {
-            members.add(getMemberFromCursor(cursor))
-        }
-        cursor.close()
-        return members
+        return queryAll(readableDatabase, table_members, columnsMembers, selection, selectionArgs, orderBy, ::getMemberFromCursor)
     }
 
     @SuppressLint("Range")
@@ -644,29 +637,20 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     @WorkerThread
     private fun getBillsCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBBill> {
         val db = readableDatabase
-        val cursor = db.query(table_bills, columnsBills, selection, selectionArgs, null, null, orderBy)
-        val bills: MutableList<DBBill> = ArrayList()
-        while (cursor.moveToNext()) {
-            bills.add(getBillFromCursor(cursor))
+        return db.transactionally {
+            val bills = queryAll(db, table_bills, columnsBills, selection, selectionArgs, orderBy, ::getBillFromCursor)
+            if (bills.isNotEmpty()) {
+                val owersByBill = queryAll(
+                    db, table_billowers, columnsBillowers,
+                    "$key_billId IN (SELECT $key_id FROM $table_bills WHERE $selection)",
+                    selectionArgs, null, ::getBillOwerFromCursor
+                ).groupBy { it.billId }
+                for (bill in bills) {
+                    bill.billOwers = owersByBill[bill.id].orEmpty()
+                }
+            }
+            bills
         }
-        cursor.close()
-        if (bills.isEmpty()) return bills
-
-        // Every ower of the matched bills in one query, keyed back to its bill.
-        //
-        // Fetching them per bill meant a project with thousands of bills issued thousands of
-        // queries on every list refresh - and that refresh runs on resume, on switching project,
-        // and after each sync. The bill ids are re-selected as a subquery rather than bound as
-        // arguments, which would blow past SQLite's limit on bound variables for a large project.
-        val owersByBill = getBillOwersCustom(
-            "$key_billId IN (SELECT $key_id FROM $table_bills WHERE $selection)",
-            selectionArgs,
-            null
-        ).groupBy { it.billId }
-        for (bill in bills) {
-            bill.billOwers = owersByBill[bill.id].orEmpty()
-        }
-        return bills
     }
 
     @SuppressLint("Range")
@@ -714,14 +698,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @WorkerThread
     private fun getBillOwersCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBBillOwer> {
-        val db = readableDatabase
-        val cursor = db.query(table_billowers, columnsBillowers, selection, selectionArgs, null, null, orderBy)
-        val billOwers: MutableList<DBBillOwer> = ArrayList()
-        while (cursor.moveToNext()) {
-            billOwers.add(getBillOwerFromCursor(cursor))
-        }
-        cursor.close()
-        return billOwers
+        return queryAll(readableDatabase, table_billowers, columnsBillowers, selection, selectionArgs, orderBy, ::getBillOwerFromCursor)
     }
 
     @SuppressLint("Range")
@@ -788,14 +765,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @WorkerThread
     private fun getCategoriesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?): List<DBCategory> {
-        val db = readableDatabase
-        val cursor = db.query(table_categories, columnsCategories, selection, selectionArgs, null, null, orderBy)
-        val categories: MutableList<DBCategory> = ArrayList()
-        while (cursor.moveToNext()) {
-            categories.add(getCategoryFromCursor(cursor))
-        }
-        cursor.close()
-        return categories
+        return queryAll(readableDatabase, table_categories, columnsCategories, selection, selectionArgs, orderBy, ::getCategoryFromCursor)
     }
 
     @SuppressLint("Range")
@@ -904,13 +874,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @WorkerThread
     private fun getPaymentModesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBPaymentMode> {
-        val cursor = db.query(table_payment_modes, columnsPaymentModes, selection, selectionArgs, null, null, orderBy)
-        val paymentModes: MutableList<DBPaymentMode> = ArrayList()
-        while (cursor.moveToNext()) {
-            paymentModes.add(getPaymentModeFromCursor(cursor))
-        }
-        cursor.close()
-        return paymentModes
+        return queryAll(db, table_payment_modes, columnsPaymentModes, selection, selectionArgs, orderBy, ::getPaymentModeFromCursor)
     }
 
     @SuppressLint("Range")
@@ -1020,13 +984,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @WorkerThread
     private fun getCurrenciesCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBCurrency> {
-        val cursor = db.query(table_currencies, columnsCurrencies, selection, selectionArgs, null, null, orderBy)
-        val currencies: MutableList<DBCurrency> = ArrayList()
-        while (cursor.moveToNext()) {
-            currencies.add(getCurrencyFromCursor(cursor))
-        }
-        cursor.close()
-        return currencies
+        return queryAll(db, table_currencies, columnsCurrencies, selection, selectionArgs, orderBy, ::getCurrencyFromCursor)
     }
 
     @SuppressLint("Range")
@@ -1073,6 +1031,36 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     }
 
     // --- Common Helpers ---
+
+    @WorkerThread
+    private fun <T> queryAll(
+        db: SQLiteDatabase,
+        table: String,
+        columns: Array<String>,
+        selection: String?,
+        selectionArgs: Array<String>?,
+        orderBy: String?,
+        fromCursor: (Cursor) -> T
+    ): List<T> = db.transactionally {
+        val items: MutableList<T> = ArrayList()
+        db.query(table, columns, selection, selectionArgs, null, null, orderBy).use { cursor ->
+            while (cursor.moveToNext()) {
+                items.add(fromCursor(cursor))
+            }
+        }
+        items
+    }
+
+    private fun <T> SQLiteDatabase.transactionally(block: () -> T): T {
+        beginTransaction()
+        try {
+            val result = block()
+            setTransactionSuccessful()
+            return result
+        } finally {
+            endTransaction()
+        }
+    }
 
     fun syncIfRemote(proj: DBProject) {
         if (!proj.isLocal) {
@@ -1146,13 +1134,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
 
     @WorkerThread
     private fun getAccountProjectsCustom(selection: String, selectionArgs: Array<String>, orderBy: String?, db: SQLiteDatabase): List<DBAccountProject> {
-        val cursor = db.query(table_account_projects, columnsAccountProjects, selection, selectionArgs, null, null, orderBy)
-        val accountProjects: MutableList<DBAccountProject> = ArrayList()
-        while (cursor.moveToNext()) {
-            accountProjects.add(getAccountProjectFromCursor(cursor))
-        }
-        cursor.close()
-        return accountProjects
+        return queryAll(db, table_account_projects, columnsAccountProjects, selection, selectionArgs, orderBy, ::getAccountProjectFromCursor)
     }
 
     @SuppressLint("Range")
