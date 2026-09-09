@@ -63,10 +63,16 @@ fun EditBillScreen(
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(Unit) {
-        if (viewModel.isNewBill) {
-            focusRequester.requestFocus()
-        }
+    // The activity reads the project off the main thread and only then reports whether this is a
+    // new bill, so the flag arrives after the first composition. Keying on it rather than on Unit
+    // is what makes the effect run at all.
+    LaunchedEffect(viewModel.isNewBill) {
+        if (!viewModel.isNewBill) return@LaunchedEffect
+        // The field has to be laid out before it can take focus, which is not yet true on the
+        // pass that composed it. Waiting for the next frame makes this hold whether the flag was
+        // already set or arrived later.
+        withFrameNanos { }
+        focusRequester.requestFocus()
     }
 
     StatefulAlertDialog(
@@ -198,7 +204,7 @@ fun BillBasicInfoSection(
 
     OutlinedTextField(
         value = viewModel.amount,
-        onValueChange = { nv->
+        onValueChange = { nv ->
             val filteredValue = nv.filter { it in "0123456789.+-*/" }
             viewModel.amount = filteredValue
             viewModel.updateSplits()
@@ -207,8 +213,8 @@ fun BillBasicInfoSection(
         placeholder = { Text("0") },
         modifier = Modifier.fillMaxWidth().focusRequester(amountFocusRequester),
         leadingIcon = {
-            val currencyToShow = viewModel.selectedCurrencyName.ifEmpty { 
-                viewModel.mainCurrencyName.ifEmpty { "$" } 
+            val currencyToShow = viewModel.selectedCurrencyName.ifEmpty {
+                viewModel.mainCurrencyName.ifEmpty { "$" }
             }
             TextIconDisplay(
                 textIcon = TextIcon.Symbol(currencyToShow),
@@ -220,8 +226,8 @@ fun BillBasicInfoSection(
                 enabled = canEdit,
                 onClick = {
                     val mainLabel = viewModel.mainCurrencyName.ifEmpty { "$" }
-                    val options = listOf("$mainLabel | Base") + viewModel.currencies.map { 
-                        "${it.name} | 1 $mainLabel = ${it.exchangeRate} ${it.name}" 
+                    val options = listOf("$mainLabel | Base") + viewModel.currencies.map {
+                        "${it.name} | 1 $mainLabel = ${it.exchangeRate} ${it.name}"
                     }
                     viewModel.showDialog(
                         title = currencyDialogTitle,
@@ -252,8 +258,8 @@ fun BillBasicInfoSection(
         placeholder = { Text(stringResource(R.string.label_what)) },
         modifier = Modifier.fillMaxWidth(),
         leadingIcon = { Icon(Icons.Default.Title, contentDescription = null) },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) })
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
     )
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -463,7 +469,7 @@ fun OwerSelectionSection(
                 } else {
                     viewModel.owersCustomSplit[member.id] ?: ""
                 }
-                
+
                 BasicTextField(
                     value = value,
                     onValueChange = { nv ->
@@ -528,7 +534,10 @@ fun BillAdditionalDetailsSection(
     val context = LocalContext.current
     var categoryExpanded by remember { mutableStateOf(false) }
     val selectedCategory =
-        categories.find { it.id == viewModel.categoryId } ?: CategoryUtils.getCategoryById(context, viewModel.categoryId)
+        categories.find { it.id == viewModel.categoryId } ?: CategoryUtils.getCategoryById(
+            context,
+            viewModel.categoryId
+        )
 
     EditableExposedDropdownMenu(
         value = selectedCategory?.name ?: "",
@@ -555,7 +564,7 @@ fun BillAdditionalDetailsSection(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(stringResource(R.string.category_none))
             }
-            
+
             DropdownMenuItem(onClick = {
                 viewModel.categoryId = DBBill.CATEGORY_REIMBURSEMENT
                 categoryExpanded = false
@@ -582,7 +591,10 @@ fun BillAdditionalDetailsSection(
 
     var pmExpanded by remember { mutableStateOf(false) }
     val selectedPm =
-        paymentModes.find { it.id == viewModel.paymentModeId } ?: CategoryUtils.getPaymentModeById(context, viewModel.paymentModeId)
+        paymentModes.find { it.id == viewModel.paymentModeId } ?: CategoryUtils.getPaymentModeById(
+            context,
+            viewModel.paymentModeId
+        )
 
     EditableExposedDropdownMenu(
         value = selectedPm?.name ?: "",
