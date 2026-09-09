@@ -807,7 +807,7 @@ class BillsListViewActivity :
 
         lifecycleScope.launch {
             val remoteProjects = withContext(Dispatchers.IO) { db.projects }
-                .filter { !it.isLocal && !it.isArchived }
+                .filter { !it.isLocal }
                 // Only the first one scheduled actually starts - the rest queue behind it - and it
                 // takes the screen's callback with it. So the selected project goes first: otherwise
                 // the spinner follows a project the user is not looking at, stops when that one
@@ -829,7 +829,7 @@ class BillsListViewActivity :
                 preferences.edit {
                     putLong(getString(R.string.pref_key_last_account_sync_timestamp), now)
                 }
-                remoteProjects.count {
+                remoteProjects.filter { !it.isArchived }.count {
                     val full = neverSynced(it)
                     val scheduled = db.cowspentServerSyncHelper.scheduleSync(false, it, full) != null
                     if (scheduled) {
