@@ -335,12 +335,17 @@ class BillsListViewActivity :
         super.onResume()
         val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         val selectedProjectId = preferences.getLong("selected_project", 0)
+        setupDrawerProjects()
         if (selectedProjectId != 0L) {
             refreshLists()
         }
         viewModel.isRefreshing = false
 
         synchronize(SyncTrigger.APP_OPEN)
+
+        lifecycleScope.launch {
+            syncNewlyDiscoveredProjects(withContext(Dispatchers.IO) { db.projects })
+        }
 
         registerBroadcastReceiver()
         updateAvatarInDrawer(CowspentServerSyncHelper.isNextcloudAccountConfigured(this))
@@ -790,12 +795,15 @@ class BillsListViewActivity :
         val selectedProjectId = preferences.getLong("selected_project", 0)
         val now = System.currentTimeMillis()
 
-        // The account and all-projects refresh belongs to opening the app, throttled by the
-        // SyncOnOpen interval so that resuming within the interval does not repeat it.
+        // The account tells the app which projects exist at all, so a project joined elsewhere only
+        // shows up once it has been read. That happens on login, on opening the app - throttled by
+        // the interval so resuming does not repeat it - and on a manual refresh, which is an
+        // explicit ask and so is never throttled.
         val intervalMinutes = SyncSettings.OPEN_SYNC_INTERVAL_MINUTES
         val lastAccountSync = preferences.getLong(getString(R.string.pref_key_last_account_sync_timestamp), 0L)
-        val accountSyncDue = trigger == SyncTrigger.APP_OPEN &&
+        val openPass = trigger == SyncTrigger.APP_OPEN &&
             now - lastAccountSync > intervalMinutes * 60 * 1000L
+        val accountSyncDue = openPass || trigger == SyncTrigger.MANUAL
 
         lifecycleScope.launch {
             val remoteProjects = withContext(Dispatchers.IO) { db.projects }
@@ -809,7 +817,11 @@ class BillsListViewActivity :
             viewModel.isRefreshing = true
             db.cowspentServerSyncHelper.addCallbackPull(syncCallBack)
 
-            val started = if (accountSyncDue) {
+            if (accountSyncDue && CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
+                db.cowspentServerSyncHelper.runAccountProjectsSync()
+            }
+
+            val started = if (openPass) {
                 // The pass is throttled by this stamp, so it has to be written here rather than
                 // left to the account sync: that only runs when an account is configured and only
                 // records itself on success, so without one the stamp stayed at zero and the pass
@@ -817,12 +829,13 @@ class BillsListViewActivity :
                 preferences.edit {
                     putLong(getString(R.string.pref_key_last_account_sync_timestamp), now)
                 }
-                if (CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
-                    db.cowspentServerSyncHelper.runAccountProjectsSync()
-                }
                 remoteProjects.count {
-                    val scheduled = db.cowspentServerSyncHelper.scheduleSync(false, it, false) != null
-                    if (scheduled) markProjectSynced(preferences, it.id, now)
+                    val full = neverSynced(it)
+                    val scheduled = db.cowspentServerSyncHelper.scheduleSync(false, it, full) != null
+                    if (scheduled) {
+                        markProjectSynced(preferences, it.id, now)
+                        if (full) markFullySynced(preferences, it.id, now)
+                    }
                     scheduled
                 }
             } else {
@@ -834,13 +847,11 @@ class BillsListViewActivity :
                 // the back gesture does to a large project, since it destroys the activity while
                 // the sync is still running. IHateMoney never advances the cursor, so the interval
                 // stays in charge there.
-                val neverCompleted = selectedProj != null &&
-                    selectedProj.type != ProjectType.IHATEMONEY &&
-                    (selectedProj.lastSyncedTimestamp ?: 0L) == 0L
+                val neverCompleted = selectedProj != null && neverSynced(selectedProj)
                 val due = trigger == SyncTrigger.MANUAL || neverCompleted ||
                     now - lastSync > SELECTED_PROJECT_SYNC_INTERVAL_MS
-                val fullSync = trigger == SyncTrigger.MANUAL &&
-                    !partialRefreshPreferred(preferences, selectedProjectId, now)
+                val fullSync = neverCompleted || (trigger == SyncTrigger.MANUAL &&
+                    !partialRefreshPreferred(preferences, selectedProjectId, now))
                 if (selectedProj != null && due &&
                     db.cowspentServerSyncHelper.scheduleSync(false, selectedProj, fullSync) != null
                 ) {
@@ -854,6 +865,24 @@ class BillsListViewActivity :
             // the indicator here when none did - nothing else would.
             if (started == 0) viewModel.isRefreshing = false
         }
+    }
+
+    private fun neverSynced(project: DBProject) =
+        project.type != ProjectType.IHATEMONEY && (project.lastSyncedTimestamp ?: 0L) == 0L
+
+    @VisibleForTesting
+    internal fun syncNewlyDiscoveredProjects(projects: List<DBProject>) {
+        if (!db.cowspentServerSyncHelper.isSyncPossible) return
+        val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        val now = System.currentTimeMillis()
+        projects
+            .filter { !it.isLocal && !it.isArchived && neverSynced(it) }
+            .forEach {
+                if (db.cowspentServerSyncHelper.scheduleSync(false, it, true) != null) {
+                    markProjectSynced(preferences, it.id, now)
+                    markFullySynced(preferences, it.id, now)
+                }
+            }
     }
 
     private fun lastProjectSyncKey(projectId: Long) = "lastProjectSyncTimestamp_$projectId"
@@ -958,6 +987,7 @@ class BillsListViewActivity :
                                 synchronize(SyncTrigger.PROJECT_OPEN)
                             }
                         }
+                        syncNewlyDiscoveredProjects(dbProjects)
                     }
                 }
             }
