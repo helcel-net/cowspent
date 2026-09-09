@@ -14,6 +14,7 @@ import com.nextcloud.android.sso.api.NextcloudAPI
 import com.nextcloud.android.sso.exceptions.NextcloudHttpRequestFailedException
 import com.nextcloud.android.sso.exceptions.TokenMismatchException
 import com.nextcloud.android.sso.helper.SingleAccountHelper
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -176,14 +177,22 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         }
 
         fun execute(): SyncTask {
+            syncActive = true
             deferred = scope.async {
-                syncActive = true
-                val status = withContext(Dispatchers.IO) {
-                    doWork()
+                try {
+                    val status = withContext(Dispatchers.IO) {
+                        doWork()
+                    }
+                    onPostExecute(status)
+                    status
+                } catch (e: CancellationException) {
+                    syncActive = false
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "Sync failed for ${project.remoteId}", e)
+                    syncActive = false
+                    LoginStatus.CONNECTION_FAILED
                 }
-                onPostExecute(status)
-                syncActive = false
-                status
             }
             return this
         }
@@ -293,12 +302,8 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                                 null, null, null, null, null
                             )
                         }
-                    } catch (e: IOException) {
-                        if (e.message == "{\"message\": \"Internal Server Error\"}") {
-                            Log.d(TAG, "EDIT MEMBER FAILED : it does not exist remotely")
-                        } else {
-                            throw e
-                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "EDIT MEMBER FAILED for ${mToEdit.name}", e)
                     }
                 }
 
@@ -1048,6 +1053,8 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             for (localMember in dbHelper.getMembersOfProject(project.id, null)) {
                 if (remoteMembersByRemoteId.containsKey(localMember.remoteId)) continue
 
+                if (localMember.state != DBBill.STATE_OK) continue
+
                 // A member still named by a bill cannot be removed without orphaning it.
                 if (dbHelper.getBillsOfMember(localMember.id).isEmpty() &&
                     dbHelper.getBillowersOfMember(localMember.id).isEmpty()
@@ -1514,11 +1521,18 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         fun execute(): SyncAccountProjectsTask {
             scope.launch {
                 syncAccountProjectsActive = true
-                val status = withContext(Dispatchers.IO) {
-                    doWork()
+                try {
+                    val status = withContext(Dispatchers.IO) {
+                        doWork()
+                    }
+                    onPostExecute(status)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                   Log.e(TAG, "Account projects sync failed", e)
+                } finally {
+                    syncAccountProjectsActive = false
                 }
-                onPostExecute(status)
-                syncAccountProjectsActive = false
             }
             return this
         }
@@ -1547,20 +1561,25 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 
                 val response = client.getAccountProjects(useOcsApi)
                 val remoteAccountProjects = response.getAccountProjects(url)
+                val forgotten = forgottenAccountProjects(preferences)
                 dbHelper.clearAccountProjects()
                 for (remoteAccountProject in remoteAccountProjects) {
                     dbHelper.addAccountProject(remoteAccountProject)
                     Log.v(TAG, "received account project $remoteAccountProject")
-                    val existingProj = localProjects.find { 
-                        it.remoteId == remoteAccountProject.remoteId && 
-                        it.serverUrl?.replace("/+$".toRegex(), "") == remoteAccountProject.ncUrl.replace("/+$".toRegex(), "") + "/index.php/apps/cospend"
+                    val existingProj = localProjects.find {
+                        it.remoteId == remoteAccountProject.remoteId &&
+                        it.serverUrl?.replace("/+$".toRegex(), "") == remoteAccountProject.ncUrl.replace("/+$".toRegex(), "") + COSPEND_PATH
                     }
                     if (existingProj == null) {
+                        if (accountProjectKey(remoteAccountProject.remoteId, remoteAccountProject.ncUrl) in forgotten) {
+                            Log.d(TAG, "skipping ${remoteAccountProject.remoteId}, deleted on this device")
+                            continue
+                        }
                         val newProj = DBProject(0,
                             remoteAccountProject.remoteId,
                             "",
                             remoteAccountProject.name,
-                            remoteAccountProject.ncUrl.replace("/+$".toRegex(), "") + "/index.php/apps/cospend",
+                            remoteAccountProject.ncUrl.replace("/+$".toRegex(), "") + COSPEND_PATH,
                             "",
                             null,
                             ProjectType.COSPEND,
@@ -1894,6 +1913,34 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             val preferences = PreferenceManager.getDefaultSharedPreferences(context)
             return !preferences.getString(AccountActivity.SETTINGS_URL, AccountActivity.DEFAULT_SETTINGS).isNullOrEmpty() ||
                     preferences.getBoolean(AccountActivity.SETTINGS_USE_SSO, false)
+        }
+
+        /** The path a Cospend project's URL carries on top of its Nextcloud server URL. */
+        const val COSPEND_PATH = "/index.php/apps/cospend"
+
+        private const val FORGOTTEN_ACCOUNT_PROJECTS = "forgottenAccountProjects"
+
+        private fun trimSlashes(url: String) = url.replace("/+$".toRegex(), "")
+
+        /** Names one project an account offers, by server and remote id, with no local row needed. */
+        private fun accountProjectKey(remoteId: String, ncUrl: String) = "${trimSlashes(ncUrl)}|$remoteId"
+
+        /** The same key for a stored project, or null when it is not one an account can offer. */
+        private fun accountProjectKey(project: DBProject): String? {
+            val url = trimSlashes(project.serverUrl.orEmpty())
+            if (!url.endsWith(COSPEND_PATH)) return null
+            return accountProjectKey(project.remoteId, url.removeSuffix(COSPEND_PATH))
+        }
+
+        private fun forgottenAccountProjects(preferences: SharedPreferences): Set<String> =
+            preferences.getStringSet(FORGOTTEN_ACCOUNT_PROJECTS, emptySet()).orEmpty()
+        
+        fun forgetAccountProject(context: Context, project: DBProject) {
+            val key = accountProjectKey(project) ?: return
+            val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+            preferences.edit {
+                putStringSet(FORGOTTEN_ACCOUNT_PROJECTS, forgottenAccountProjects(preferences) + key)
+            }
         }
 
         fun getNextcloudAccountServerUrl(context: Context): String {
