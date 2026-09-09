@@ -144,7 +144,12 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
          * walk it is empty, and nothing may be deleted locally on the strength of it.
          */
         val allIds: List<Long>,
-        val syncTimestamp: Long?
+        val syncTimestamp: Long?,
+        /**
+         * A bill referenced a member, category or payment mode this device does not know. A
+         * partial sync skips re-reading the project, so this is what tells it to go back for it.
+         */
+        val hasUnresolvedReferences: Boolean = false
     )
 
     inner class SyncTask(private val onlyLocalChanges: Boolean, private val project: DBProject, private val forceFullSync: Boolean = false) {
@@ -188,11 +193,18 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             if (project.type == ProjectType.COSPEND) {
                 nextcloudClient = createNextcloudClient()
                 if (nextcloudClient != null) {
-                    try {
-                        val response = nextcloudClient!!.getCapabilities(project)
-                        version = response.cospendVersion
-                    } catch (e: Exception) {
-                        Log.i(TAG, "Failed to get cospend version when syncing: $e")
+                    // The server's version only moves when the server itself is upgraded, and
+                    // asking costs a whole round trip before any project data moves. Remember it
+                    // per server, and re-read it whenever a full sync is asked for.
+                    version = if (forceFullSync) null else cachedCospendVersion()
+                    if (version == null) {
+                        try {
+                            val response = nextcloudClient!!.getCapabilities(project)
+                            version = response.cospendVersion
+                            rememberCospendVersion(version)
+                        } catch (e: Exception) {
+                            Log.i(TAG, "Failed to get cospend version when syncing: $e")
+                        }
                     }
                 } else if (preferences.getBoolean(AccountActivity.SETTINGS_USE_SSO, false)) {
                     return LoginStatus.SSO_TOKEN_MISMATCH
@@ -218,35 +230,53 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             deferred?.await() ?: LoginStatus.CONNECTION_FAILED
         }
 
+        /** Keyed by server rather than by project, since several projects can share one. */
+        private fun versionKey() = "cospend_version_" + (project.serverUrl ?: "")
+
+        private fun cachedCospendVersion(): String? =
+            preferences.getString(versionKey(), null)
+
+        private fun rememberCospendVersion(version: String?) {
+            // A failed lookup is not an answer, and caching it would pin the wrong API dialect
+            // until the next forced sync.
+            if (version.isNullOrEmpty()) return
+            preferences.edit { putString(versionKey(), version) }
+        }
+
         private fun pushLocalChanges(): LoginStatus {
             Log.d(TAG, "PUSH LOCAL CHANGES")
 
             return try {
-                val membersResponse = client!!.getMembers(project)
-                val remoteMembers = membersResponse.getMembers(project.id)
-                val remoteMembersNames = remoteMembers.map { it.name }
-
+                // The remote member list is only needed to match members waiting to be created,
+                // and pullRemoteChanges fetches them again as part of the project anyway, so it
+                // is not worth a round trip of its own when there is nothing to add.
                 val membersToAdd = dbHelper.getMembersOfProjectWithState(project.id, DBBill.STATE_ADDED)
-                for (mToAdd in membersToAdd) {
-                    val searchIndex = remoteMembersNames.indexOf(mToAdd.name)
-                    if (searchIndex != -1) {
-                        val remoteMember = remoteMembers[searchIndex]
-                        dbHelper.updateMember(
-                            mToAdd.id, null,
-                            remoteMember.weight, remoteMember.isActivated,
-                            DBBill.STATE_OK, remoteMember.remoteId, remoteMember.r,
-                            remoteMember.g, remoteMember.b,
-                            remoteMember.ncUserId, ""
-                        )
-                    } else {
-                        val createRemoteMemberResponse = client!!.createRemoteMember(project, mToAdd)
-                        val newRemoteId = createRemoteMemberResponse.remoteMemberId
-                        if (newRemoteId > 0) {
+                if (membersToAdd.isNotEmpty()) {
+                    val membersResponse = client!!.getMembers(project)
+                    val remoteMembers = membersResponse.getMembers(project.id)
+                    val remoteMembersNames = remoteMembers.map { it.name }
+
+                    for (mToAdd in membersToAdd) {
+                        val searchIndex = remoteMembersNames.indexOf(mToAdd.name)
+                        if (searchIndex != -1) {
+                            val remoteMember = remoteMembers[searchIndex]
                             dbHelper.updateMember(
                                 mToAdd.id, null,
-                                null, null, DBBill.STATE_OK, newRemoteId,
-                                null, null, null, null, null
+                                remoteMember.weight, remoteMember.isActivated,
+                                DBBill.STATE_OK, remoteMember.remoteId, remoteMember.r,
+                                remoteMember.g, remoteMember.b,
+                                remoteMember.ncUserId, ""
                             )
+                        } else {
+                            val createRemoteMemberResponse = client!!.createRemoteMember(project, mToAdd)
+                            val newRemoteId = createRemoteMemberResponse.remoteMemberId
+                            if (newRemoteId > 0) {
+                                dbHelper.updateMember(
+                                    mToAdd.id, null,
+                                    null, null, DBBill.STATE_OK, newRemoteId,
+                                    null, null, null, null, null
+                                )
+                            }
                         }
                     }
                 }
@@ -540,32 +570,53 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         }
 
         /**
+         * Reads the project's own row and each of its collections. One request, and everything it
+         * carries is applied as it goes, so a failure part way through leaves the earlier steps
+         * written. Returns the members it saw, keyed by remote id.
+         */
+        private fun pullProject(): Map<Long, DBMember> {
+            val projResponse = client!!.getProject(project, 0, null)
+            updateLocalProject(projResponse)
+            syncPaymentModes(projResponse)
+            syncCategories(projResponse)
+            syncCurrencies(projResponse)
+            return syncMembers(projResponse)
+        }
+
+        /**
          * Brings the local copy of the project in line with the server: its own row, then each of
          * its collections, then its bills. Each step is applied as it goes, so a failure part way
          * through leaves the earlier steps written - the next sync picks up where this one stopped.
+         *
+         * A partial sync is meant to cost one request. A project's members and labels change far
+         * less often than its bills, so it skips reading them and goes straight for the bills; it
+         * only goes back for the project when a bill turns out to name something this device has
+         * never seen. What that trades away is noticing a rename or a deletion that no bill
+         * refers to - those land on the next full sync.
          */
         private fun pullRemoteChanges(): LoginStatus {
             Log.d(TAG, "pullRemoteChanges($project)")
             return try {
-                val projResponse = client!!.getProject(project, 0, null)
+                val localBills = dbHelper.getBillsOfProject(project.id)
+                val localBillsByRemoteId = localBills.associateBy { it.remoteId }
+                val partial = !forceFullSync && localBillsByRemoteId.isNotEmpty()
 
-                updateLocalProject(projResponse)
-                syncPaymentModes(projResponse)
-                syncCategories(projResponse)
-                syncCurrencies(projResponse)
-                val remoteMembersByRemoteId = syncMembers(projResponse)
+                var remoteMembersByRemoteId: Map<Long, DBMember>? = null
+                if (!partial) remoteMembersByRemoteId = pullProject()
 
                 // Bills arrive with the server's ids for their member, category and payment mode,
                 // so the maps have to be built after those collections are in place.
-                val idMaps = buildRemoteIdMaps()
+                var pulled = fetchRemoteBills(buildRemoteIdMaps(), localBillsByRemoteId)
 
-                val localBills = dbHelper.getBillsOfProject(project.id)
-                val localBillsByRemoteId = localBills.associateBy { it.remoteId }
-                val pulled = fetchRemoteBills(idMaps, localBillsByRemoteId)
+                if (pulled.hasUnresolvedReferences && remoteMembersByRemoteId == null) {
+                    Log.d(TAG, "Bill referenced an unknown member or label; re-reading the project")
+                    remoteMembersByRemoteId = pullProject()
+                    pulled = fetchRemoteBills(buildRemoteIdMaps(), localBillsByRemoteId)
+                }
 
                 applyRemoteBills(pulled.bills, localBillsByRemoteId)
                 deleteVanishedBills(pulled, localBills)
-                deleteVanishedMembers(remoteMembersByRemoteId)
+                remoteMembersByRemoteId?.let { deleteVanishedMembers(it) }
 
                 dbHelper.updateProject(
                     projId = project.id,
@@ -825,6 +876,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             var syncTimestamp = project.lastSyncedTimestamp
             var offset = 0
             var previousPageIds: List<Long>? = null
+            var unresolved = false
             // Counted across pages, not restarted at each one: a run that begins near the end of
             // a page still finishes on the next.
             var unchangedRun = 0
@@ -834,6 +886,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 val page = response.getBillsCospend(
                     project.id, idMaps.members, idMaps.categories, idMaps.paymentModes
                 )
+                if (response.hasUnresolvedReferences) unresolved = true
                 if (page.isEmpty()) break
 
                 if (page.first().timestamp < page.last().timestamp) {
@@ -873,7 +926,7 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
             }
 
             // A walk reports no allIds, so it never causes a local deletion.
-            return RemoteBills(bills, emptyList(), syncTimestamp)
+            return RemoteBills(bills, emptyList(), syncTimestamp, unresolved)
         }
 
         /**
@@ -888,14 +941,16 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
                 val bills = response.getBillsIHM(
                     project.id, idMaps.members, idMaps.categories, idMaps.paymentModes
                 )
-                RemoteBills(bills, bills.map { it.remoteId }, 0L)
+                RemoteBills(bills, bills.map { it.remoteId }, 0L, response.hasUnresolvedReferences)
             } else {
+                val bills = response.getBillsCospend(
+                    project.id, idMaps.members, idMaps.categories, idMaps.paymentModes
+                )
                 RemoteBills(
-                    response.getBillsCospend(
-                        project.id, idMaps.members, idMaps.categories, idMaps.paymentModes
-                    ),
+                    bills,
                     response.allBillIds,
-                    response.syncTimestamp
+                    response.syncTimestamp,
+                    response.hasUnresolvedReferences
                 )
             }
         }

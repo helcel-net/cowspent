@@ -28,6 +28,33 @@ open class ServerResponse(
 ) {
     private val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
 
+    /**
+     * Set while parsing bills when one referenced a member, category or payment mode that none of
+     * the supplied maps knew about. A partial sync does not re-read the project, so this is how it
+     * learns that its copy of those collections has gone stale and has to be refreshed.
+     */
+    var hasUnresolvedReferences = false
+        private set
+
+    /** Members are only ever addressed by the server's own id, so an unknown one is stale state. */
+    private fun resolveMember(map: Map<Long, Long>, remoteId: Long): Long {
+        map[remoteId]?.let { return it }
+        if (remoteId != 0L) hasUnresolvedReferences = true
+        return 0L
+    }
+
+    /**
+     * Built-in labels are negative constants with no row of their own on a remote project, so they
+     * never appear in these maps and are carried through as-is. An unknown *positive* id is a real
+     * gap - it is dropped rather than kept, as it would collide with a local id.
+     */
+    private fun resolveLabel(map: Map<Long, Long>, remoteId: Long): Long {
+        map[remoteId]?.let { return it }
+        if (remoteId < 0) return remoteId
+        if (remoteId > 0) hasUnresolvedReferences = true
+        return 0L
+    }
+
     class NotModifiedException : IOException()
 
     protected val content: String
@@ -744,10 +771,10 @@ open class ServerResponse(
         }
         if (!json.isNull("payer_id")) {
             payerRemoteId = json.getLong("payer_id")
-            payerId = memberRemoteIdToId[payerRemoteId] ?: 0
+            payerId = resolveMember(memberRemoteIdToId, payerRemoteId)
         } else if (!json.isNull("payer")) {
             payerRemoteId = json.getLong("payer")
-            payerId = memberRemoteIdToId[payerRemoteId] ?: 0
+            payerId = resolveMember(memberRemoteIdToId, payerRemoteId)
         }
         if (!json.isNull("amount")) {
             amount = json.getDouble("amount")
@@ -794,8 +821,8 @@ open class ServerResponse(
             paymentModeRemoteId = DBBill.oldPmIdToNew[paymentMode] ?: DBBill.PAYMODE_ID_NONE
         }
 
-        val categoryId = catRemoteIdToId[categoryRemoteId] ?: 0L
-        val paymentModeId = pmRemoteIdToId[paymentModeRemoteId] ?: 0L
+        val categoryId = resolveLabel(catRemoteIdToId, categoryRemoteId)
+        val paymentModeId = resolveLabel(pmRemoteIdToId, paymentModeRemoteId)
 
         val bill = DBBill(
             0, remoteId, projId, payerId, amount, timestamp, what,
@@ -822,7 +849,7 @@ open class ServerResponse(
                 } else {
                     jsonOs.getLong(i)
                 }
-                val memberLocalId = memberRemoteIdToId[memberRemoteId] ?: 0
+                val memberLocalId = resolveMember(memberRemoteIdToId, memberRemoteId)
                 billOwers.add(DBBillOwer(0, 0, memberLocalId))
             }
         }
