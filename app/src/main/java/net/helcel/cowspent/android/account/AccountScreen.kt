@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -28,8 +29,7 @@ fun AccountScreen(
     viewModel: AccountViewModel,
     onBack: () -> Unit,
     onConnect: () -> Unit,
-    onSsoClick: (Boolean) -> Unit,
-    onLogout: () -> Unit
+    onSsoClick: (Boolean) -> Unit
 ) {
     AccountScreenContent(
         isLoggedIn = viewModel.isLoggedIn,
@@ -51,7 +51,57 @@ fun AccountScreen(
         onBack = onBack,
         onConnect = onConnect,
         onSsoClick = onSsoClick,
-        onLogout = onLogout
+        onLogout = { viewModel.requestLogout() }
+    )
+
+    viewModel.logoutImpact?.let { impact ->
+        LogoutConfirmationDialog(
+            impact = impact,
+            onDismiss = { viewModel.cancelLogout() },
+            onConfirm = { viewModel.confirmLogout() }
+        )
+    }
+}
+
+@Composable
+fun LogoutConfirmationDialog(
+    impact: AccountViewModel.LogoutImpact,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.logout_confirm_title)) },
+        text = {
+            Column {
+                Text(
+                    if (impact.projects > 0) {
+                        pluralStringResource(
+                            R.plurals.logout_confirm_projects, impact.projects, impact.projects
+                        )
+                    } else {
+                        stringResource(R.string.logout_confirm_no_projects)
+                    }
+                )
+                if (impact.unsyncedBills > 0) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = pluralStringResource(
+                            R.plurals.warning_unsynced_bills,
+                            impact.unsyncedBills,
+                            impact.unsyncedBills
+                        ),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_logout)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.simple_cancel)) }
+        }
     )
 }
 

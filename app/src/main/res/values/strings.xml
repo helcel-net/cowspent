@@ -25,6 +25,8 @@
     <string name="action_settings">Settings</string>
     <string name="action_label_bills">Label missing categories</string>
     <string name="action_logout">Logout</string>
+    <string name="logout_confirm_title">Log out?</string>
+    <string name="logout_confirm_no_projects">You can sign back in at any time.</string>
     <string name="action_connect">Connect</string>
     <string name="action_discard">Discard</string>
     <string name="action_members">Members</string>
@@ -298,5 +300,15 @@
     <plurals name="settings_restore_deleted_projects_summary">
         <item quantity="one">%d project the account offers is kept off this device.</item>
         <item quantity="other">%d projects the account offers are kept off this device.</item>
+    </plurals>
+
+    <plurals name="logout_confirm_projects">
+        <item quantity="one">%d project from this account will be removed from this device. It comes back when you sign in again.</item>
+        <item quantity="other">%d projects from this account will be removed from this device. They come back when you sign in again.</item>
+    </plurals>
+
+    <plurals name="warning_unsynced_bills">
+        <item quantity="one">%d bill has not reached the server yet and will be lost.</item>
+        <item quantity="other">%d bills have not reached the server yet and will be lost.</item>
     </plurals>
 </resources>

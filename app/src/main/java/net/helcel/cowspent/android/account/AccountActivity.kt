@@ -109,8 +109,7 @@ class AccountActivity : AppCompatActivity() {
                                 viewModel.useSso = false
                                 preferences.edit { putBoolean(SETTINGS_USE_SSO, false) }
                             }
-                        },
-                        onLogout = { viewModel.logout() }
+                        }
                     )
                 }
 

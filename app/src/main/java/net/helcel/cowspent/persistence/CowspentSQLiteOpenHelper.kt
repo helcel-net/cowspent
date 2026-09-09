@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
+import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.text.TextUtils
@@ -553,6 +554,14 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
     fun getBillsOfProject(projId: Long): List<DBBill> {
         return getBillsCustom("$key_projectid = ?", arrayOf(projId.toString()), "$key_timestamp ASC")
     }
+    
+    @WorkerThread
+    fun countUnsyncedBills(projId: Long): Int = DatabaseUtils.queryNumEntries(
+        readableDatabase,
+        table_bills,
+        "$key_projectid = ? AND $key_state != ?",
+        arrayOf(projId.toString(), DBBill.STATE_OK.toString())
+    ).toInt()
 
     fun getBillsOfProjectWithState(projId: Long, state: Int): List<DBBill> {
         return getBillsCustom(

@@ -408,11 +408,26 @@ class BillsListViewActivity :
     private fun onRemoveProjectClick(projectId: Long) {
         if (projectId == 0L) return
         lifecycleScope.launch {
-            val proj = withContext(Dispatchers.IO) { db.getProject(projectId) } ?: return@launch
-            
+            val (proj, unsyncedBills) = withContext(Dispatchers.IO) {
+                val p = db.getProject(projectId) ?: return@withContext null
+                p to db.countUnsyncedBills(projectId)
+            } ?: return@launch
+
+            val message = buildString {
+                if (!proj.isLocal) append(getString(R.string.dialog_confirm_remove_project_msg))
+                if (unsyncedBills > 0) {
+                    if (isNotEmpty()) append("\n\n")
+                    append(
+                        resources.getQuantityString(
+                            R.plurals.warning_unsynced_bills, unsyncedBills, unsyncedBills
+                        )
+                    )
+                }
+            }
+
             viewModel.showDialog(
                 title = getString(R.string.title_confirm),
-                message = if (!proj.isLocal) getString(R.string.dialog_confirm_remove_project_msg) else null,
+                message = message.ifEmpty { null },
                 positiveText = getString(R.string.simple_yes),
                 onConfirm = {
                     lifecycleScope.launch {
