@@ -137,6 +137,9 @@
     <string name="settings_night_mode">Theme</string>
     <string name="settings_offline_mode">Offline mode</string>
     <string name="settings_offline_mode_summary">Only sync manually.</string>
+    <string name="settings_restore_deleted_projects">Restore deleted projects</string>
+    <string name="settings_restore_deleted_projects_done">Restoring from the account</string>
+    <string name="settings_restore_deleted_projects_confirm">Restore</string>
     <string name="settings_color_custom">Custom color</string>
     <string name="settings_color_mode">Color Selection</string>
     <string name="settings_show_archived">Show archived projects</string>
@@ -291,4 +294,9 @@
     <string name="share_intent_title">Project %1$s</string>
     <string name="share_chooser_title">Share %1$s</string>
 
+
+    <plurals name="settings_restore_deleted_projects_summary">
+        <item quantity="one">%d project the account offers is kept off this device.</item>
+        <item quantity="other">%d projects the account offers are kept off this device.</item>
+    </plurals>
 </resources>

@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import androidx.annotation.WorkerThread
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import androidx.preference.PreferenceManager
@@ -27,6 +28,7 @@ import net.helcel.cowspent.R
 import net.helcel.cowspent.android.account.AccountActivity
 import net.helcel.cowspent.android.main.BillsListViewActivity
 import net.helcel.cowspent.android.main.MainConstants
+import net.helcel.cowspent.model.DBAccountProject
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.model.DBProject
@@ -1472,6 +1474,21 @@ class CowspentServerSyncHelper private constructor(private val dbHelper: Cowspen
         updateNetworkStatus()
         if (isNextcloudAccountConfigured(appContext) && isSyncPossible) {
             UpdateMemberAvatarTask(memberId).execute()
+        }
+    }
+
+    @WorkerThread
+    fun deletedAccountProjects(): List<DBAccountProject> {
+        val forgotten = forgottenAccountProjects(preferences)
+        if (forgotten.isEmpty()) return emptyList()
+        return dbHelper.accountProjects.filter { accountProjectKey(it.remoteId, it.ncUrl) in forgotten }
+    }
+
+    fun restoreAccountProjects(projects: List<DBAccountProject>) {
+        if (projects.isEmpty()) return
+        val restored = projects.map { accountProjectKey(it.remoteId, it.ncUrl) }.toSet()
+        preferences.edit {
+            putStringSet(FORGOTTEN_ACCOUNT_PROJECTS, forgottenAccountProjects(preferences) - restored)
         }
     }
 

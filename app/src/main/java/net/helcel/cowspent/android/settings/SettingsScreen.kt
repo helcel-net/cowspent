@@ -21,6 +21,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.RadioButton
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Slider
+import androidx.compose.material.Checkbox
 import androidx.compose.material.Switch
 import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.Text
@@ -34,11 +35,14 @@ import androidx.compose.material.icons.filled.Brightness2
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,6 +61,9 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.ColorPicker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import net.helcel.cowspent.model.DBAccountProject
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.persistence.CowspentServerSyncHelper
 import net.helcel.cowspent.util.ColorUtils
@@ -68,7 +76,8 @@ fun SettingsScreen(
     onAccountSettingsClick: () -> Unit,
     onAboutClick: () -> Unit,
     onColorSelected: (Int) -> Unit,
-    onNightModeChanged: (String) -> Unit = {}
+    onNightModeChanged: (String) -> Unit = {},
+    onRestoreDeletedProjects: (List<DBAccountProject>) -> Unit = {}
 ) {
     val context = LocalContext.current
     val sharedPreferences = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -91,6 +100,16 @@ fun SettingsScreen(
     val keyLastAccountSync = stringResource(R.string.pref_key_last_account_sync_timestamp)
 
     val isNextcloudConfigured = CowspentServerSyncHelper.isNextcloudAccountConfigured(context)
+
+    var deletedProjects by remember { mutableStateOf(emptyList<DBAccountProject>()) }
+    var showRestoreDialog by remember { mutableStateOf(false) }
+
+    // Off the main thread: this reads the account projects table.
+    LaunchedEffect(Unit) {
+        deletedProjects = withContext(Dispatchers.IO) {
+            CowspentSQLiteOpenHelper.getInstance(context).cowspentServerSyncHelper.deletedAccountProjects()
+        }
+    }
 
     // States for preferences
     var nightMode by remember(keyNightMode) {
@@ -257,6 +276,32 @@ fun SettingsScreen(
                 onClick = onAccountSettingsClick
             )
 
+            // Nothing held back means nothing to undo, so the row is not offered at all.
+            if (deletedProjects.isNotEmpty()) {
+                SettingsPreference(
+                    title = stringResource(R.string.settings_restore_deleted_projects),
+                    summary = pluralStringResource(
+                        R.plurals.settings_restore_deleted_projects_summary,
+                        deletedProjects.size,
+                        deletedProjects.size
+                    ),
+                    icon = Icons.Default.Restore,
+                    onClick = { showRestoreDialog = true }
+                )
+            }
+
+            if (showRestoreDialog) {
+                RestoreDeletedProjectsDialog(
+                    projects = deletedProjects,
+                    onDismiss = { showRestoreDialog = false },
+                    onConfirm = { chosen ->
+                        showRestoreDialog = false
+                        onRestoreDeletedProjects(chosen)
+                        deletedProjects = deletedProjects - chosen.toSet()
+                    }
+                )
+            }
+
             // Other
             SettingsCategory(stringResource(R.string.settings_other))
 
@@ -347,6 +392,60 @@ fun SettingsScreen(
             )
         }
     }
+}
+
+@Composable
+fun RestoreDeletedProjectsDialog(
+    projects: List<DBAccountProject>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<DBAccountProject>) -> Unit
+) {
+    val selected = remember(projects) { mutableStateListOf<DBAccountProject>().apply { addAll(projects) } }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_restore_deleted_projects)) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                projects.forEach { project ->
+                    val isSelected = project in selected
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = isSelected,
+                                onClick = {
+                                    if (isSelected) selected.remove(project) else selected.add(project)
+                                }
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(checked = isSelected, onCheckedChange = null)
+                        Spacer(Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = project.name.ifEmpty { project.remoteId },
+                                style = MaterialTheme.typography.subtitle1
+                            )
+                            Text(text = project.ncUrl, style = MaterialTheme.typography.caption)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(selected.toList()) },
+                enabled = selected.isNotEmpty()
+            ) {
+                Text(stringResource(R.string.settings_restore_deleted_projects_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.simple_cancel)) }
+        }
+    )
 }
 
 @Composable

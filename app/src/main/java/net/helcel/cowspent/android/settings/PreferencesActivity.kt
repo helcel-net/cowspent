@@ -16,8 +16,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.app.NavUtils
 import androidx.preference.PreferenceManager
+import net.helcel.cowspent.R
 import net.helcel.cowspent.android.about.AboutActivity
 import net.helcel.cowspent.android.account.AccountActivity
+import net.helcel.cowspent.android.helper.showToast
+import net.helcel.cowspent.model.DBAccountProject
+import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
+import net.helcel.cowspent.persistence.CowspentServerSyncHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.ColorUtils
 
@@ -32,6 +37,17 @@ class PreferencesActivity : AppCompatActivity() {
         if (result.resultCode == RESULT_OK) {
             setResult(RESULT_OK, result.data)
         }
+    }
+
+    private fun restoreDeletedProjects(projects: List<DBAccountProject>) {
+        if (projects.isEmpty()) return
+        val syncHelper = CowspentSQLiteOpenHelper.getInstance(applicationContext).cowspentServerSyncHelper
+        syncHelper.restoreAccountProjects(projects)
+        if (CowspentServerSyncHelper.isNextcloudAccountConfigured(applicationContext)) {
+            syncHelper.runAccountProjectsSync()
+        }
+        setResult(RESULT_OK)
+        showToast(this, getString(R.string.settings_restore_deleted_projects_done))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,7 +90,8 @@ class PreferencesActivity : AppCompatActivity() {
                         startActivity(Intent(this, AboutActivity::class.java))
                     },
                     onColorSelected = { appColor = it },
-                    onNightModeChanged = { nightMode = it }
+                    onNightModeChanged = { nightMode = it },
+                    onRestoreDeletedProjects = { restoreDeletedProjects(it) }
                 )
             }
         }
