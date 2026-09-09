@@ -1,7 +1,6 @@
 package net.helcel.cowspent.android.account
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
@@ -149,7 +148,7 @@ class AccountActivity : AppCompatActivity() {
                             allowFileAccess = false
                             javaScriptEnabled = true
                             domStorageEnabled = true
-                            userAgentString = getWebLoginUserAgent(context)
+                            userAgentString = getWebLoginUserAgent()
                         }
                         webViewClient = object : WebViewClient() {
                             @Deprecated("Deprecated in Java")
@@ -244,13 +243,9 @@ class AccountActivity : AppCompatActivity() {
         }
     }
 
-    private fun getWebLoginUserAgent(context: Context): String {
-        val defaultUA = try {
-            android.webkit.WebSettings.getDefaultUserAgent(context)
-        } catch (_: Exception) {
-            Build.MANUFACTURER + " " + Build.MODEL
-        }
-        return "$defaultUA Cowspent/Android"
+    private fun getWebLoginUserAgent(): String {
+        val manufacturer = Build.MANUFACTURER.replaceFirstChar { it.titlecase(Locale.ROOT) }
+        return "$manufacturer ${Build.MODEL} (Cowspent/Android)"
     }
 
     private fun parseAndLoginFromWebView(dataString: String) {
