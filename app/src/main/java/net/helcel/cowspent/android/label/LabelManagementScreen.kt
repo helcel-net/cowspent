@@ -219,6 +219,7 @@ fun CategoryList(
                 onDelete = { onDelete(category) }
             )
         }
+        item { LabelListBottomSpacer() }
     }
 }
 
@@ -238,7 +239,17 @@ fun PaymentModeList(
                 onDelete = { onDelete(pm) }
             )
         }
+        item { LabelListBottomSpacer() }
     }
+}
+
+/**
+ * Keeps the last row clear of the add button, which otherwise sits on top of its delete icon and
+ * swallows the tap - with nothing below to scroll to, that row simply cannot be deleted.
+ */
+@Composable
+private fun LabelListBottomSpacer() {
+    Spacer(modifier = Modifier.height(64.dp).fillMaxWidth())
 }
 
 @Composable
