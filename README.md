@@ -75,6 +75,14 @@ Extra Features:
 - `INTERNET` and `ACCESS_NETWORK_STATE`: necessary for synchronization with Cospend/IHateMoney servers
 - `GET_ACCOUNTS` necessary to log in with the Nextcloud account for Cospend
 
+
+## Signinig key
+```
+net.helcel.cowspent
+D3:EE:68:A8:5A:7F:35:A1:14:D2:74:B4:50:AA:CE:8C:ED:68:EA:C8:1A:A2:22:E2:7F:F5:0E:98:4C:C6:29
+```
+
+
 ## 📝 Contribute
 
 Cowspent is a user-driven project. We welcome any contribution, big or small.
