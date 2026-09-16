@@ -12,8 +12,6 @@ Which is originally a fork of [PhoneTrack-Android](https://gitlab.com/eneiluj/ph
 Which is itself a fork of [Nextcloud Notes for Android](https://github.com/stefan-niedermann/nextcloud-notes).
 Many thanks to their developers :heart: !
 
-
-
 </p>
 
 <a href="https://ko-fi.com/I2I615VP5M"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="ko-fi"></a>
@@ -24,6 +22,7 @@ Many thanks to their developers :heart: !
 <a href="https://github.com/helcel-net/cowspent/actions/workflows/build.yml">
 <img src="https://github.com/helcel-net/cowspent/actions/workflows/build.yml/badge.svg?branch=main" alt="Build Status">
 </a>
+
 </div>
 
 ## 🌄 Screenshots
@@ -57,7 +56,6 @@ Extra Features:
 - Support for Cospend archived-status (hide archived projects by default)
 - Modern UI and code with Kotlin and Jetpack-Compose
 
-
 ## 📳 Installation
 
 <div style="display: flex; justify-content: center; align-items: center; flex-direction: row;">
@@ -75,14 +73,6 @@ Extra Features:
 - `INTERNET` and `ACCESS_NETWORK_STATE`: necessary for synchronization with Cospend/IHateMoney servers
 - `GET_ACCOUNTS` necessary to log in with the Nextcloud account for Cospend
 
-
-## Signinig key
-```
-net.helcel.cowspent
-D3:EE:68:A8:5A:7F:35:A1:14:D2:74:B4:50:AA:CE:8C:ED:68:EA:C8:1A:A2:22:E2:7F:F5:0E:98:4C:C6:29
-```
-
-
 ## 📝 Contribute
 
 Cowspent is a user-driven project. We welcome any contribution, big or small.
@@ -95,6 +85,13 @@ Cowspent is a user-driven project. We welcome any contribution, big or small.
 ## ✏️ Acknowledgements
 
 Thanks to all contributors, the developers of our dependencies, and our users.
+
+## Signinig key
+
+```
+net.helcel.cowspent
+D3:EE:68:A8:5A:7F:35:A1:14:D2:74:B4:50:AA:CE:8C:ED:68:EA:C8:1A:A2:22:E2:7F:F5:0E:98:4C:C6:29
+```
 
 ## 📝 License
 
