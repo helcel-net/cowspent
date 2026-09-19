@@ -60,12 +60,22 @@ Extra Features:
 
 <div style="display: flex; justify-content: center; align-items: center; flex-direction: row;">
     <a href="https://apt.izzysoft.de/fdroid/index/apk/net.helcel.cowspent">
-        <img width="200" height="80" alt="Izzy Download" src=".github/images/izzy.png">
+        <img width="200" height="84" alt="Izzy Download" src=".github/images/izzy.png">
     </a>
     <a href="https://github.com/helcel-net/cowspent/releases/latest">
         <img width="200" height="84" alt="APK Download" src=".github/images/apk.png">
     </a>
+    <a future-href="https://f-droid.org/en/packages/net.helcel.cowspent">
+        <img width="200" height="84" alt="Fdroid Download" src=".github/images/fdroid.png">
+    </a>
+    <a href="https://play.google.com/store/apps/details?id=net.helcel.cowspent">
+        <img width="200" height="84" alt="GooglePlay Download" src=".github/images/playstore.png">
+    </a>
 </div>
+
+Note:
+ - Fdroid: requested, see https://gitlab.com/fdroid/rfp/-/work_items/4412
+ - PlayStore: alpha test restriction by Google. To access, join https://groups.google.com/g/helcel-android-test
 
 ## ⚙️ Permissions
 
