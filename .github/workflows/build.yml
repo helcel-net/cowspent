@@ -34,6 +34,11 @@ jobs:
           gpg -d --passphrase "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" --batch keystore.asc > app/keystore.properties
           gpg -d --passphrase "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" --batch key.asc > app/key.jks          
 
+      - name: Generate Dynamic Release Notes
+        run: |
+          mkdir -p tmp/whatsnew
+          echo "Various improvements for you to experience..." > tmp/whatsnew/whatsnew-en-US
+          
       - name: create and checkout branch
         if: github.event_name == 'pull_request'
         env:
@@ -92,5 +97,6 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
           packageName: net.helcel.cowspent
           releaseFiles: app/build/outputs/bundle/signedRelease/app-signedRelease.aab
-          tracks: 'internal' # ${{ startsWith(github.ref, 'refs/tags/') && 'production' || 'beta' }}
+          tracks: ${{ startsWith(github.ref, 'refs/tags/') && 'production' || 'alpha' }}
           status: completed
+          whatsNewDirectory: tmp/whatsnew
