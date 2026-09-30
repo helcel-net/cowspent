@@ -141,7 +141,7 @@ object SupportUtil {
                 membersBalance[b.payerId] = balPayer + amount
                 val paid = membersPaid[b.payerId] ?: 0.0
                 membersPaid[b.payerId] = paid + amount
-                
+
                 var nbOwerShares = 0.0
                 for (bo in b.billOwers) {
                     nbOwerShares += membersWeight[bo.memberId] ?: 0.0
@@ -167,6 +167,39 @@ object SupportUtil {
     }
 
     const val SETTLE_OPTIMAL: Long = 0
+    const val SETTLE_DIRECT: Long = -1
+
+    @JvmStatic
+    fun settleBillsDirect(members: List<DBMember>, bills: List<DBBill>): List<Transaction> {
+        val membersWeight = members.associate { it.id to it.weight }
+        // owed[debtor][creditor] = total the debtor owes the creditor over all bills
+        val owed = HashMap<Long, HashMap<Long, Double>>()
+
+        for (b in bills) {
+            if (b.state == DBBill.STATE_DELETED) continue
+            val nbOwerShares = b.billOwers.sumOf { membersWeight[it.memberId] ?: 0.0 }
+            if (nbOwerShares <= 0.0) continue
+            for (bo in b.billOwers) {
+                if (bo.memberId == b.payerId) continue
+                val share = b.amount / nbOwerShares * (membersWeight[bo.memberId] ?: 0.0)
+                val row = owed.getOrPut(bo.memberId) { HashMap() }
+                row[b.payerId] = (row[b.payerId] ?: 0.0) + share
+            }
+        }
+
+        val results: MutableList<Transaction> = ArrayList()
+        for (debtor in members) {
+            for (creditor in members) {
+                if (debtor.id == creditor.id) continue
+                val net = (owed[debtor.id]?.get(creditor.id) ?: 0.0) -
+                        (owed[creditor.id]?.get(debtor.id) ?: 0.0)
+                if (round2(net) > 0.0) {
+                    results.add(Transaction(debtor.id, creditor.id, round2(net)))
+                }
+            }
+        }
+        return results
+    }
 
     @JvmStatic
     fun settleBills(
@@ -233,11 +266,11 @@ object SupportUtil {
                 if (cd1.balance < cd2.balance) 1 else -1
             }
         }
-        
+
         for (c in crediters) {
             Log.e(SupportUtil::class.java.simpleName, "* " + c.memberId + " : " + c.balance)
         }
-        
+
         debiters.sortWith { cd2, cd1 ->
             if (cd1.balance == cd2.balance) {
                 0

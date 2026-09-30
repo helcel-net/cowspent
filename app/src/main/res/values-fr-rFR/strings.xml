@@ -213,6 +213,7 @@
 
     <!-- Settlement -->
     <string name="center_none">Aucun (optimal)</string>
+    <string name="center_none_direct">Aucun (direct)</string>
     <string name="settle_who">Qui paie</string>
     <string name="settle_to_whom">À qui</string>
     <string name="settle_how_much">Montant</string>

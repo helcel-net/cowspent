@@ -48,8 +48,10 @@ import net.helcel.cowspent.model.Transaction
 import net.helcel.cowspent.model.UserItem
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.util.SupportUtil
+import net.helcel.cowspent.util.SupportUtil.SETTLE_DIRECT
 import net.helcel.cowspent.util.SupportUtil.SETTLE_OPTIMAL
 import net.helcel.cowspent.util.SupportUtil.settleBills
+import net.helcel.cowspent.util.SupportUtil.settleBillsDirect
 
 @Composable
 fun ProjectSettlementDialogContent(
@@ -60,10 +62,12 @@ fun ProjectSettlementDialogContent(
     onDismiss: () -> Unit
 ) {
     val centerNoneStr = stringResource(R.string.center_none)
+    val centerDirectStr = stringResource(R.string.center_none_direct)
     val memberList = remember(proj.id) { db.getMembersOfProject(proj.id, null) }
-    val userList = remember(memberList, centerNoneStr) {
+    val userList = remember(memberList, centerNoneStr, centerDirectStr) {
         buildList {
             add(UserItem(SETTLE_OPTIMAL, centerNoneStr))
+            add(UserItem(SETTLE_DIRECT, centerDirectStr))
             addAll(memberList.map { UserItem(it.id, it.name) })
         }
     }
@@ -91,7 +95,11 @@ fun ProjectSettlementDialogContent(
     }
 
     val transactions = remember(selectedMemberId, membersBalance, membersSortedByName) {
-        settleBills(membersSortedByName, membersBalance, selectedMemberId)
+        if (selectedMemberId == SETTLE_DIRECT) {
+            settleBillsDirect(membersSortedByName, db.getBillsOfProject(proj.id))
+        } else {
+            settleBills(membersSortedByName, membersBalance, selectedMemberId)
+        }
     }
 
     ProjectSettlementUI(

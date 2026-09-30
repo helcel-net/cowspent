@@ -210,6 +210,7 @@
 
     <!-- Settlement -->
     <string name="center_none">Ninguno (óptimo)</string>
+    <string name="center_none_direct">Ninguno (directo)</string>
     <string name="settle_who">Quién paga</string>
     <string name="settle_to_whom">A quién</string>
     <string name="settle_how_much">Importe</string>

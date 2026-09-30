@@ -209,6 +209,7 @@
 
     <!-- Settlement -->
     <string name="center_none">Keine (optimal)</string>
+    <string name="center_none_direct">Keine (direkt)</string>
     <string name="settle_who">Wer zahlt</string>
     <string name="settle_to_whom">An wen</string>
     <string name="settle_how_much">Betrag</string>
