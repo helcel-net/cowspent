@@ -205,7 +205,7 @@ fun BillBasicInfoSection(
     OutlinedTextField(
         value = viewModel.amount,
         onValueChange = { nv ->
-            val filteredValue = nv.filter { it in "0123456789.+-*/" }
+            val filteredValue = nv.filter { it in "0123456789.,+-*/" }
             viewModel.amount = filteredValue
             viewModel.updateSplits()
         },
@@ -473,7 +473,7 @@ fun OwerSelectionSection(
                 BasicTextField(
                     value = value,
                     onValueChange = { nv ->
-                        val filteredValue = nv.filter { it in "0123456789.+-*/" }
+                        val filteredValue = nv.filter { it in "0123456789,.+-*/" }
                         if (viewModel.splitMode == SplitMode.PERCENT) {
                             viewModel.owersPercentSplit[member.id] = filteredValue
                         } else {
