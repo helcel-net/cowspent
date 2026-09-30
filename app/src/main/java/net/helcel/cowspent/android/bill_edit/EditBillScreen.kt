@@ -1,11 +1,14 @@
 package net.helcel.cowspent.android.bill_edit
 
 import android.annotation.SuppressLint
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,18 +22,24 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -62,6 +71,8 @@ fun EditBillScreen(
     val canEdit = accessLevel == DBProject.ACCESS_LEVEL_UNKNOWN || accessLevel >= DBProject.ACCESS_LEVEL_PARTICIPANT
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
+    var amountFocused by remember { mutableStateOf(false) }
+    var amountSelection by remember { mutableStateOf(TextRange(viewModel.amount.length)) }
 
     // The activity reads the project off the main thread and only then reports whether this is a
     // new bill, so the flag arrives after the first composition. Keying on it rather than on Unit
@@ -118,16 +129,21 @@ fun EditBillScreen(
                 val errorOwers = stringResource(R.string.error_invalid_bill_owers)
                 val errorInvalidForm = stringResource(R.string.error_generic)
 
-                FloatingActionButton(onClick = {
-                    val validationError = viewModel.getValidationError(
-                        errorWhat, errorDate, errorPayer, errorOwers, errorInvalidForm
-                    )
-                    if (validationError == null) {
-                        onSave()
-                    } else {
-                        showToast(context, validationError)
-                    }
-                }) {
+                FloatingActionButton(
+                    // Keep the button clear of the operator row pinned above the keyboard.
+                    modifier = Modifier.padding(
+                        bottom = if (amountFocused) MathOperatorRowHeight else 0.dp
+                    ),
+                    onClick = {
+                        val validationError = viewModel.getValidationError(
+                            errorWhat, errorDate, errorPayer, errorOwers, errorInvalidForm
+                        )
+                        if (validationError == null) {
+                            onSave()
+                        } else {
+                            showToast(context, validationError)
+                        }
+                    }) {
                     Icon(
                         Icons.Default.Done,
                         contentDescription = stringResource(R.string.action_save)
@@ -141,42 +157,138 @@ fun EditBillScreen(
             modifier = Modifier
                 .padding(padding)
                 .imePadding()
-                .padding(16.dp)
                 .fillMaxSize()
-                .verticalScroll(scrollState)
         ) {
-            BillBasicInfoSection(
-                viewModel = viewModel,
-                canEdit = canEdit,
-                onDateClick = onDateClick,
-                onTimeClick = onTimeClick,
-                amountFocusRequester = focusRequester
-            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp)
+                    .verticalScroll(scrollState)
+            ) {
+                BillBasicInfoSection(
+                    viewModel = viewModel,
+                    canEdit = canEdit,
+                    onDateClick = onDateClick,
+                    onTimeClick = onTimeClick,
+                    amountFocusRequester = focusRequester,
+                    amountSelection = amountSelection,
+                    onAmountSelectionChange = { amountSelection = it },
+                    onAmountFocusChange = { amountFocused = it }
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            PayerSection(
-                viewModel = viewModel,
-                canEdit = canEdit
-            )
+                PayerSection(
+                    viewModel = viewModel,
+                    canEdit = canEdit
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            OwerSelectionSection(
-                viewModel = viewModel,
-                canEdit = canEdit
-            )
+                OwerSelectionSection(
+                    viewModel = viewModel,
+                    canEdit = canEdit
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            BillAdditionalDetailsSection(
-                viewModel = viewModel,
-                categories = categories,
-                paymentModes = paymentModes,
-                canEdit = canEdit
-            )
+                BillAdditionalDetailsSection(
+                    viewModel = viewModel,
+                    categories = categories,
+                    paymentModes = paymentModes,
+                    canEdit = canEdit
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            if (amountFocused && canEdit) {
+                MathOperatorRow(onInsert = { op ->
+                    val text = viewModel.amount
+                    val start = amountSelection.min.coerceIn(0, text.length)
+                    val end = amountSelection.max.coerceIn(0, text.length)
+                    viewModel.amount = text.replaceRange(start, end, op)
+                    amountSelection = TextRange(start + op.length)
+                    viewModel.updateSplits()
+                })
+            }
+        }
+    }
+}
+
+private val MathOperatorRowHeight = 54.dp
+
+private data class KeyboardColors(val tray: Color, val edge: Color, val key: Color, val label: Color)
+
+@Composable
+private fun keyboardColors(): KeyboardColors {
+    val dark = isSystemInDarkTheme()
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val (tray, edge) = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> if (dark) {
+                colorResource(android.R.color.system_surface_container_dark) to
+                    colorResource(android.R.color.system_surface_container_high_dark)
+            } else {
+                colorResource(android.R.color.system_surface_container_light) to
+                    colorResource(android.R.color.system_surface_container_high_light)
+            }
+
+            else -> if (dark) {
+                colorResource(android.R.color.system_neutral1_900) to
+                    colorResource(android.R.color.system_neutral1_800)
+            } else {
+                colorResource(android.R.color.system_neutral1_50) to
+                    colorResource(android.R.color.system_neutral1_100)
+            }
+        }
+        if (dark) KeyboardColors(
+            tray = tray,
+            edge = edge,
+            key = colorResource(android.R.color.system_accent2_700),
+            label = colorResource(android.R.color.system_neutral1_50)
+        ) else KeyboardColors(
+            tray = tray,
+            edge = edge,
+            key = colorResource(android.R.color.system_accent2_100),
+            label = colorResource(android.R.color.system_neutral1_900)
+        )
+    } else {
+        if (dark) KeyboardColors(Color(0xFF1B1B1F), Color(0xFF2B2B2F), Color(0xFF43474E), Color(0xFFE3E2E6))
+        else KeyboardColors(Color(0xFFEEEDF6), Color(0xFFE7E7F0), Color(0xFFDDE2F9), Color(0xFF1B1B1F))
+    }
+}
+
+/** Operator keys shown above the numeric keypad, which has no room for them itself. */
+@Composable
+fun MathOperatorRow(onInsert: (String) -> Unit) {
+    val colors = keyboardColors()
+    Surface(color = colors.tray) {
+        // Flat pill-shaped keys, styled like the keyboard's own function keys (e.g. its minus).
+        val keyShape = RoundedCornerShape(percent = 50)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(MathOperatorRowHeight)
+                .drawBehind {
+                    // A thin edge in the same tone the keyboard uses for its own top border.
+                    drawLine(colors.edge, Offset(0f, 0f), Offset(size.width, 0f), 1.dp.toPx())
+                }
+                .padding(horizontal = 3.dp, vertical = 5.dp)
+        ) {
+            listOf("(" to "(", ")" to ")", "+" to "+", "−" to "-", "×" to "*", "÷" to "/").forEach { (label, op) ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(horizontal = 3.dp)
+                        .clip(keyShape)
+                        .background(colors.key)
+                        .clickable { onInsert(op) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(label, fontSize = 24.sp, color = colors.label)
+                }
+            }
         }
     }
 }
@@ -187,7 +299,10 @@ fun BillBasicInfoSection(
     canEdit: Boolean,
     onDateClick: () -> Unit,
     onTimeClick: () -> Unit,
-    amountFocusRequester: FocusRequester
+    amountFocusRequester: FocusRequester,
+    amountSelection: TextRange = TextRange(viewModel.amount.length),
+    onAmountSelectionChange: (TextRange) -> Unit = {},
+    onAmountFocusChange: (Boolean) -> Unit = {}
 ) {
     Text(
         text = "GENERAL",
@@ -203,15 +318,29 @@ fun BillBasicInfoSection(
         stringResource(R.string.currency_dialog_title, viewModel.mainCurrencyName)
 
     OutlinedTextField(
-        value = viewModel.amount,
+        value = TextFieldValue(
+            text = viewModel.amount,
+            selection = TextRange(
+                amountSelection.start.coerceIn(0, viewModel.amount.length),
+                amountSelection.end.coerceIn(0, viewModel.amount.length)
+            )
+        ),
         onValueChange = { nv ->
-            val filteredValue = nv.filter { it in "0123456789.,+-*/" }
-            viewModel.amount = filteredValue
-            viewModel.updateSplits()
+            val filteredValue = nv.text.filter { it in "0123456789.,+-*/()" }
+            onAmountSelectionChange(
+                if (filteredValue == nv.text) nv.selection else TextRange(filteredValue.length)
+            )
+            if (filteredValue != viewModel.amount) {
+                viewModel.amount = filteredValue
+                viewModel.updateSplits()
+            }
         },
         enabled = canEdit,
         placeholder = { Text("0") },
-        modifier = Modifier.fillMaxWidth().focusRequester(amountFocusRequester),
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(amountFocusRequester)
+            .onFocusChanged { onAmountFocusChange(it.isFocused) },
         leadingIcon = {
             val currencyToShow = viewModel.selectedCurrencyName.ifEmpty {
                 viewModel.mainCurrencyName.ifEmpty { "$" }
@@ -245,7 +374,7 @@ fun BillBasicInfoSection(
                 Icon(Icons.Default.SwapHoriz, contentDescription = "Change Currency")
             }
         },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
         keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) })
     )
 

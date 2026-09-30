@@ -48,7 +48,7 @@ class EditBillViewModel : ViewModel() {
         if (input.isBlank()) return 0.0
         val sanitized = input.replace(',', '.')
         // If it contains any math operator, try evalMath first
-        if (sanitized.any { it in "+-*/" }) {
+        if (sanitized.any { it in "+-*/()" }) {
             try {
                 val result = evalMath(sanitized)
                 if (result != 0.0) return SupportUtil.round2(result)
