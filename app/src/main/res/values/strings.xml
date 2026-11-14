@@ -146,12 +146,20 @@
     <string name="settings_color_mode">Color Selection</string>
     <string name="settings_show_archived">Show archived projects</string>
     <string name="settings_extra_features">Extra Features</string>
-    <string name="settings_extra_features_summary">Experimental and advanced settings. Use at your own risk.</string>
-    <string name="settings_fill_new_bill_from_last">Auto-fill from last bill</string>
-    <string name="settings_fill_new_bill_from_last_summary">Pre-fill payer, category, mode and owers from the last bill created in the project.</string>
+    <string name="settings_extra_features_summary">Experimental and advanced options.</string>
+    <string name="prefill_button">Pre-fill</string>
+    <string name="prefill_mode_off">Nothing</string>
+    <string name="prefill_mode_latest_project">Last from project</string>
+    <string name="prefill_mode_latest_device">Last from device</string>
+    <string name="prefill_mode_preset">Saved preset</string>
+    <string name="prefill_mode_preset_empty">None saved yet</string>
+    <string name="prefill_save_preset">Save current as preset</string>
+    <string name="prefill_preset_saved">Preset saved for this project</string>
     <string name="settings_stats_include_deactivated">Include deactivated members in stats</string>
+    <string name="settings_auto_categorize">Auto-categorize new bills</string>
+    <string name="settings_auto_categorize_summary">Pick the category from similar past bills.</string>
     <string name="settings_full_sync_delay">Full sync delay</string>
-    <string name="settings_full_sync_delay_summary">How long a pull-to-refresh waits between two full syncs. In between, it only fetches what changed, which is much faster.</string>
+    <string name="settings_full_sync_delay_summary">Time between full syncs. Other refreshes only fetch changes.</string>
     <string name="pref_value_sync_always">Always</string>
     <string name="pref_value_sync_1h">1 hour</string>
     <string name="pref_value_sync_1d">1 day</string>
@@ -178,6 +186,7 @@
     <string name="pref_key_show_archived" translatable="false">showArchived</string>
     <string name="pref_key_extra_features" translatable="false">betaFeatures</string>
     <string name="pref_key_stats_include_deactivated" translatable="false">statsIncludeDeactivated</string>
+    <string name="pref_key_auto_categorize" translatable="false">autoCategorizeNewBills</string>
     <string name="pref_key_full_sync_delay" translatable="false">fullSyncDelayMinutes</string>
     <string name="pref_key_last_account_sync_timestamp" translatable="false">lastAccountSyncTimestamp</string>
     <string name="pref_key_fill_new_bill_from_last" translatable="false">fillNewBillFromLast</string>

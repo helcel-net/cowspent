@@ -49,6 +49,7 @@ import net.helcel.cowspent.R
 import net.helcel.cowspent.android.helper.*
 import net.helcel.cowspent.model.*
 import net.helcel.cowspent.util.CategoryUtils
+import net.helcel.cowspent.util.PrefillMode
 import net.helcel.cowspent.util.SupportUtil
 import java.util.Date
 import kotlin.math.abs
@@ -66,6 +67,8 @@ fun EditBillScreen(
     onScan: () -> Unit,
     onDuplicate: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
+    onPrefillModeSelected: (PrefillMode) -> Unit = {},
+    onSavePrefillPreset: () -> Unit = {},
     accessLevel: Int = DBProject.ACCESS_LEVEL_ADMIN
 ) {
     val canEdit = accessLevel == DBProject.ACCESS_LEVEL_UNKNOWN || accessLevel >= DBProject.ACCESS_LEVEL_PARTICIPANT
@@ -102,6 +105,14 @@ fun EditBillScreen(
                 },
                 actions = {
                     if (canEdit) {
+                        viewModel.prefillMode?.let { mode ->
+                            PrefillMenu(
+                                mode = mode,
+                                hasPreset = viewModel.hasPrefillPreset,
+                                onModeSelected = onPrefillModeSelected,
+                                onSavePreset = onSavePrefillPreset
+                            )
+                        }
                         IconButton(onClick = onScan) {
                             Icon(Icons.Default.QrCodeScanner, contentDescription = null)
                         }
@@ -217,6 +228,65 @@ fun EditBillScreen(
 }
 
 private val MathOperatorRowHeight = 54.dp
+
+/**
+ * Chooses where this project's new bills take their payer, owers, category and payment mode
+ * from, and saves the form's current values as the project's preset.
+ */
+@Composable
+fun PrefillMenu(
+    mode: PrefillMode,
+    hasPreset: Boolean,
+    onModeSelected: (PrefillMode) -> Unit,
+    onSavePreset: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(Icons.Default.AutoFixHigh, contentDescription = stringResource(R.string.prefill_button))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            val options = listOf(
+                PrefillMode.OFF to R.string.prefill_mode_off,
+                PrefillMode.LATEST_IN_PROJECT to R.string.prefill_mode_latest_project,
+                PrefillMode.LATEST_ON_DEVICE to R.string.prefill_mode_latest_device,
+                PrefillMode.PRESET to R.string.prefill_mode_preset
+            )
+            for ((option, label) in options) {
+                // The preset has nothing to fill from until one is saved.
+                val enabled = option != PrefillMode.PRESET || hasPreset
+                DropdownMenuItem(
+                    enabled = enabled,
+                    onClick = {
+                        expanded = false
+                        onModeSelected(option)
+                    }
+                ) {
+                    RadioButton(selected = option == mode, onClick = null, enabled = enabled)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(stringResource(label))
+                        if (!enabled) {
+                            Text(
+                                text = stringResource(R.string.prefill_mode_preset_empty),
+                                style = MaterialTheme.typography.caption
+                            )
+                        }
+                    }
+                }
+            }
+            Divider(modifier = Modifier.padding(vertical = 4.dp))
+            DropdownMenuItem(onClick = {
+                expanded = false
+                onSavePreset()
+            }) {
+                Icon(Icons.Default.Save, contentDescription = null)
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(R.string.prefill_save_preset))
+            }
+        }
+    }
+}
 
 private data class KeyboardColors(val tray: Color, val edge: Color, val key: Color, val label: Color)
 
@@ -382,7 +452,7 @@ fun BillBasicInfoSection(
 
     OutlinedTextField(
         value = viewModel.what,
-        onValueChange = { viewModel.what = it },
+        onValueChange = { viewModel.updateWhat(it) },
         enabled = canEdit,
         placeholder = { Text(stringResource(R.string.label_what)) },
         modifier = Modifier.fillMaxWidth(),
@@ -686,7 +756,7 @@ fun BillAdditionalDetailsSection(
         },
         content = {
             DropdownMenuItem(onClick = {
-                viewModel.categoryId = 0
+                viewModel.selectCategory(DBBill.CATEGORY_NONE)
                 categoryExpanded = false
             }) {
                 Icon(Icons.Default.Close, tint = Color.Red, contentDescription = null)
@@ -695,7 +765,7 @@ fun BillAdditionalDetailsSection(
             }
 
             DropdownMenuItem(onClick = {
-                viewModel.categoryId = DBBill.CATEGORY_REIMBURSEMENT
+                viewModel.selectCategory(DBBill.CATEGORY_REIMBURSEMENT)
                 categoryExpanded = false
             }) {
                 Text(text = "\uD83D\uDCB0", fontSize = 20.sp)
@@ -705,7 +775,7 @@ fun BillAdditionalDetailsSection(
 
             categories.filter { it.remoteId != DBBill.CATEGORY_REIMBURSEMENT }.forEach { category ->
                 DropdownMenuItem(onClick = {
-                    viewModel.categoryId = category.id
+                    viewModel.selectCategory(category.id)
                     categoryExpanded = false
                 }) {
                     Text(text = category.icon, fontSize = 20.sp)

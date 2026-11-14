@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Brightness2
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
@@ -95,8 +96,8 @@ fun SettingsScreen(
     val keyShowArchived = stringResource(R.string.pref_key_show_archived)
     val keyExtraFeatures = stringResource(R.string.pref_key_extra_features)
     val keyStatsIncludeDeactivated = stringResource(R.string.pref_key_stats_include_deactivated)
+    val keyAutoCategorize = stringResource(R.string.pref_key_auto_categorize)
     val keyFullSyncDelay = stringResource(R.string.pref_key_full_sync_delay)
-    val keyFillNewBillFromLast = stringResource(R.string.pref_key_fill_new_bill_from_last)
     val keyLastAccountSync = stringResource(R.string.pref_key_last_account_sync_timestamp)
 
     val isNextcloudConfigured = CowspentServerSyncHelper.isNextcloudAccountConfigured(context)
@@ -150,11 +151,11 @@ fun SettingsScreen(
     var extraFeatures by remember(keyExtraFeatures) {
         mutableStateOf(sharedPreferences.getBoolean(keyExtraFeatures, false))
     }
-    var fillNewBillFromLast by remember(keyFillNewBillFromLast) {
-        mutableStateOf(sharedPreferences.getBoolean(keyFillNewBillFromLast, false))
-    }
     var statsIncludeDeactivated by remember(keyStatsIncludeDeactivated) {
         mutableStateOf(sharedPreferences.getBoolean(keyStatsIncludeDeactivated, false))
+    }
+    var autoCategorize by remember(keyAutoCategorize) {
+        mutableStateOf(sharedPreferences.getBoolean(keyAutoCategorize, false))
     }
     
     val fullSyncDelays = SyncSettings.FULL_SYNC_DELAY_CHOICES_MINUTES
@@ -342,19 +343,6 @@ fun SettingsScreen(
                 )
 
                 SettingsSwitchPreference(
-                    title = stringResource(R.string.settings_fill_new_bill_from_last),
-                    summary = stringResource(R.string.settings_fill_new_bill_from_last_summary),
-                    icon = Icons.Default.Info,
-                    checked = fillNewBillFromLast,
-                    onCheckedChange = {
-                        fillNewBillFromLast = it
-                        sharedPreferences.edit {
-                            putBoolean(keyFillNewBillFromLast, it)
-                        }
-                    }
-                )
-
-                SettingsSwitchPreference(
                     title = stringResource(R.string.settings_stats_include_deactivated),
                     icon = Icons.Default.Group,
                     checked = statsIncludeDeactivated,
@@ -362,6 +350,19 @@ fun SettingsScreen(
                         statsIncludeDeactivated = it
                         sharedPreferences.edit {
                             putBoolean(keyStatsIncludeDeactivated, it)
+                        }
+                    }
+                )
+
+                SettingsSwitchPreference(
+                    title = stringResource(R.string.settings_auto_categorize),
+                    summary = stringResource(R.string.settings_auto_categorize_summary),
+                    icon = Icons.Default.Category,
+                    checked = autoCategorize,
+                    onCheckedChange = {
+                        autoCategorize = it
+                        sharedPreferences.edit {
+                            putBoolean(keyAutoCategorize, it)
                         }
                     }
                 )

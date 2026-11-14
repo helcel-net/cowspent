@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBCategory
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
+import net.helcel.cowspent.util.CategorySuggester
 
 class LabelBillsViewModel : ViewModel() {
     var billsToLabel by mutableStateOf<List<DBBill>>(emptyList())
@@ -32,26 +33,9 @@ class LabelBillsViewModel : ViewModel() {
             suggestedCategories = emptyList()
             return
         }
-        val name = bill.what.lowercase().trim()
-        if (name.isEmpty()) {
-            suggestedCategories = emptyList()
-            return
-        }
-
-        val matches = allCategorizedBills.filter {
-            val otherName = it.what.lowercase().trim()
-            otherName == name || (name.length > 3 && otherName.contains(name)) || (otherName.length > 3 && name.contains(otherName))
-        }
-
-        val counts = matches.groupBy { it.categoryId }
-            .mapValues { it.value.size }
-            .toList()
-            .sortedByDescending { it.second }
+        suggestedCategories = CategorySuggester.rank(bill.what, allCategorizedBills)
             .take(2)
-
-        suggestedCategories = counts.mapNotNull { (catId, _) ->
-            categoriesMap[catId]
-        }
+            .mapNotNull { (catId, _) -> categoriesMap[catId] }
     }
 
     fun labelCurrentBill(db: CowspentSQLiteOpenHelper, categoryId: Long) {

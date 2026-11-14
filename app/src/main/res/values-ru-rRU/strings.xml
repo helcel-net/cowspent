@@ -137,8 +137,6 @@
     <string name="settings_color_custom">Пользовательский цвет</string>
     <string name="settings_color_mode">Выбор цвета</string>
     <string name="settings_show_archived">Показывать заархивированные проекты</string>
-    <string name="settings_fill_new_bill_from_last">Автозаполнение на основе последнего расхода</string>
-    <string name="settings_fill_new_bill_from_last_summary">Предварительное заполнение полей "Плательщик", "Категория", "Способ оплаты" и "Для кого" на основе последнего расхода, созданного в проекте.</string>
     <string name="pref_value_sync_1h">1 час</string>
     <string name="pref_value_sync_1d">1 день</string>
     <string name="settings_url_warn_http">ПРЕДУПРЕЖДЕНИЕ: "http" небезопасен. Используйте "https".</string>

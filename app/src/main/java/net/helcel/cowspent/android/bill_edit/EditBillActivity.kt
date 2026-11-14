@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.WorkerThread
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
@@ -27,6 +28,10 @@ import net.helcel.cowspent.model.ProjectType
 import net.helcel.cowspent.persistence.CowspentSQLiteOpenHelper
 import net.helcel.cowspent.theme.ThemeUtils
 import net.helcel.cowspent.util.BillParser
+import net.helcel.cowspent.util.BillPrefill
+import net.helcel.cowspent.util.BillTemplate
+import net.helcel.cowspent.util.CategorySuggester
+import net.helcel.cowspent.util.PrefillMode
 import net.helcel.cowspent.util.SupportUtil
 import java.text.ParseException
 import java.time.ZoneId
@@ -39,6 +44,9 @@ class EditBillActivity : AppCompatActivity() {
     private lateinit var bill: DBBill
     private var projectType: ProjectType = ProjectType.LOCAL
     private val calendar = Calendar.getInstance()
+
+    // The pre-fill mode the form was opened with; null when the bill is not a fresh one.
+    private var prefillMode: PrefillMode? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -95,8 +103,14 @@ class EditBillActivity : AppCompatActivity() {
                             val createIntent = Intent(this@EditBillActivity, QrCodeScannerActivity::class.java)
                             scanQRCodeLauncher.launch(createIntent)
                         },
-                        onDuplicate = if (!viewModel.isNewBill) { { duplicateCurrentBill() } } else null,
-                        onDelete = if (!viewModel.isNewBill) { { deleteBillAsked() } } else null,
+                        onDuplicate = if (!viewModel.isNewBill) {
+                            { duplicateCurrentBill() }
+                        } else null,
+                        onDelete = if (!viewModel.isNewBill) {
+                            { deleteBillAsked() }
+                        } else null,
+                        onPrefillModeSelected = { onPrefillModeSelected(it) },
+                        onSavePrefillPreset = { onSavePrefillPreset() },
                         accessLevel = db.getProject(bill.projectId)?.myAccessLevel ?: DBProject.ACCESS_LEVEL_ADMIN
                     )
                 }
@@ -133,7 +147,7 @@ class EditBillActivity : AppCompatActivity() {
                         first.timestamp, first.what, first.state, first.repeat,
                         first.paymentMode, first.categoryId, first.comment, first.paymentModeId
                     )
-                    
+
                     val splits = mutableMapOf<Long, Double>()
                     for (b in sourceBills) {
                         val owersCount = b.billOwers.size
@@ -152,25 +166,13 @@ class EditBillActivity : AppCompatActivity() {
                 val billIdToDuplicate = intent.getLongExtra(PARAM_BILL_ID_TO_DUPLICATE, 0)
                 val timeNowSeconds = System.currentTimeMillis() / 1000
                 if (billIdToDuplicate == 0L) {
-                    val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-                    val fillFromLast = preferences.getBoolean(getString(R.string.pref_key_fill_new_bill_from_last), false)
-                    val lastBill = if (fillFromLast) db.getLastBillOfProject(projectId) else null
-
-                    if (lastBill != null) {
-                        bill = DBBill(
-                            0, 0, projectId, lastBill.payerId, 0.0, timeNowSeconds,
-                            "", DBBill.STATE_ADDED, lastBill.repeat ?: DBBill.NON_REPEATED,
-                            lastBill.paymentMode, lastBill.categoryId, "", lastBill.paymentModeId
-                        )
-                        bill.billOwers = lastBill.billOwers.map { DBBillOwer(0, 0, it.memberId) }
-                    } else {
-                        val project = db.getProject(projectId)
-                        bill = DBBill(
-                            0, 0, projectId, project?.lastPayerId ?: 0, 0.0, timeNowSeconds,
-                            "", DBBill.STATE_ADDED, DBBill.NON_REPEATED,
-                            DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE, "", DBBill.PAYMODE_ID_NONE
-                        )
-                    }
+                    val mode = BillPrefill.mode(applicationContext, projectId)
+                    bill = newBill(
+                        projectId,
+                        timeNowSeconds,
+                        BillPrefill.templateFor(applicationContext, db, projectId, mode)
+                    )
+                    prefillMode = mode
                 } else {
                     val btd = db.getBill(billIdToDuplicate)!!
                     bill = DBBill(
@@ -193,20 +195,104 @@ class EditBillActivity : AppCompatActivity() {
             val members = allMembers.filter { m ->
                 m.isActivated || m.id == bill.payerId || billOwerIds.contains(m.id)
             }
-            
+
             val project = db.getProject(bill.projectId)
             val currencies = db.getCurrencies(bill.projectId)
-            
+
             if (project != null) {
                 db.ensureDefaultLabels(bill.projectId, project.type)
             }
+
+            val hasPreset = BillPrefill.preset(applicationContext, bill.projectId) != null
+            val categoryMatcher = if (bill.id == 0L) autoCategoryMatcher(bill.projectId) else null
 
             withContext(Dispatchers.Main) {
                 viewModel.currencies = currencies
                 viewModel.mainCurrencyName = project?.currencyName ?: ""
                 viewModel.isNewBill = (bill.id == 0L)
+                viewModel.prefillMode = prefillMode
+                viewModel.hasPrefillPreset = hasPreset
                 viewModel.initFromBill(bill, members, customSplits)
+                categoryMatcher?.let { viewModel.enableAutoCategorize(it) }
             }
+        }
+    }
+
+    @WorkerThread
+    private fun autoCategoryMatcher(projectId: Long): ((String) -> Long?)? {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        // The switch lives under Extra Features; with those off it is hidden, so it must not act.
+        if (!preferences.getBoolean(getString(R.string.pref_key_extra_features), false)) return null
+        if (!preferences.getBoolean(getString(R.string.pref_key_auto_categorize), false)) return null
+        val categorized = db.getBillsOfProject(projectId)
+            .filter { it.categoryId != DBBill.CATEGORY_NONE && it.state != DBBill.STATE_DELETED }
+        // Only categories the picker offers: the project's own, plus the built-in reimbursement.
+        val allowed = db.getCategories(projectId).map { it.id }.toSet() + DBBill.CATEGORY_REIMBURSEMENT
+        return { what -> CategorySuggester.confidentMatch(what, categorized, allowed) }
+    }
+
+    @WorkerThread
+    private fun newBill(projectId: Long, timestamp: Long, template: BillTemplate?): DBBill {
+        val project = db.getProject(projectId)
+        val lastPayerId = project?.lastPayerId ?: 0
+        if (template == null) {
+            return DBBill(
+                0, 0, projectId, lastPayerId, 0.0, timestamp,
+                "", DBBill.STATE_ADDED, DBBill.NON_REPEATED,
+                DBBill.PAYMODE_NONE, DBBill.CATEGORY_NONE, "", DBBill.PAYMODE_ID_NONE
+            )
+        }
+        val activeIds = db.getMembersOfProject(projectId, null).filter { it.isActivated }.map { it.id }.toSet()
+        return DBBill(
+            0, 0, projectId, if (template.payerId in activeIds) template.payerId else lastPayerId,
+            0.0, timestamp, "", DBBill.STATE_ADDED, template.repeat,
+            template.paymentMode, template.categoryId, "", template.paymentModeId
+        ).apply {
+            billOwers = template.owerIds.filter { it in activeIds }.map { DBBillOwer(0, 0, it) }
+        }
+    }
+
+    private fun onPrefillModeSelected(mode: PrefillMode) {
+        val projectId = bill.projectId
+        lifecycleScope.launch {
+            val template = withContext(Dispatchers.IO) {
+                BillPrefill.setMode(applicationContext, projectId, mode)
+                newBill(projectId, bill.timestamp, BillPrefill.templateFor(applicationContext, db, projectId, mode))
+            }
+            // Keep the reference bill in step, so the unsaved-changes check compares against
+            // what pre-filling put there rather than flagging it as the user's edit.
+            bill.payerId = template.payerId
+            bill.billOwers = template.billOwers
+            bill.categoryId = template.categoryId
+            bill.paymentMode = template.paymentMode
+            bill.paymentModeId = template.paymentModeId
+            bill.repeat = template.repeat
+            viewModel.prefillMode = mode
+            viewModel.applyPrefill(template)
+        }
+    }
+
+    private fun currentTemplate() = BillTemplate(
+        payerId = viewModel.payerId,
+        owerIds = viewModel.getOwersIds(),
+        categoryId = viewModel.categoryId,
+        paymentModeId = viewModel.paymentModeId,
+        paymentMode = bill.paymentMode,
+        repeat = viewModel.repeat
+    )
+
+    /** Saves the form's current values as the project's preset and switches to using it. */
+    private fun onSavePrefillPreset() {
+        val projectId = bill.projectId
+        val template = currentTemplate()
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                BillPrefill.savePreset(applicationContext, projectId, template)
+                BillPrefill.setMode(applicationContext, projectId, PrefillMode.PRESET)
+            }
+            viewModel.hasPrefillPreset = true
+            viewModel.prefillMode = PrefillMode.PRESET
+            showToast(this@EditBillActivity, getString(R.string.prefill_preset_saved))
         }
     }
 
@@ -251,7 +337,7 @@ class EditBillActivity : AppCompatActivity() {
         calendar.timeInMillis = System.currentTimeMillis()
         viewModel.timestamp = calendar.timeInMillis / 1000
         viewModel.isNewBill = true
-        
+
         showToast(this, "Duplicating bill...")
     }
 
@@ -282,8 +368,18 @@ class EditBillActivity : AppCompatActivity() {
         if (validationError != null) {
             showToast(this, validationError)
         } else {
+            // Taken before saving: saving can split the bill into one per ower, and the template
+            // should hold the whole selection rather than whichever split was written last.
+            val createdHere = bill.id == 0L
+            val template = currentTemplate()
             lifecycleScope.launch {
-                val savedBillId = withContext(Dispatchers.IO) { saveBill() }
+                val savedBillId = withContext(Dispatchers.IO) {
+                    saveBill().also { id ->
+                        if (createdHere && id != 0L) {
+                            BillPrefill.recordCreatedOnDevice(applicationContext, bill.projectId, template)
+                        }
+                    }
+                }
                 val data = Intent()
                 data.putExtra(MainConstants.SAVED_BILL_ID, savedBillId)
                 setResult(RESULT_OK, data)
@@ -361,7 +457,7 @@ class EditBillActivity : AppCompatActivity() {
             }
 
             if (splits.isEmpty()) return@withContext 0L
-            
+
             val finalComment = viewModel.getFinalComment()
             val splitEntries = splits.entries.toList()
 

@@ -21,6 +21,7 @@ import net.helcel.cowspent.model.DBMember
 import net.helcel.cowspent.model.DBPaymentMode
 import net.helcel.cowspent.model.DBProject
 import net.helcel.cowspent.model.ProjectType
+import net.helcel.cowspent.util.BillPrefill
 import net.helcel.cowspent.util.CategoryUtils
 import net.helcel.cowspent.util.SecureStorage
 import net.helcel.cowspent.util.SupportUtil
@@ -312,6 +313,7 @@ class CowspentSQLiteOpenHelper private constructor(val context: Context) :
             db.delete(table_projects, "$key_id = ?", projectId)
         }
         SecureStorage.removePasswordSync(context, "ProjectPassword_$id")
+        BillPrefill.clear(context, id)
     }
 
     // --- Members logic ---

@@ -13,6 +13,7 @@ import net.helcel.cowspent.android.helper.parseAmount
 import net.helcel.cowspent.model.DBBill
 import net.helcel.cowspent.model.DBCurrency
 import net.helcel.cowspent.model.DBMember
+import net.helcel.cowspent.util.PrefillMode
 import net.helcel.cowspent.util.SupportUtil
 import net.helcel.cowspent.util.evalMath
 
@@ -30,6 +31,20 @@ class EditBillViewModel : ViewModel() {
     var paymentModeId by mutableLongStateOf(0L)
     var categoryId by mutableLongStateOf(0L)
     var isNewBill by mutableStateOf(false)
+
+    // Null hides the pre-fill menu: it only applies to a bill started from scratch.
+    var prefillMode by mutableStateOf<PrefillMode?>(null)
+    var hasPrefillPreset by mutableStateOf(false)
+
+    // Auto-categorization: null while it is off, or for a bill that is not new.
+    private var autoCategorizer: ((String) -> Long?)? = null
+
+    // Once the user picks a category themselves, the name no longer gets a say.
+    private var categoryChosenByUser = false
+
+    // The category in place before an automatic one replaced it, to restore when the name stops
+    // matching; null while no automatic category is applied.
+    private var categoryBeforeAuto: Long? = null
 
     var currencies by mutableStateOf<List<DBCurrency>>(emptyList())
     var mainCurrencyName by mutableStateOf("")
@@ -52,7 +67,8 @@ class EditBillViewModel : ViewModel() {
             try {
                 val result = evalMath(sanitized)
                 if (result != 0.0) return SupportUtil.round2(result)
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
         val parsed = parseAmount(input) ?: 0.0
         return SupportUtil.round2(parsed)
@@ -166,10 +182,10 @@ class EditBillViewModel : ViewModel() {
     fun convertCurrency(currency: DBCurrency) {
         selectedCurrencyName = currency.name ?: ""
         selectedCurrencyRate = currency.exchangeRate
-        
+
         // We don't change 'amount' here anymore as per request.
         // It stays as the original amount.
-        
+
         updateSplits()
     }
 
@@ -187,7 +203,7 @@ class EditBillViewModel : ViewModel() {
         var baseComment = comment
         val regex = "\\s*#[^:]+:[\\d.,]+@[\\d.,]+".toRegex()
         baseComment = baseComment.replace(regex, "").trim()
-        
+
         return if (selectedCurrencyName.isNotEmpty() && selectedCurrencyRate != 1.0) {
             val metadata = "#$selectedCurrencyName:$amount@$selectedCurrencyRate"
             if (baseComment.isEmpty()) metadata else "$baseComment $metadata"
@@ -204,21 +220,21 @@ class EditBillViewModel : ViewModel() {
         repeat = bill.repeat ?: DBBill.NON_REPEATED
         paymentModeId = bill.paymentModeId
         categoryId = bill.categoryId
-        
+
         val rawComment = bill.comment ?: ""
-        
+
         // Try to parse existing conversion metadata #CURR:ORIG@RATE
         // Using [^:]+ for currency name to support symbols and names with spaces
         val regex = "#([^:]+):([\\d.,]+)@([\\d.,]+)".toRegex()
         val match = regex.find(rawComment)
-        
+
         if (match != null) {
             val (currName, origAmount, rate) = match.destructured
             selectedCurrencyName = currName
             selectedCurrencyRate = rate.replace(',', '.').toDoubleOrNull() ?: 1.0
             amount = origAmount
             comment = rawComment.replace(match.value, "").trim()
-            
+
             // Check if latest rate is different
             val latestCurrency = currencies.find { it.name == selectedCurrencyName }
             if (latestCurrency != null && latestCurrency.exchangeRate != selectedCurrencyRate) {
@@ -264,7 +280,7 @@ class EditBillViewModel : ViewModel() {
             val billOwerIds = bill.billOwersIds
             val selectedMembers = members.filter { billOwerIds.contains(it.id) }
             val totalWeight = selectedMembers.sumOf { it.weight }
-            
+
             // Use UI amount for even split calculation
             val uiAmount = amountAsDouble
 
@@ -276,6 +292,48 @@ class EditBillViewModel : ViewModel() {
                     owersCustomSplit[member.id] = if (share == 0.0) "" else SupportUtil.round2(share).toString()
                 }
             }
+        }
+    }
+
+    fun applyPrefill(bill: DBBill) {
+        payerId = bill.payerId
+        categoryId = bill.categoryId
+        paymentModeId = bill.paymentModeId
+        repeat = bill.repeat ?: DBBill.NON_REPEATED
+        val owerIds = bill.billOwersIds.toSet()
+        for (member in members) {
+            toggleMember(member.id, member.id in owerIds)
+        }
+        // The pre-filled category is the new fallback; a name match still wins over it.
+        categoryBeforeAuto = null
+        autoCategorize()
+    }
+
+    fun enableAutoCategorize(match: (String) -> Long?) {
+        autoCategorizer = match
+    }
+
+    fun updateWhat(value: String) {
+        what = value
+        autoCategorize()
+    }
+
+    fun selectCategory(id: Long) {
+        categoryId = id
+        categoryChosenByUser = true
+        categoryBeforeAuto = null
+    }
+
+    private fun autoCategorize() {
+        val match = autoCategorizer ?: return
+        if (!isNewBill || categoryChosenByUser) return
+        val categoryForName = match(what)
+        if (categoryForName != null) {
+            if (categoryBeforeAuto == null) categoryBeforeAuto = categoryId
+            categoryId = categoryForName
+        } else {
+            categoryBeforeAuto?.let { categoryId = it }
+            categoryBeforeAuto = null
         }
     }
 

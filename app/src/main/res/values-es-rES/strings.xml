@@ -137,8 +137,6 @@
     <string name="settings_color_custom">Color personalizado</string>
     <string name="settings_color_mode">Selección de color</string>
     <string name="settings_show_archived">Mostrar los proyectos archivados</string>
-    <string name="settings_fill_new_bill_from_last">Rellenar desde la última factura</string>
-    <string name="settings_fill_new_bill_from_last_summary">Reutilizar el pagador, la categoría, el modo y los participantes de la última factura creada en el proyecto.</string>
     <string name="pref_value_sync_1h">1 hora</string>
     <string name="pref_value_sync_1d">1 día</string>
     <string name="settings_url_warn_http">ADVERTENCIA: \"http\" no es seguro. Usa \"https\".</string>
