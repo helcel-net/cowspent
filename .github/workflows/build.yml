@@ -8,11 +8,11 @@ env:
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     tags:
-      - '**'
+      - "**"
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -32,13 +32,13 @@ jobs:
           echo "${{ secrets.RELEASE_KEYSTORE }}" > keystore.asc
           echo "${{ secrets.RELEASE_KEY}}" > key.asc
           gpg -d --passphrase "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" --batch keystore.asc > app/keystore.properties
-          gpg -d --passphrase "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" --batch key.asc > app/key.jks          
+          gpg -d --passphrase "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" --batch key.asc > app/key.jks
 
       - name: Generate Dynamic Release Notes
         run: |
           mkdir -p tmp/whatsnew
           echo "Various improvements for you to experience..." > tmp/whatsnew/whatsnew-en-US
-          
+
       - name: create and checkout branch
         if: github.event_name == 'pull_request'
         env:
@@ -67,9 +67,8 @@ jobs:
           else
             VERSION_NAME="${VERSION_BASE}"
           fi
+          printf '%s\n%s\n' "$VERSION_CODE" "$VERSION_NAME" > version.txt
           ./gradlew bundleSignedRelease assembleSignedRelease -PVERSION_CODE=$VERSION_CODE -PVERSION_NAME=$VERSION_NAME
-        # ./gradlew assembleSignedRelease -PVERSION_CODE=$VERSION_CODE -PVERSION_NAME=$VERSION_NAME
-        # ./gradlew bundleSignedRelease -PVERSION_CODE=$VERSION_CODE -PVERSION_NAME=$VERSION_NAME
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
@@ -78,22 +77,28 @@ jobs:
           compression-level: 0
           archive: false
 
+      - name: Determine prerelease
+        id: prerelease
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          if [[ "$GITHUB_REF_NAME" =~ ^[0-9]+\.[0-9]+[a-z]+$ ]]; then
+            echo "value=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Release
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             app/build/outputs/apk/signedRelease/app-signedRelease.apk
-          prerelease: |
-            if [[ ${{ github.ref }} =~ ^refs/tags/[0-9]+\.[0-9]+[a-z]+$ ]]; then
-              echo "false"
-            else
-              echo "true"
-            fi
+            version.txt
+          prerelease: ${{ steps.prerelease.outputs.value }}
 
       - name: Upload to Google Play
         uses: r0adkll/upload-google-play@v1
-       # if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push'
         with:
           serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
           packageName: net.helcel.cowspent
