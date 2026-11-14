@@ -81,7 +81,7 @@ jobs:
         id: prerelease
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          if [[ "$GITHUB_REF_NAME" =~ ^[0-9]+\.[0-9]+[a-z]+$ ]]; then
+          if [[ "$GITHUB_REF_NAME" =~ ^[0-9]+(\.[0-9]+)+$ ]]; then
             echo "value=false" >> "$GITHUB_OUTPUT"
           else
             echo "value=true" >> "$GITHUB_OUTPUT"
@@ -99,6 +99,7 @@ jobs:
       - name: Upload to Google Play
         uses: r0adkll/upload-google-play@v1
         if: github.event_name == 'push'
+        continue-on-error: true
         with:
           serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
           packageName: net.helcel.cowspent
